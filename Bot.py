@@ -12,6 +12,7 @@ import TradingStrats as TS
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
 import datetime
+import pandas as pd
 
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
@@ -21,8 +22,8 @@ Order_precision = -99 ##Precision Orders are measured up to
 # kline_15m - OHLC for 15 min intervals, Change accordingly
 
 #PRICES = "wss://stream.binance.com:9443/ws/btcusdt@depth10"
-SOCKET = "wss://stream.binance.com:9443/ws/btcusdt@kline_15m"
-symbol="BTCUSDT"
+#SOCKET = "wss://stream.binance.com:9443/ws/btcusdt@kline_15m"
+#symbol="BTCUSDT"
 
 #SOCKET = "wss://stream.binance.com:9443/ws/ethusdt@kline_15m"
 #symbol="ETHUSDT"
@@ -43,11 +44,11 @@ symbol="BTCUSDT"
 #symbol="ADAUSDT"
 
 
-#SOCKET = "wss://stream.binance.com:9443/ws/dogeusdt@kline_15m"
-#symbol="DOGEUSDT"
+SOCKET = "wss://stream.binance.com:9443/ws/dogeusdt@kline_1m"
+symbol="DOGEUSDT"
 
 
-#SOCKET = "wss://stream.binance.com:9443/ws/maticusdt@kline_15m"
+#SOCKET = "wss://stream.binance.com:9443/ws/maticusdt@kline_1m"
 #symbol="MATICUSDT"
 
 
@@ -122,7 +123,7 @@ pp = pprint.PrettyPrinter()
 #print(symbol)
 #print(30)
 client = Client(api_key="",api_secret="") ##Binance keys needed to get historical data/ Trade on an account
-for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_15MINUTE, start_str="1 months ago UTC"):  ## get KLines with 15 minute intervals for the last month
+for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_1MINUTE, start_str="1 week ago UTC"):  ## get KLines with 15 minute intervals for the last month
     # print(kline)
     Date.append(datetime.datetime.utcfromtimestamp(int(kline[0])/1000))
     Open.append(float(kline[1]))
@@ -149,8 +150,9 @@ prediction2=-99
 Highest=-999
 
 
-leverage=125 ##leverage used on binance just for console display
-AccountBalance=617*leverage  ## $617 from binance account balance multiplied by leverage used x125
+leverage=50#125 ##leverage used on binance just for console display
+AccountBalance=200 ## $617 from binance account balance multiplied by leverage used x125
+EffectiveAccountBalance = AccountBalance*leverage
 OriginalAccountSize=copy(AccountBalance)
 OrderSIZE = .02 ##how much of account to use per trade in Decimal
 positionSize = 0 ##altered later and sent as the orderQTY
@@ -158,12 +160,12 @@ positionSize = 0 ##altered later and sent as the orderQTY
 
 Trading=0 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
           ## If Trading==0 then we are paper trading a strategy on historical data
-print("Symbol:",symbol,"Start Balance:",AccountBalance/leverage)
+print("Symbol:",symbol,"Start Balance:",AccountBalance)
 if Trading: ## Trade on Binance with above api key and secret key
     async def runWS():
         async with websockets.connect(SOCKET) as websocket:
             global Open, Close, High, Low, Volume,Profit,tradeNO,CurrentPos,positionPrice,\
-                AccountBalance,positionSize,Highestprice,prediction1, signal1, signal2, HighestUlt, Highest, \
+                AccountBalance,EffectiveAccountBalance,positionSize,Highestprice,prediction1, signal1, signal2, HighestUlt, Highest, \
                 stoplossval, takeprofitval,prevsignal1,prevsignal2,PrevPos
             Profit = 0
             tradeNO = 0
@@ -239,7 +241,8 @@ if Trading: ## Trade on Binance with above api key and secret key
                         TimeCount+=1
                         if minuteFlag: ##new OHLC data
                             y = client.futures_account_balance()
-                            AccountBalance = float(y[1]['balance'])*leverage  ##Get Account Balance when multiplied by leverage to use for deciding positionSize based of OrderSIZE above
+                            AccountBalance = float(y[1]['balance']) ##Get Account Balance when multiplied by leverage to use for deciding positionSize based of OrderSIZE above
+                            EffectiveAccountBalance = AccountBalance*leverage
                             minuteFlag = 0 ##switch off flag
 
 
@@ -252,8 +255,6 @@ if Trading: ## Trade on Binance with above api key and secret key
                             #prediction1, signal1, signal2, HighestUlt, Highest, Type1 = TS.UltOscMACD(prediction1,Close,High, Low,signal1, signal2,HighestUlt, Highest)
                             prediction1, signal1, Type1 = TS.RSIStochEMA200(prediction1,Close,High,Low,signal1,signal2,CurrentPos)
                             #prediction1,Type1 = TS.Fractal2(Close,Low,High,signal1,prediction1)
-
-
                             stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval, Close, High,Low, prediction1, CurrentPos, Type1) ##This function sets the stoploss and takeprofit based off the Type1 variable returned by the above functions
 
                             ##These trading strategies have custom stoploss & takeprofits:
@@ -264,7 +265,7 @@ if Trading: ## Trade on Binance with above api key and secret key
 
                             if CurrentPos == -99 and prediction1 == 0:  ##not in a trade but want to enter a short position
                                 positionPrice = Close[-1]
-                                positionSize = (OrderSIZE * AccountBalance) / positionPrice ##work out OrderQTY
+                                positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice ##work out OrderQTY
                                 #print(positionSize)
                                 CurrentPos = 0
                                 tradeNO += 1
@@ -281,7 +282,7 @@ if Trading: ## Trade on Binance with above api key and secret key
 
                             elif CurrentPos == -99 and prediction1 == 1: ##not in a trade but want to enter a Long position
                                 positionPrice = Close[-1]
-                                positionSize = (OrderSIZE * AccountBalance) / positionPrice ##work out OrderQTY
+                                positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice ##work out OrderQTY
                                 CurrentPos = 1
                                 tradeNO += 1
                                 Highestprice = positionPrice
@@ -297,8 +298,8 @@ if Trading: ## Trade on Binance with above api key and secret key
                                     Order(round(positionSize), 1, symbol, stoplossval, takeprofitval, positionPrice,Order_precision)
 
                             if CurrentPos != PrevPos:
-                                prevsignal1 = -999
-                                prevsignal2 = -999
+                                signal1 = -99
+                                signal2 = -99
                                 print("Current Position:", CurrentPos, "\n")
                                 print("Margin:", positionPrice - Close[-1])
                                 # print("Date:",DateStream[-1])
@@ -420,6 +421,16 @@ if Trading: ## Trade on Binance with above api key and secret key
 
     run()
 else:       ## Paper Trading, exact same as above but simulated trading with graphs
+    stocks=0
+    if stocks:
+        ##load in csv file
+        df = pd.read_csv(f'C:\\Users\\conor\\Desktop\\AMZN.csv')
+        Close = df["Close"]
+        Open = df["Open"]
+        High = df["High"]
+        Low = df["Low"]
+        Volume = df["Volume"]
+
     for i in range(len(Close)):
         #global trailing_stoploss,Highestprice
         #DateStream = flow.dataStream(DateStream, Date[i], 1, 300)
@@ -431,7 +442,7 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
         #print(len(OpenStream))
         if len(OpenStream)>=299:
             prevProfit=copy(Profit)
-
+            EffectiveAccountBalance = AccountBalance*leverage
             #prediction1,Type = TS.MovingAverage(CloseStream,prediction1)
             #prediction1,signal1,signal2,Type =TS.StochRSIMACD(prediction1,CloseStream,signal1,signal2)
             #prediction1, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1)
@@ -449,7 +460,7 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
 
             if CurrentPos == -99 and prediction1 == 0:
                 positionPrice = CloseStream[len(CloseStream) - 1]
-                positionSize= (OrderSIZE*AccountBalance)/positionPrice
+                positionSize= (OrderSIZE*EffectiveAccountBalance)/positionPrice
                 CurrentPos = 0
                 tradeNO+=1
                 Highestprice = positionPrice
@@ -460,7 +471,7 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
                 AccountBalance -= positionSize * CloseStream[-1] * .00036
             elif CurrentPos == -99 and prediction1 == 1:
                 positionPrice = CloseStream[len(CloseStream) - 1]
-                positionSize = (OrderSIZE * AccountBalance) / positionPrice
+                positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice
                 CurrentPos = 1
                 tradeNO += 1
                 Highestprice = positionPrice
@@ -531,8 +542,8 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
 
 
             if CurrentPos!=PrevPos:
-                prevsignal1=-999
-                prevsignal2=-999
+                signal1=-99
+                signal2=-99
                 print("Current Position:",CurrentPos,"\n")
                 print("Margin:",positionPrice-CloseStream[-1])
                 #print("Date:",DateStream[-1])
@@ -546,6 +557,9 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
             if AccountBalance<0:
                 print("Negative account balance, No Equity")
                 break
+
+    print("Account Balance:", AccountBalance)
+    print("% Gain on Account:", ((AccountBalance - OriginalAccountSize) * 100) / OriginalAccountSize)
     ax1 = plt.subplot2grid((6, 1), (0, 0), rowspan=5, colspan=1)
     ax2 = plt.subplot2grid((6, 1), (5, 0), rowspan=1, colspan=1)
     for trade in trades:
@@ -604,8 +618,6 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
         print("Long W/L:", longwins / longlosses)
     except Exception as E:
         pass
-    print("Account Balance:",AccountBalance/leverage)
-    print("% Gain on Account:",((AccountBalance-OriginalAccountSize)*100)/OriginalAccountSize)
     #Close1=data['Close']
 
     #xs = [x[0] for x in profitgraph]
