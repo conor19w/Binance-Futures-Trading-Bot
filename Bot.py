@@ -353,7 +353,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                 commission.append(j['commission'])
                 PNL.append(j['realizedPnl'])
         for x in commission:
-            Profit -= float(x)/float(bnb) ##rough calculation, not accurate as bnb/usdt pair fluctuating
+            Profit -= float(x)*float(bnb) ##rough calculation, not accurate as bnb/usdt pair fluctuating
         for x in PNL:
             Profit += float(x)
         print("Account Balance: ", AccountBalance, "Profit:", Profit, "PV:", (Profit * 100) / (tradeNO * Close[-1]),"Stoploss:",stoplossval, "TakeProfit:", takeprofitval)
