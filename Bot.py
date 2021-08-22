@@ -9,6 +9,7 @@ from binance.client import Client
 import matplotlib.pyplot as plt
 from copy import copy
 import TradingStrats as TS
+from TradingStrats import SetSLTP
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
 import datetime
@@ -244,14 +245,14 @@ if Trading: ## Trade on Binance with above api key and secret key
                             #prediction1,Type1 = TS.MovingAverage(Close,prediction1)
                             #prediction1,signal1,signal2,Type1 =TS.StochRSIMACD(prediction1,Close,signal1,signal2)
                             #prediction1, signal1, signal2, Type1 = TS.tripleEMAStochasticRSIATR(Close,signal1,signal2,prediction1)
-                            #prediction1,Type1 = TS.Fractal(Close,Low,High,signal1,prediction1)
+                            prediction1,Type1 = TS.Fractal(Close,Low,High,signal1,prediction1)
                             #prediction1, signal1, signal2, HighestUlt, Highest, Type1 = TS.UltOscMACD(prediction1,Close,High, Low,signal1, signal2,HighestUlt, Highest)
                             #prediction1, signal1, Type1 = TS.RSIStochEMA200(prediction1,Close,High,Low,signal1,signal2,CurrentPos)
                             #prediction1,Type1 = TS.Fractal2(Close,Low,High,signal1,prediction1)
 
-                            prediction1, Type1 = stochBB(prediction1, Close, Volume)
+                            
 
-                            stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval, Close, High,Low, prediction1, CurrentPos, Type1) ##This function sets the stoploss and takeprofit based off the Type1 variable returned by the above functions
+                            stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, Close, High,Low, prediction1, CurrentPos, Type1) ##This function sets the stoploss and takeprofit based off the Type1 variable returned by the above functions
 
                             ##These trading strategies have custom stoploss & takeprofits:
                             #takeprofitval, stoplossval, prediction1, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,Close,High,Low,prediction1,CurrentPos,signal1)
@@ -498,9 +499,9 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
             #prediction1, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1)
             #prediction1,Type = TS.Fractal(CloseStream,LowStream,HighStream,signal1,prediction1)
             #prediction1,signal1,signal2,HighestUlt,Highest,Type = TS.UltOscMACD(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,HighestUlt,Highest)
-            #prediction1, signal1, Type = TS.RSIStochEMA200(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,CurrentPos)
+            prediction1, signal1, Type = TS.RSIStochEMA200(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,CurrentPos)
             #prediction1,Type = TS.Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1)
-            prediction1,Type = TS.stochBB(prediction1,CloseStream,VolumeStream)
+            
             stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,Type)
 
             #takeprofitval, stoplossval, prediction1, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
