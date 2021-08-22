@@ -146,7 +146,7 @@ current_date = datetime.datetime.now(timezone.utc)
 current_date = current_date.replace(tzinfo=timezone.utc)
 current_date = round(float(current_date.timestamp()*1000-.5))
 
-Trading=0 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
+Trading=1 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
           ## If Trading==0 then we are paper trading a strategy on historical data
 print("Symbol:",symbol,"Start Balance:",AccountBalance)
 if Trading: ## Trade on Binance with above api key and secret key
@@ -176,6 +176,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                     try:
                         #pp.pprint(x)
                         #print(client.futures_position_information(symbol=symbol)[0])
+
                         message = await websocket.recv() ##pull klines
                         json_message = json.loads(message)
                         payload = json_message['k']
@@ -241,21 +242,21 @@ if Trading: ## Trade on Binance with above api key and secret key
                             ######################## These are some trading strategies I have coded up as functions, found in TradingStrats.py #######################################
 
                             #prediction1,Type1 = TS.MovingAverage(Close,prediction1)
-                            prediction1,signal1,signal2,Type1 =TS.StochRSIMACD(prediction1,Close,signal1,signal2)
+                            #prediction1,signal1,signal2,Type1 =TS.StochRSIMACD(prediction1,Close,signal1,signal2)
                             #prediction1, signal1, signal2, Type1 = TS.tripleEMAStochasticRSIATR(Close,signal1,signal2,prediction1)
                             #prediction1,Type1 = TS.Fractal(Close,Low,High,signal1,prediction1)
                             #prediction1, signal1, signal2, HighestUlt, Highest, Type1 = TS.UltOscMACD(prediction1,Close,High, Low,signal1, signal2,HighestUlt, Highest)
                             #prediction1, signal1, Type1 = TS.RSIStochEMA200(prediction1,Close,High,Low,signal1,signal2,CurrentPos)
                             #prediction1,Type1 = TS.Fractal2(Close,Low,High,signal1,prediction1)
 
+                            prediction1, Type1 = stochBB(prediction1, Close, Volume)
+
                             stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval, Close, High,Low, prediction1, CurrentPos, Type1) ##This function sets the stoploss and takeprofit based off the Type1 variable returned by the above functions
 
                             ##These trading strategies have custom stoploss & takeprofits:
                             #takeprofitval, stoplossval, prediction1, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,Close,High,Low,prediction1,CurrentPos,signal1)
                             #takeprofitval, stoplossval, prediction1, signal1= TS.TripleEMA(stoplossval, takeprofitval,Close,High,Low,prediction1,CurrentPos,signal1)
-                            LP = await lastprice.recv()  ##lastprice
-                            LP = json.loads(LP)
-                            LP = float(LP['c'])
+
                             x = client.futures_position_information(symbol=symbol)[0]['positionAmt']
                             if x == '0':
                                 CurrentPos = -99 ##Check if we are in a trade, if not reinitialize CurrentPos
@@ -263,6 +264,11 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 CurrentPos = 0 ##in a short
                             elif float(x)>0:
                                 CurrentPos = 1 ##in a long
+
+                            LP = await lastprice.recv()  ##lastprice
+                            LP = json.loads(LP)
+                            LP = float(LP['c'])
+
                             if CurrentPos == -99 and prediction1 == 0:  ##not in a trade but want to enter a short position
                                 positionPrice = LP
                                 positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice ##work out OrderQTY
@@ -274,9 +280,6 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 #trades.append({'x': i, 'y': positionPrice, 'type': "sell",'current_price': positionPrice})
 
                                 ##Create Order on Binance
-                                LP = await lastprice.recv() ##lastprice
-                                LP = json.loads(LP)
-                                LP = float(LP['c'])
                                 if Order_precision!=0:
                                     Order(round(positionSize,Order_precision), 0, symbol,stoplossval,takeprofitval,positionPrice,Coin_precision)
                                 else:
@@ -459,7 +462,7 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
         Low = df["Low"]
         Volume = df["Volume"]
     else:
-        symbol = "BTCUSDT"
+        #symbol = "BTCUSDT"
         #symbol="ETHUSDT"
         #symbol='SHIBUSDT'
         #symbol='ADAUSDT'
@@ -468,10 +471,10 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
         #symbol= 'SUSHIUSDT'
         #symbol = 'SOLUSDT' ###############################
         #symbol = 'MATICUSDT' #############################
-        #symbol = 'DOGEUSDT'
-        leverage = 50  ##leverage being used
+        symbol = 'DOGEUSDT'
+        leverage = 35  ##leverage being used
         AccountBalance=1000
-        for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str="2 month ago UTC"):  ## get KLines with 15 minute intervals for the last month
+        for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str="2 month ago UTC"):  ## get KLines with 15 minute intervals for the last month
             # print(kline)
             Date.append(datetime.datetime.utcfromtimestamp(int(kline[0]) / 1000))
             Open.append(float(kline[1]))
@@ -496,8 +499,9 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
             #prediction1, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1)
             #prediction1,Type = TS.Fractal(CloseStream,LowStream,HighStream,signal1,prediction1)
             #prediction1,signal1,signal2,HighestUlt,Highest,Type = TS.UltOscMACD(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,HighestUlt,Highest)
-            prediction1, signal1, Type = TS.RSIStochEMA200(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,CurrentPos)
+            #prediction1, signal1, Type = TS.RSIStochEMA200(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,CurrentPos)
             #prediction1,Type = TS.Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1)
+            prediction1,Type = TS.stochBB(prediction1,CloseStream,VolumeStream)
             stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,Type)
 
             #takeprofitval, stoplossval, prediction1, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
