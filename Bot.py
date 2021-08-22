@@ -9,6 +9,7 @@ from binance.client import Client
 import matplotlib.pyplot as plt
 from copy import copy
 import TradingStrats as TS
+from TradingStrats import stochBB
 from TradingStrats import SetSLTP
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
@@ -116,7 +117,8 @@ pp = pprint.PrettyPrinter()
 
 #print(symbol)
 #print(30)
-client = Client(api_key='', api_secret='') ##Binance keys needed to get historical data/ Trade on an account
+client = Client(api_secret='',api_key='') ##Binance keys needed to get historical data/ Trade on an account
+
 
 #OrderSize = 100
 tradeNO=0 ##number of trades
@@ -147,12 +149,12 @@ current_date = datetime.datetime.now(timezone.utc)
 current_date = current_date.replace(tzinfo=timezone.utc)
 current_date = round(float(current_date.timestamp()*1000-.5))
 
-Trading=1 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
+Trading=0 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
           ## If Trading==0 then we are paper trading a strategy on historical data
 print("Symbol:",symbol,"Start Balance:",AccountBalance)
 if Trading: ## Trade on Binance with above api key and secret key
     async def runWS():
-        async with websockets.connect(SOCKET) as websocket, websockets.connect(PRICES) as lastprice, websockets.connect(BNBfee) as bnbFEE:
+        async with websockets.connect(SOCKET) as websocket:
             global Open, Close, High, Low, Volume,Profit,tradeNO,CurrentPos,positionPrice,\
                 AccountBalance,EffectiveAccountBalance,positionSize,Highestprice,prediction1, signal1, signal2, HighestUlt, Highest, \
                 stoplossval, takeprofitval,prevsignal1,prevsignal2,PrevPos
@@ -266,9 +268,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                             elif float(x)>0:
                                 CurrentPos = 1 ##in a long
 
-                            LP = await lastprice.recv()  ##lastprice
-                            LP = json.loads(LP)
-                            LP = float(LP['c'])
+                            LP = await getLastPrice()
 
                             if CurrentPos == -99 and prediction1 == 0:  ##not in a trade but want to enter a short position
                                 positionPrice = LP
@@ -300,9 +300,9 @@ if Trading: ## Trade on Binance with above api key and secret key
                                     Order(round(positionSize,Order_precision), 1, symbol,stoplossval,takeprofitval,positionPrice,Coin_precision)
                                 else:
                                     Order(round(positionSize), 1, symbol, stoplossval, takeprofitval, positionPrice,Coin_precision)
-                            bnb = await bnbFEE.recv()
-                            bnb = json.loads(bnb)
-                            bnb = float(bnb['c'])
+
+                            bnb = await getBNBfee()
+
                             if CurrentPos != PrevPos:
                                 signal1 = -99
                                 signal2 = -99
@@ -325,6 +325,21 @@ if Trading: ## Trade on Binance with above api key and secret key
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                     print(exc_type, fname, exc_tb.tb_lineno)
+
+
+    async def getLastPrice():
+        async with websockets.connect(PRICES) as lastprice:
+            LP = await lastprice.recv()  ##lastprice
+            LP = json.loads(LP)
+            LP = float(LP['c'])
+            return LP
+
+    async def getBNBfee():
+        async with websockets.connect(BNBfee) as bnbFEE:
+            bnb = await bnbFEE.recv()
+            bnb = json.loads(bnb)
+            bnb = float(bnb['c'])
+            return bnb
 
     def printProfit(S,bnb):
         global Profit,tradeNO,stoplossval,takeprofitval,Close,AccountBalance
@@ -499,8 +514,8 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
             #prediction1, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1)
             #prediction1,Type = TS.Fractal(CloseStream,LowStream,HighStream,signal1,prediction1)
             #prediction1,signal1,signal2,HighestUlt,Highest,Type = TS.UltOscMACD(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,HighestUlt,Highest)
-            prediction1, signal1, Type = TS.RSIStochEMA200(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,CurrentPos)
-            #prediction1,Type = TS.Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1)
+            #prediction1, signal1, Type = TS.RSIStochEMA200(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,CurrentPos)
+            prediction1,Type = TS.Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1)
             
             stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,Type)
 
