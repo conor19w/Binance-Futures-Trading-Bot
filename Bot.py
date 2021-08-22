@@ -299,7 +299,9 @@ if Trading: ## Trade on Binance with above api key and secret key
                                     Order(round(positionSize,Order_precision), 1, symbol,stoplossval,takeprofitval,positionPrice,Coin_precision)
                                 else:
                                     Order(round(positionSize), 1, symbol, stoplossval, takeprofitval, positionPrice,Coin_precision)
-
+                            bnb = await bnbFEE.recv()
+                            bnb = json.loads(bnb)
+                            bnb = float(bnb['c'])
                             if CurrentPos != PrevPos:
                                 signal1 = -99
                                 signal2 = -99
@@ -307,9 +309,6 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 print("Margin:", positionPrice - Close[-1])
                                 # print("Date:",DateStream[-1])
                                 try:
-                                    bnb = await bnbFEE.recv()
-                                    bnb = json.loads(bnb)
-                                    bnb = float(bnb['c'])
                                     printProfit(symbol,bnb)
                                 except Exception as e:
                                     pass
