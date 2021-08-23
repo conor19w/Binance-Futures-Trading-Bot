@@ -288,41 +288,57 @@ if Trading: ## Trade on Binance with above api key and secret key
                             elif float(x['positionAmt']) < 0:
                                 CurrentPos = 0  ##in a short
                                 ##Check that stoploss and takeprofit are set:
-                                if client.futures_get_all_orders(symbol=symbol)[-1]['status']!='NEW' or client.futures_get_all_orders(symbol=symbol)[-2]['status']!='NEW':
-                                    print("Stop Price:",round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
-                                    order2 = client.futures_create_order(
-                                        symbol=symbol,
-                                        side=SIDE_BUY,
-                                        type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                        quantity=-1*float(x['positionAmt']),
-                                        stopPrice=round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
-                                    order3 = client.futures_create_order(
-                                        symbol=symbol,
-                                        side=SIDE_BUY,
-                                        type=FUTURE_ORDER_TYPE_LIMIT,
-                                        price=round(float(x['entryPrice']) - current_takeprofitval, Coin_precision),
-                                        timeInForce='GTC',
-                                        quantity=-1*float(x['positionAmt']))
+                                try:
+                                    if client.futures_get_all_orders(symbol=symbol)[-1]['status']!='NEW' or client.futures_get_all_orders(symbol=symbol)[-2]['status']!='NEW':
+                                        print("Stop Price:",round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
+                                        order2 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_BUY,
+                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                            quantity=-1*float(x['positionAmt']),
+                                            stopPrice=round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
+                                        order3 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_BUY,
+                                            type=FUTURE_ORDER_TYPE_LIMIT,
+                                            price=round(float(x['entryPrice']) - current_takeprofitval, Coin_precision),
+                                            timeInForce='GTC',
+                                            quantity=-1*float(x['positionAmt']))
+                                except BinanceAPIException as d:
+                                    if d.message=='Order would immediately trigger.':
+                                        order4= client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_BUY,
+                                            type=FUTURE_ORDER_TYPE_MARKET,
+                                            quantity=-1*float(x['positionAmt']))
 
                             elif float(x['positionAmt']) > 0:
                                 CurrentPos = 1  ##in a long
                                 ##Check that stoploss and takeprofit are set:
-                                if client.futures_get_all_orders(symbol=symbol)[-1]['status'] != 'NEW' or client.futures_get_all_orders(symbol=symbol)[-2]['status'] != 'NEW':
-                                    ##stoploss
-                                    order2 = client.futures_create_order(
-                                        symbol=symbol,
-                                        side=SIDE_SELL,
-                                        type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                        quantity=float(x['positionAmt']),
-                                        stopPrice=round(float(x['entryPrice']) - current_stoplossval - (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
-                                    ##takeprofit:
-                                    order3 = client.futures_create_order(
-                                        symbol=symbol,
-                                        side=SIDE_SELL,
-                                        type=FUTURE_ORDER_TYPE_LIMIT,
-                                        price=round(float(x['entryPrice']) + current_takeprofitval, Coin_precision),
-                                        timeInForce='GTC',
-                                        quantity=float(x['positionAmt']))
+                                try:
+                                    if client.futures_get_all_orders(symbol=symbol)[-1]['status'] != 'NEW' or client.futures_get_all_orders(symbol=symbol)[-2]['status'] != 'NEW':
+                                        ##stoploss
+                                        order2 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                            quantity=float(x['positionAmt']),
+                                            stopPrice=round(float(x['entryPrice']) - current_stoplossval - (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
+                                        ##takeprofit:
+                                        order3 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_LIMIT,
+                                            price=round(float(x['entryPrice']) + current_takeprofitval, Coin_precision),
+                                            timeInForce='GTC',
+                                            quantity=float(x['positionAmt']))
+                                except BinanceAPIException as d:
+                                    if d.message=='Order would immediately trigger.':
+                                        order4= client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_MARKET,
+                                            quantity=-1*float(x['positionAmt']))
 
                             LP = await getLastPrice()
 
