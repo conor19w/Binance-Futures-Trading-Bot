@@ -289,70 +289,41 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 CurrentPos = 0  ##in a short
                                 ##Check that stoploss and takeprofit are set:
                                 if client.futures_get_all_orders(symbol=symbol)[-1]['status']!='NEW' or client.futures_get_all_orders(symbol=symbol)[-2]['status']!='NEW':
-                                    if Coin_precision != 0:
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_SELL,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=-1*float(x['positionAmt']),
-                                                stopPrice=round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
-                                            order3 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_BUY,
-                                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                                price=round(float(x['entryPrice']) - current_takeprofitval, Coin_precision),
-                                                timeInForce='GTC',
-                                                quantity=-1*float(x['positionAmt']))
-                                    else:
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_SELL,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=-1*float(x['positionAmt']),
-                                                stopPrice=round(float(x['entryPrice']) + current_stoplossval))
-                                            order3 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_BUY,
-                                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                                price=round(float(x['entryPrice']) - current_takeprofitval),
-                                                timeInForce='GTC',
-                                                quantity=-1*float(x['positionAmt']))
+                                    print("Stop Price:",round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
+                                    order2 = client.futures_create_order(
+                                        symbol=symbol,
+                                        side=SIDE_BUY,
+                                        type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                        quantity=-1*float(x['positionAmt']),
+                                        stopPrice=round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
+                                    order3 = client.futures_create_order(
+                                        symbol=symbol,
+                                        side=SIDE_BUY,
+                                        type=FUTURE_ORDER_TYPE_LIMIT,
+                                        price=round(float(x['entryPrice']) - current_takeprofitval, Coin_precision),
+                                        timeInForce='GTC',
+                                        quantity=-1*float(x['positionAmt']))
 
                             elif float(x['positionAmt']) > 0:
                                 CurrentPos = 1  ##in a long
                                 ##Check that stoploss and takeprofit are set:
                                 if client.futures_get_all_orders(symbol=symbol)[-1]['status'] != 'NEW' or client.futures_get_all_orders(symbol=symbol)[-2]['status'] != 'NEW':
-                                    if Coin_precision != 0:
-                                        ##stoploss
-                                        order2 = client.futures_create_order(
-                                            symbol=symbol,
-                                            side=SIDE_SELL,
-                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                            quantity=float(x['positionAmt']),
-                                            stopPrice=round(float(x['entryPrice']) - current_stoplossval - (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
-                                        ##takeprofit:
-                                        order3 = client.futures_create_order(
-                                            symbol=symbol,
-                                            side=SIDE_SELL,
-                                            type=FUTURE_ORDER_TYPE_LIMIT,
-                                            price=round(float(x['entryPrice']) + current_takeprofitval, Coin_precision),
-                                            timeInForce='GTC',
-                                            quantity=float(x['positionAmt']))
-                                    else:
-                                        order2 = client.futures_create_order(
-                                            symbol=symbol,
-                                            side=SIDE_SELL,
-                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                            quantity=float(x['positionAmt']),
-                                            stopPrice=round(float(x['entryPrice']) - current_stoplossval))
-                                            ##takeprofit:
-                                        order3 = client.futures_create_order(
-                                            symbol=symbol,
-                                            side=SIDE_SELL,
-                                            type=FUTURE_ORDER_TYPE_LIMIT,
-                                            price=round(float(x['entryPrice']) + current_takeprofitval),
-                                            timeInForce='GTC',
-                                            quantity=float(x['positionAmt']))
+                                    ##stoploss
+                                    order2 = client.futures_create_order(
+                                        symbol=symbol,
+                                        side=SIDE_SELL,
+                                        type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                        quantity=float(x['positionAmt']),
+                                        stopPrice=round(float(x['entryPrice']) - current_stoplossval - (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
+                                    ##takeprofit:
+                                    order3 = client.futures_create_order(
+                                        symbol=symbol,
+                                        side=SIDE_SELL,
+                                        type=FUTURE_ORDER_TYPE_LIMIT,
+                                        price=round(float(x['entryPrice']) + current_takeprofitval, Coin_precision),
+                                        timeInForce='GTC',
+                                        quantity=float(x['positionAmt']))
+
                             LP = await getLastPrice()
 
                             if CurrentPos == -99 and prediction1 == 0:  ##not in a trade but want to enter a short position
@@ -457,179 +428,92 @@ if Trading: ## Trade on Binance with above api key and secret key
                 PP = await getLastPrice()
                 if side1: ##Long
                     ##Place the Long
-                    if CP != 0:
-                        order1 = client.futures_create_order(
+                    order1 = client.futures_create_order(
+                        symbol=s,
+                        side=SIDE_BUY,
+                        type=ORDER_TYPE_LIMIT,
+                        price= PP,
+                        timeInForce=TIME_IN_FORCE_IOC,
+                        quantity=q)
+                    x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                    if x[-1]['status'] == 'FILLED':
+                        ##stoploss:
+                        #print("avPrice:", (x[-1]['avgPrice']))
+                        #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) - stoploss - 5 * math.pow(10, -CP - 1), CP))
+                        #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) + takeprofit, CP)))
+                        order2 = client.futures_create_order(symbol=s,
+                            side=SIDE_SELL,
+                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                            quantity=float(x[-1]['executedQty']),
+                            stopPrice=round((float(x[-1]['avgPrice']))-stoploss-(5*math.pow(10,-CP-1)),CP))
+                        ##takeprofit:
+                        order3 = client.futures_create_order(
                             symbol=s,
-                            side=SIDE_BUY,
-                            type=ORDER_TYPE_LIMIT,
-                            price= PP,
-                            timeInForce=TIME_IN_FORCE_IOC,
-                            quantity=q)
-                        x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-                        if x[-1]['status'] == 'FILLED':
-                            ##stoploss:
-                            #print("avPrice:", (x[-1]['avgPrice']))
-                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) - stoploss - 5 * math.pow(10, -CP - 1), CP))
-                            #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) + takeprofit, CP)))
-                            order2 = client.futures_create_order(symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                quantity=float(x[-1]['executedQty']),
-                                stopPrice=round((float(x[-1]['avgPrice']))-stoploss-(5*math.pow(10,-CP-1)),CP))
-                            ##takeprofit:
-                            order3 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round((float(x[-1]['avgPrice'])) + takeprofit, CP),
-                                timeInForce='GTC',
-                                quantity=float(x[-1]['executedQty']))
-                    else:
-
-                        order1 = client.futures_create_order(
-                            symbol=s,
-                            side=SIDE_BUY,
-                            type=ORDER_TYPE_LIMIT,
-                            price=PP,
-                            timeInForce=TIME_IN_FORCE_IOC,
-                            quantity=q)
-                        x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-                        if x[-1]['status'] == 'FILLED':
-                            #print("avPrice:", (float(x[-1]['avgPrice'])))
-                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) - stoploss))
-                            #print("attempted Takeprofit:", round((float(x[-1]['avgPrice'])) + takeprofit))
-                            ##stoploss:
-                            order2 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                quantity=float(x[-1]['executedQty']),
-                                stopPrice=round((float(x[-1]['avgPrice'])) - stoploss))
-                            ##takeprofit:
-                            order3 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round((float(x[-1]['avgPrice'])) + takeprofit),
-                                timeInForce='GTC',
-                                quantity=float(x[-1]['executedQty']))
-
+                            side=SIDE_SELL,
+                            type=FUTURE_ORDER_TYPE_LIMIT,
+                            price=round((float(x[-1]['avgPrice'])) + takeprofit, CP),
+                            timeInForce='GTC',
+                            quantity=float(x[-1]['executedQty']))
                     ##Order was filled
                     if x[-1]['status']=='FILLED' or x[-1]['status']=='PARTIALLY_FILLED':
                         pass
 
                     ##Order not filled so use market order instead
                     else:
-                        if CP != 0:
-                            ##Market order so we don't miss the move
-                            order1 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_BUY,
-                                type=ORDER_TYPE_MARKET,
-                                quantity=q)
-                            x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-                            #print("avPrice:", (float(x[-1]['avgPrice'])))
-                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) - stoploss - 5 * math.pow(10, -CP - 1), CP))
-                            #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) + takeprofit, CP)))
-                            ##stoploss:
-                            order2 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                quantity=float(x[-1]['executedQty']),
-                                stopPrice=round((float(x[-1]['avgPrice'])) - stoploss - (5 * math.pow(10, -CP - 1)), CP))
-                            ##takeprofit:
-                            order3 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round((float(x[-1]['avgPrice'])) + takeprofit, CP),
-                                timeInForce='GTC',
-                                quantity=float(x[-1]['executedQty']))
-                        else:
-                            order1 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_BUY,
-                                type=ORDER_TYPE_MARKET,
-                                quantity=q)
-
-                            x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-                            #print("avPrice:", (float(x[-1]['avgPrice'])))
-                            #print("attempted Stoploss:", round((float(x[-1]['avgPrice'])) - stoploss))
-                            #print("attempted Takeprofit:", round((float(x[-1]['avgPrice'])) + takeprofit))
-                            order2 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                quantity=float(x[-1]['executedQty']),
-                                stopPrice=round((float(x[-1]['avgPrice'])) - stoploss))
-
-                            # Place the take profit
-                            order3 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round((float(x[-1]['avgPrice'])) + takeprofit),
-                                timeInForce='GTC',
-                                quantity=float(x[-1]['executedQty']))
+                        ##Market order so we don't miss the move
+                        order1 = client.futures_create_order(
+                            symbol=s,
+                            side=SIDE_BUY,
+                            type=ORDER_TYPE_MARKET,
+                            quantity=q)
+                        x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                        #print("avPrice:", (float(x[-1]['avgPrice'])))
+                        #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) - stoploss - 5 * math.pow(10, -CP - 1), CP))
+                        #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) + takeprofit, CP)))
+                        ##stoploss:
+                        order2 = client.futures_create_order(
+                            symbol=s,
+                            side=SIDE_SELL,
+                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                            quantity=float(x[-1]['executedQty']),
+                            stopPrice=round((float(x[-1]['avgPrice'])) - stoploss - (5 * math.pow(10, -CP - 1)), CP))
+                        ##takeprofit:
+                        order3 = client.futures_create_order(
+                            symbol=s,
+                            side=SIDE_SELL,
+                            type=FUTURE_ORDER_TYPE_LIMIT,
+                            price=round((float(x[-1]['avgPrice'])) + takeprofit, CP),
+                            timeInForce='GTC',
+                            quantity=float(x[-1]['executedQty']))
 
                 else: ##Short
                     ##Place the short
-                    if CP != 0:
+                    order1 = client.futures_create_order(
+                        symbol=s,
+                        side=SIDE_SELL,
+                        type=ORDER_TYPE_LIMIT,
+                        price=PP,
+                        timeInForce=TIME_IN_FORCE_IOC,
+                        quantity=q)
 
-                        order1 = client.futures_create_order(
+                    x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                    if x[-1]['status'] == 'FILLED':
+                        #print("avPrice:", (float(x[-1]['avgPrice'])))
+                        #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) + stoploss + 5 * math.pow(10, -CP - 1), CP))
+                        #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) - takeprofit, CP)))
+                        order2 = client.futures_create_order(
                             symbol=s,
-                            side=SIDE_SELL,
-                            type=ORDER_TYPE_LIMIT,
-                            price=PP,
-                            timeInForce=TIME_IN_FORCE_IOC,
-                            quantity=q)
-
-                        x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-                        if x[-1]['status'] == 'FILLED':
-                            #print("avPrice:", (float(x[-1]['avgPrice'])))
-                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) + stoploss + 5 * math.pow(10, -CP - 1), CP))
-                            #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) - takeprofit, CP)))
-                            order2 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                quantity=float(x[-1]['executedQty']),
-                                stopPrice=round((float(x[-1]['avgPrice'])) + stoploss + (5 * math.pow(10, -CP - 1)), CP))
-                            order3 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_BUY,
-                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round((float(x[-1]['avgPrice'])) - takeprofit, CP),
-                                timeInForce='GTC',
-                                quantity=float(x[-1]['executedQty']))
-                    else:
-
-                        order1 = client.futures_create_order(
+                            side=SIDE_BUY,
+                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                            quantity=float(x[-1]['executedQty']),
+                            stopPrice=round((float(x[-1]['avgPrice'])) + stoploss + (5 * math.pow(10, -CP - 1)), CP))
+                        order3 = client.futures_create_order(
                             symbol=s,
-                            side=SIDE_SELL,
-                            type=ORDER_TYPE_LIMIT,
-                            price=PP,
-                            timeInForce=TIME_IN_FORCE_IOC,
-                            quantity=q)
-                        x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-                        if x[-1]['status'] == 'FILLED':
-                            #print("avPrice:", (float(x[-1]['avgPrice'])))
-                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) + stoploss , CP))
-                            #print("attempted Takeprofit:", round(float(x[-1]['avgPrice']) - takeprofit))
-                            order2 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                quantity=float(x[-1]['executedQty']),
-                                stopPrice=round((float(x[-1]['avgPrice'])) + stoploss))
-                            order3 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_BUY,
-                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round((float(x[-1]['avgPrice'])) - takeprofit),
-                                timeInForce='GTC',
-                                quantity=float(x[-1]['executedQty']))
+                            side=SIDE_BUY,
+                            type=FUTURE_ORDER_TYPE_LIMIT,
+                            price=round((float(x[-1]['avgPrice'])) - takeprofit, CP),
+                            timeInForce='GTC',
+                            quantity=float(x[-1]['executedQty']))
 
                     ##Order was filled
                     if x[-1]['status'] == 'FILLED' or x[-1]['status'] == 'PARTIALLY_FILLED':
@@ -637,58 +521,30 @@ if Trading: ## Trade on Binance with above api key and secret key
 
                     ##Order not filled so use market order instead
                     else:
-                        if CP != 0:
+                        ##Market order so we don't miss the move
+                        order1 = client.futures_create_order(
+                            symbol=s,
+                            side=SIDE_SELL,
+                            type=ORDER_TYPE_MARKET,
+                            quantity=q)
+                        x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                        #print("avPrice:", (float(x[-1]['avgPrice'])))
+                        #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) + stoploss + (5 * math.pow(10, -CP - 1)), CP))
+                        #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) - takeprofit, CP)))
+                        order2 = client.futures_create_order(
+                            symbol=s,
+                            side=SIDE_BUY,
+                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                            quantity=float(x[-1]['executedQty']),
+                            stopPrice=round((float(x[-1]['avgPrice'])) + stoploss + 5 * math.pow(10, -CP - 1), CP))
 
-                            ##Market order so we don't miss the move
-                            order1 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=ORDER_TYPE_MARKET,
-                                quantity=q)
-                            x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-                            #print("avPrice:", (float(x[-1]['avgPrice'])))
-                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) + stoploss + (5 * math.pow(10, -CP - 1)), CP))
-                            #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) - takeprofit, CP)))
-                            order2 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                quantity=float(x[-1]['executedQty']),
-                                stopPrice=round((float(x[-1]['avgPrice'])) + stoploss + 5 * math.pow(10, -CP - 1), CP))
-
-                            order3 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_BUY,
-                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round((float(x[-1]['avgPrice'])) - takeprofit, CP),
-                                timeInForce='GTC',
-                                quantity=float(x[-1]['executedQty']))
-                        else:
-
-                            order1 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_BUY,
-                                type=ORDER_TYPE_MARKET,
-                                quantity=q)
-
-                            x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-                            #print("avPrice:", (float(x[-1]['avgPrice'])))
-                            #print("attempted Stoploss:", float(x[-1]['avgPrice']) + stoploss)
-                            #print("attempted Takeprofit:", round(float(x[-1]['avgPrice']) - takeprofit))
-                            order2 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                quantity=float(x[-1]['executedQty']),
-                                stopPrice=round((float(x[-1]['avgPrice'])) + stoploss))
-                            # Place the take profit
-                            order3 = client.futures_create_order(
-                                symbol=s,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round((float(x[-1]['avgPrice'])) - takeprofit),
-                                timeInForce='GTC',
-                                quantity=float(x[-1]['executedQty']))
+                        order3 = client.futures_create_order(
+                            symbol=s,
+                            side=SIDE_BUY,
+                            type=FUTURE_ORDER_TYPE_LIMIT,
+                            price=round((float(x[-1]['avgPrice'])) - takeprofit, CP),
+                            timeInForce='GTC',
+                            quantity=float(x[-1]['executedQty']))
 
             except BinanceAPIException as e:
                 print(e.status_code)
