@@ -52,7 +52,7 @@ symbol="SOLUSDT"
 #symbol="DOGEUSDT"
 
 #PRICES = "wss://stream.binance.com:9443/ws/maticusdt@ticker"
-#SOCKET = "wss://stream.binance.com:9443/ws/maticusdt@kline_1m"
+#SOCKET = "wss://stream.binance.com:9443/ws/maticusdt@kline_1m" ##############Price not increased by tick size error
 #symbol="MATICUSDT"
 
 #PRICES = "wss://stream.binance.com:9443/ws/bakeusdt@ticker"
@@ -66,6 +66,14 @@ symbol="SOLUSDT"
 #PRICES = "wss://stream.binance.com:9443/ws/xrpusdt@ticker"
 #SOCKET = "wss://stream.binance.com:9443/ws/xrpusdt@kline_1m"
 #symbol="XRPUSDT"
+
+#PRICES = "wss://stream.binance.com:9443/ws/dotusdt@ticker"
+#SOCKET = "wss://stream.binance.com:9443/ws/dotusdt@kline_1m"
+#symbol="DOTUSDT"
+
+#PRICES = "wss://stream.binance.com:9443/ws/alphausdt@ticker"
+#SOCKET = "wss://stream.binance.com:9443/ws/alphausdt@kline_1m"
+#symbol = "ALPHAUSDT"
 
 BNBfee = "wss://stream.binance.com:9443/ws/bnbusdt@ticker"
 
@@ -112,6 +120,18 @@ elif symbol =="SHIBUSDT":
 elif symbol =="XRPUSDT":
     Coin_precision = 4
     Order_precision = 1
+
+elif symbol == "SUSHIUSDT":
+    Coin_precision = 3
+    Order_precision = 0
+
+elif symbol == "DOTUSDT":
+    Coin_precision = 3
+    Order_precision = 1
+
+elif symbol =="ALPHAUSDT":
+    Coin_precision = 4
+    Order_precision = 0
 
 #data.reset_index(level=0, inplace=True)
 trades = deque(maxlen=100000) ##keep track of shorts/Longs for graphing
@@ -174,9 +194,20 @@ current_date = datetime.datetime.now(timezone.utc)
 current_date = current_date.replace(tzinfo=timezone.utc)
 current_date = round(float(current_date.timestamp()*1000-.5))
 
-Trading=0 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
+Trading=1 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
           ## If Trading==0 then we are paper trading a strategy on historical data
 #print(client.futures_get_all_orders(symbol=symbol)[-3])
+#x = client.futures_get_all_orders(symbol=symbol)
+'''order1 = client.futures_create_order(
+                            symbol=symbol,
+                            side=SIDE_BUY,
+                            type=ORDER_TYPE_MARKET,
+                            quantity=20)
+print(order1)
+x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+print(x)
+print(x[-1])'''
+#print(client.futures_position_information(symbol=symbol)[0])
 if Trading: ## Trade on Binance with above api key and secret key
     print("Symbol:", symbol, "Start Balance:", AccountBalance)
     async def runWS():
@@ -189,6 +220,8 @@ if Trading: ## Trade on Binance with above api key and secret key
             CurrentPos = -99
             positionPrice = 0
             minuteFlag = 0 ##flag to signal new incoming kline
+            current_stoplossval = 0
+            current_takeprofitval = 0
             TimeCount=0
             TTC = 0
             timer = 0
@@ -211,6 +244,9 @@ if Trading: ## Trade on Binance with above api key and secret key
                         message = await websocket.recv() ##pull klines
                         json_message = json.loads(message)
                         payload = json_message['k']
+
+
+
                         if payload['x']: ##if payload['x']==1 then it is a new kline we have received => new OHLC data
                             Open = flow.dataStream(Open, float(payload['o']), 1, 300)
                             Close = flow.dataStream(Close, float(payload['c']), 1, 300)
@@ -231,10 +267,10 @@ if Trading: ## Trade on Binance with above api key and secret key
                             #prediction1,Type1 = TS.MovingAverage(Close,prediction1)
                             #prediction1,signal1,signal2,Type1 =TS.StochRSIMACD(prediction1,Close,signal1,signal2)
                             #prediction1, signal1, signal2, Type1 = TS.tripleEMAStochasticRSIATR(Close,signal1,signal2,prediction1)
-                            prediction1,Type1 = TS.Fractal(Close,Low,High,signal1,prediction1)
+                            #prediction1,Type1 = TS.Fractal(Close,Low,High,signal1,prediction1)
                             #prediction1, signal1, signal2, HighestUlt, Highest, Type1 = TS.UltOscMACD(prediction1,Close,High, Low,signal1, signal2,HighestUlt, Highest)
                             #prediction1, signal1, Type1 = TS.RSIStochEMA200(prediction1,Close,High,Low,signal1,signal2,CurrentPos)
-                            #prediction1,Type1 = TS.Fractal2(Close,Low,High,signal1,prediction1)
+                            prediction1,Type1 = TS.Fractal2(Close,Low,High,signal1,prediction1)
 
                             
 
@@ -244,15 +280,79 @@ if Trading: ## Trade on Binance with above api key and secret key
                             #takeprofitval, stoplossval, prediction1, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,Close,High,Low,prediction1,CurrentPos,signal1)
                             #takeprofitval, stoplossval, prediction1, signal1= TS.TripleEMA(stoplossval, takeprofitval,Close,High,Low,prediction1,CurrentPos,signal1)
 
-                            x = client.futures_position_information(symbol=symbol)[0]['positionAmt']
-                            if x == '0':
-                                CurrentPos = -99 ##Check if we are in a trade, if not reinitialize CurrentPos
-                                client.futures_cancel_all_open_orders(symbol=symbol) ##cancel open orders also
-                            elif float(x)<0:
-                                CurrentPos = 0 ##in a short
-                            elif float(x)>0:
-                                CurrentPos = 1 ##in a long
+                            x = client.futures_position_information(symbol=symbol)[0]
+                            #print("position Amount:",x)
+                            if float(x['positionAmt']) == 0:
+                                CurrentPos = -99  ##Check if we are in a trade, if not reinitialize CurrentPos
+                                client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel open orders also
+                            elif float(x['positionAmt']) < 0:
+                                CurrentPos = 0  ##in a short
+                                ##Check that stoploss and takeprofit are set:
+                                if client.futures_get_all_orders(symbol=symbol)[-1]['status']!='NEW' or client.futures_get_all_orders(symbol=symbol)[-2]['status']!='NEW':
+                                    if Coin_precision != 0:
+                                            order2 = client.futures_create_order(
+                                                symbol=symbol,
+                                                side=SIDE_SELL,
+                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                                quantity=-1*float(x['positionAmt']),
+                                                stopPrice=round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
+                                            order3 = client.futures_create_order(
+                                                symbol=symbol,
+                                                side=SIDE_BUY,
+                                                type=FUTURE_ORDER_TYPE_LIMIT,
+                                                price=round(float(x['entryPrice']) - current_takeprofitval, Coin_precision),
+                                                timeInForce='GTC',
+                                                quantity=-1*float(x['positionAmt']))
+                                    else:
+                                            order2 = client.futures_create_order(
+                                                symbol=symbol,
+                                                side=SIDE_SELL,
+                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                                quantity=-1*float(x['positionAmt']),
+                                                stopPrice=round(float(x['entryPrice']) + current_stoplossval))
+                                            order3 = client.futures_create_order(
+                                                symbol=symbol,
+                                                side=SIDE_BUY,
+                                                type=FUTURE_ORDER_TYPE_LIMIT,
+                                                price=round(float(x['entryPrice']) - current_takeprofitval),
+                                                timeInForce='GTC',
+                                                quantity=-1*float(x['positionAmt']))
 
+                            elif float(x['positionAmt']) > 0:
+                                CurrentPos = 1  ##in a long
+                                ##Check that stoploss and takeprofit are set:
+                                if client.futures_get_all_orders(symbol=symbol)[-1]['status'] != 'NEW' or client.futures_get_all_orders(symbol=symbol)[-2]['status'] != 'NEW':
+                                    if Coin_precision != 0:
+                                        ##stoploss
+                                        order2 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                            quantity=float(x['positionAmt']),
+                                            stopPrice=round(float(x['entryPrice']) - current_stoplossval - (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
+                                        ##takeprofit:
+                                        order3 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_LIMIT,
+                                            price=round(float(x['entryPrice']) + current_takeprofitval, Coin_precision),
+                                            timeInForce='GTC',
+                                            quantity=float(x['positionAmt']))
+                                    else:
+                                        order2 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                            quantity=float(x['positionAmt']),
+                                            stopPrice=round(float(x['entryPrice']) - current_stoplossval))
+                                            ##takeprofit:
+                                        order3 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_LIMIT,
+                                            price=round(float(x['entryPrice']) + current_takeprofitval),
+                                            timeInForce='GTC',
+                                            quantity=float(x['positionAmt']))
                             LP = await getLastPrice()
 
                             if CurrentPos == -99 and prediction1 == 0:  ##not in a trade but want to enter a short position
@@ -264,6 +364,9 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 Highestprice = positionPrice
                                 # stoplossval = positionPrice * trailing_stoploss
                                 #trades.append({'x': i, 'y': positionPrice, 'type': "sell",'current_price': positionPrice})
+                                ##Stoploss and takeprofit in case the stop/limit order isn't filled
+                                current_stoplossval = copy(stoplossval)
+                                current_takeprofitval = copy(takeprofitval)
 
                                 ##Create Order on Binance
                                 if Order_precision!=0:
@@ -279,6 +382,9 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 Highestprice = positionPrice
                                 # stoplossval = positionPrice * trailing_stoploss
                                 #trades.append({'x': i, 'y': positionPrice, 'type': "buy",'current_price': positionPrice})
+                                ##Stoploss and takeprofit in case the stop/limit order isn't filled
+                                current_stoplossval = copy(stoplossval)
+                                current_takeprofitval = copy(takeprofitval)
 
                                 ##Create Order on Binance
                                 if Order_precision!=0:
@@ -292,7 +398,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 signal1 = -99
                                 signal2 = -99
                                 print("Current Position:", CurrentPos)
-                                print("Margin:", positionPrice - Close[-1])
+                                #print("Margin:", positionPrice - Close[-1])
                                 # print("Date:",DateStream[-1])
                                 try:
                                     printProfit(symbol,bnb)
@@ -352,9 +458,6 @@ if Trading: ## Trade on Binance with above api key and secret key
                 if side1: ##Long
                     ##Place the Long
                     if CP != 0:
-                        print("Lastprice:", PP)
-                        print("attempted Stoploss:", round(PP - stoploss - 5 * math.pow(10, -CP - 1), CP))
-                        print("attempted Takeprofit:", round(PP + takeprofit, CP))
                         order1 = client.futures_create_order(
                             symbol=s,
                             side=SIDE_BUY,
@@ -363,24 +466,26 @@ if Trading: ## Trade on Binance with above api key and secret key
                             timeInForce=TIME_IN_FORCE_IOC,
                             quantity=q)
                         x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-
-                        order2 = client.futures_create_order(symbol=s,
-                            side=SIDE_SELL,
-                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                            quantity=float(x[-1]['executedQty']),
-                            stopPrice=round(float(x[-1]['avgPrice'])-stoploss-5*math.pow(10,-CP-1),CP))
-
-                        order3 = client.futures_create_order(
-                            symbol=s,
-                            side=SIDE_SELL,
-                            type=FUTURE_ORDER_TYPE_LIMIT,
-                            price=round(float(x[-1]['avgPrice']) + takeprofit, CP),
-                            timeInForce='GTC',
-                            quantity=float(x[-1]['executedQty']))
+                        if x[-1]['status'] == 'FILLED':
+                            ##stoploss:
+                            #print("avPrice:", (x[-1]['avgPrice']))
+                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) - stoploss - 5 * math.pow(10, -CP - 1), CP))
+                            #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) + takeprofit, CP)))
+                            order2 = client.futures_create_order(symbol=s,
+                                side=SIDE_SELL,
+                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                quantity=float(x[-1]['executedQty']),
+                                stopPrice=round((float(x[-1]['avgPrice']))-stoploss-(5*math.pow(10,-CP-1)),CP))
+                            ##takeprofit:
+                            order3 = client.futures_create_order(
+                                symbol=s,
+                                side=SIDE_SELL,
+                                type=FUTURE_ORDER_TYPE_LIMIT,
+                                price=round((float(x[-1]['avgPrice'])) + takeprofit, CP),
+                                timeInForce='GTC',
+                                quantity=float(x[-1]['executedQty']))
                     else:
-                        print("Lastprice:", PP)
-                        print("attempted Stoploss:", round(PP - stoploss))
-                        print("attempted Takeprofit:", round(PP + takeprofit))
+
                         order1 = client.futures_create_order(
                             symbol=s,
                             side=SIDE_BUY,
@@ -389,30 +494,33 @@ if Trading: ## Trade on Binance with above api key and secret key
                             timeInForce=TIME_IN_FORCE_IOC,
                             quantity=q)
                         x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                        if x[-1]['status'] == 'FILLED':
+                            #print("avPrice:", (float(x[-1]['avgPrice'])))
+                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) - stoploss))
+                            #print("attempted Takeprofit:", round((float(x[-1]['avgPrice'])) + takeprofit))
+                            ##stoploss:
+                            order2 = client.futures_create_order(
+                                symbol=s,
+                                side=SIDE_SELL,
+                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                quantity=float(x[-1]['executedQty']),
+                                stopPrice=round((float(x[-1]['avgPrice'])) - stoploss))
+                            ##takeprofit:
+                            order3 = client.futures_create_order(
+                                symbol=s,
+                                side=SIDE_SELL,
+                                type=FUTURE_ORDER_TYPE_LIMIT,
+                                price=round((float(x[-1]['avgPrice'])) + takeprofit),
+                                timeInForce='GTC',
+                                quantity=float(x[-1]['executedQty']))
 
-                        order2 = client.futures_create_order(
-                            symbol=s,
-                            side=SIDE_SELL,
-                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                            quantity=float(x[-1]['executedQty']),
-                            stopPrice=round(float(x[-1]['avgPrice']) - stoploss))
-
-                        order3 = client.futures_create_order(
-                            symbol=s,
-                            side=SIDE_SELL,
-                            type=FUTURE_ORDER_TYPE_LIMIT,
-                            price=round(float(x[-1]['avgPrice']) + takeprofit),
-                            timeInForce='GTC',
-                            quantity=float(x[-1]['executedQty']))
                     ##Order was filled
                     if x[-1]['status']=='FILLED' or x[-1]['status']=='PARTIALLY_FILLED':
                         pass
+
                     ##Order not filled so use market order instead
                     else:
                         if CP != 0:
-                            print("Lastprice:", PP)
-                            print("attempted Stoploss:", round(PP - stoploss - 5 * math.pow(10, -CP - 1), CP))
-                            print("attempted Takeprofit:", round(PP + takeprofit, CP))
                             ##Market order so we don't miss the move
                             order1 = client.futures_create_order(
                                 symbol=s,
@@ -420,25 +528,25 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 type=ORDER_TYPE_MARKET,
                                 quantity=q)
                             x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                            #print("avPrice:", (float(x[-1]['avgPrice'])))
+                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) - stoploss - 5 * math.pow(10, -CP - 1), CP))
+                            #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) + takeprofit, CP)))
+                            ##stoploss:
                             order2 = client.futures_create_order(
                                 symbol=s,
                                 side=SIDE_SELL,
                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
                                 quantity=float(x[-1]['executedQty']),
-                                stopPrice=round(float(x[-1]['avgPrice']) - stoploss - 5 * math.pow(10, -CP - 1), CP))
-
+                                stopPrice=round((float(x[-1]['avgPrice'])) - stoploss - (5 * math.pow(10, -CP - 1)), CP))
+                            ##takeprofit:
                             order3 = client.futures_create_order(
                                 symbol=s,
                                 side=SIDE_SELL,
                                 type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round(float(x[-1]['avgPrice']) + takeprofit, CP),
+                                price=round((float(x[-1]['avgPrice'])) + takeprofit, CP),
                                 timeInForce='GTC',
                                 quantity=float(x[-1]['executedQty']))
                         else:
-                            print("Lastprice:", PP)
-                            print("attempted Stoploss:", round(PP - stoploss))
-                            print("attempted Takeprofit:", round(PP + takeprofit))
-
                             order1 = client.futures_create_order(
                                 symbol=s,
                                 side=SIDE_BUY,
@@ -446,28 +554,29 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 quantity=q)
 
                             x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                            #print("avPrice:", (float(x[-1]['avgPrice'])))
+                            #print("attempted Stoploss:", round((float(x[-1]['avgPrice'])) - stoploss))
+                            #print("attempted Takeprofit:", round((float(x[-1]['avgPrice'])) + takeprofit))
                             order2 = client.futures_create_order(
                                 symbol=s,
                                 side=SIDE_SELL,
                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
                                 quantity=float(x[-1]['executedQty']),
-                                stopPrice=round(float(x[-1]['avgPrice']) - stoploss))
+                                stopPrice=round((float(x[-1]['avgPrice'])) - stoploss))
 
                             # Place the take profit
                             order3 = client.futures_create_order(
                                 symbol=s,
                                 side=SIDE_SELL,
                                 type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round(float(x[-1]['avgPrice']) + takeprofit),
+                                price=round((float(x[-1]['avgPrice'])) + takeprofit),
                                 timeInForce='GTC',
                                 quantity=float(x[-1]['executedQty']))
 
                 else: ##Short
                     ##Place the short
                     if CP != 0:
-                        print("Lastprice:", PP)
-                        print("attempted Stoploss:", round(PP + stoploss + 5 * math.pow(10, -CP - 1), CP))
-                        print("attempted Takeprofit:", round(PP - takeprofit, CP))
+
                         order1 = client.futures_create_order(
                             symbol=s,
                             side=SIDE_SELL,
@@ -477,24 +586,25 @@ if Trading: ## Trade on Binance with above api key and secret key
                             quantity=q)
 
                         x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-
-                        order2 = client.futures_create_order(
-                            symbol=s,
-                            side=SIDE_SELL,
-                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                            quantity=float(x[-1]['executedQty']),
-                            stopPrice=round(float(x[-1]['avgPrice']) + stoploss + 5 * math.pow(10, -CP - 1), CP))
-                        order3 = client.futures_create_order(
-                            symbol=s,
-                            side=SIDE_BUY,
-                            type=FUTURE_ORDER_TYPE_LIMIT,
-                            price=round(float(x[-1]['avgPrice']) - takeprofit, CP),
-                            timeInForce='GTC',
-                            quantity=float(x[-1]['executedQty']))
+                        if x[-1]['status'] == 'FILLED':
+                            #print("avPrice:", (float(x[-1]['avgPrice'])))
+                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) + stoploss + 5 * math.pow(10, -CP - 1), CP))
+                            #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) - takeprofit, CP)))
+                            order2 = client.futures_create_order(
+                                symbol=s,
+                                side=SIDE_SELL,
+                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                quantity=float(x[-1]['executedQty']),
+                                stopPrice=round((float(x[-1]['avgPrice'])) + stoploss + (5 * math.pow(10, -CP - 1)), CP))
+                            order3 = client.futures_create_order(
+                                symbol=s,
+                                side=SIDE_BUY,
+                                type=FUTURE_ORDER_TYPE_LIMIT,
+                                price=round((float(x[-1]['avgPrice'])) - takeprofit, CP),
+                                timeInForce='GTC',
+                                quantity=float(x[-1]['executedQty']))
                     else:
-                        print("Lastprice:", PP)
-                        print("attempted Stoploss:", round(PP + stoploss))
-                        print("attempted Takeprofit:", round(PP - takeprofit))
+
                         order1 = client.futures_create_order(
                             symbol=s,
                             side=SIDE_SELL,
@@ -503,29 +613,32 @@ if Trading: ## Trade on Binance with above api key and secret key
                             timeInForce=TIME_IN_FORCE_IOC,
                             quantity=q)
                         x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                        if x[-1]['status'] == 'FILLED':
+                            #print("avPrice:", (float(x[-1]['avgPrice'])))
+                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) + stoploss , CP))
+                            #print("attempted Takeprofit:", round(float(x[-1]['avgPrice']) - takeprofit))
+                            order2 = client.futures_create_order(
+                                symbol=s,
+                                side=SIDE_SELL,
+                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                quantity=float(x[-1]['executedQty']),
+                                stopPrice=round((float(x[-1]['avgPrice'])) + stoploss))
+                            order3 = client.futures_create_order(
+                                symbol=s,
+                                side=SIDE_BUY,
+                                type=FUTURE_ORDER_TYPE_LIMIT,
+                                price=round((float(x[-1]['avgPrice'])) - takeprofit),
+                                timeInForce='GTC',
+                                quantity=float(x[-1]['executedQty']))
 
-                        order2 = client.futures_create_order(
-                            symbol=s,
-                            side=SIDE_SELL,
-                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                            quantity=float(x[-1]['executedQty']),
-                            stopPrice=round(float(x[-1]['avgPrice']) + stoploss))
-                        order3 = client.futures_create_order(
-                            symbol=s,
-                            side=SIDE_BUY,
-                            type=FUTURE_ORDER_TYPE_LIMIT,
-                            price=round(float(x[-1]['avgPrice']) - takeprofit),
-                            timeInForce='GTC',
-                            quantity=float(x[-1]['executedQty']))
                     ##Order was filled
                     if x[-1]['status'] == 'FILLED' or x[-1]['status'] == 'PARTIALLY_FILLED':
                         pass
+
                     ##Order not filled so use market order instead
                     else:
                         if CP != 0:
-                            print("Lastprice:", PP)
-                            print("attempted Stoploss:", round(PP + stoploss + 5 * math.pow(10, -CP - 1), CP))
-                            print("attempted Takeprofit:", round(PP - takeprofit, CP))
+
                             ##Market order so we don't miss the move
                             order1 = client.futures_create_order(
                                 symbol=s,
@@ -533,25 +646,24 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 type=ORDER_TYPE_MARKET,
                                 quantity=q)
                             x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-
+                            #print("avPrice:", (float(x[-1]['avgPrice'])))
+                            #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) + stoploss + (5 * math.pow(10, -CP - 1)), CP))
+                            #print("attempted Takeprofit:", round(round((float(x[-1]['avgPrice'])) - takeprofit, CP)))
                             order2 = client.futures_create_order(
                                 symbol=s,
                                 side=SIDE_SELL,
                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
                                 quantity=float(x[-1]['executedQty']),
-                                stopPrice=round(float(x[-1]['avgPrice']) + stoploss + 5 * math.pow(10, -CP - 1), CP))
+                                stopPrice=round((float(x[-1]['avgPrice'])) + stoploss + 5 * math.pow(10, -CP - 1), CP))
 
                             order3 = client.futures_create_order(
                                 symbol=s,
                                 side=SIDE_BUY,
                                 type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round(float(x[-1]['avgPrice']) - takeprofit, CP),
+                                price=round((float(x[-1]['avgPrice'])) - takeprofit, CP),
                                 timeInForce='GTC',
                                 quantity=float(x[-1]['executedQty']))
                         else:
-                            print("Lastprice:", PP)
-                            print("attempted Stoploss:", round(PP + stoploss))
-                            print("attempted Takeprofit:", round(PP - takeprofit))
 
                             order1 = client.futures_create_order(
                                 symbol=s,
@@ -560,19 +672,21 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 quantity=q)
 
                             x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-
+                            #print("avPrice:", (float(x[-1]['avgPrice'])))
+                            #print("attempted Stoploss:", float(x[-1]['avgPrice']) + stoploss)
+                            #print("attempted Takeprofit:", round(float(x[-1]['avgPrice']) - takeprofit))
                             order2 = client.futures_create_order(
                                 symbol=s,
                                 side=SIDE_SELL,
                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
                                 quantity=float(x[-1]['executedQty']),
-                                stopPrice=round(float(x[-1]['avgPrice']) + stoploss))
+                                stopPrice=round((float(x[-1]['avgPrice'])) + stoploss))
                             # Place the take profit
                             order3 = client.futures_create_order(
                                 symbol=s,
                                 side=SIDE_SELL,
                                 type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round(float(x[-1]['avgPrice']) - takeprofit),
+                                price=round((float(x[-1]['avgPrice'])) - takeprofit),
                                 timeInForce='GTC',
                                 quantity=float(x[-1]['executedQty']))
 
@@ -620,12 +734,14 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
         #symbol= 'SUSHIUSDT'
         #symbol = 'SOLUSDT' ###############################
         #symbol = 'MATICUSDT' #############################
-        #symbol = 'DOGEUSDT'
-        symbol = "XRPUSDT"
+        symbol = 'DOGEUSDT'
+        #symbol = "XRPUSDT"
+        #symbol = "DOTUSDT"
+        #symbol = "ALPHAUSDT"
         leverage = 35  ##leverage being used
         AccountBalance=1000
         print("Symbol:", symbol, "Start Balance:", AccountBalance)
-        for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str="1 week ago UTC"):  ## get KLines with 15 minute intervals for the last month
+        for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str="1 month ago UTC"):  ## get KLines with 15 minute intervals for the last month
             # print(kline)
             Date.append(datetime.datetime.utcfromtimestamp(int(kline[0]) / 1000))
             Open.append(float(kline[1]))
@@ -648,10 +764,10 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
             #prediction1,Type = TS.MovingAverage(CloseStream,prediction1)
             #prediction1,signal1,signal2,Type =TS.StochRSIMACD(prediction1,CloseStream,signal1,signal2)
             #prediction1, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1)
-            prediction1,Type = TS.Fractal(CloseStream,LowStream,HighStream,signal1,prediction1)
+            #prediction1,Type = TS.Fractal(CloseStream,LowStream,HighStream,signal1,prediction1)
             #prediction1,signal1,signal2,HighestUlt,Highest,Type = TS.UltOscMACD(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,HighestUlt,Highest)
             #prediction1, signal1, Type = TS.RSIStochEMA200(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,CurrentPos)
-            #prediction1,Type = TS.Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1)
+            prediction1,Type = TS.Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1)
             
             stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,Type)
 
