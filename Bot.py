@@ -338,7 +338,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                                             symbol=symbol,
                                             side=SIDE_SELL,
                                             type=FUTURE_ORDER_TYPE_MARKET,
-                                            quantity=-1*float(x['positionAmt']))
+                                            quantity=float(x['positionAmt']))
 
                             LP = await getLastPrice()
 
