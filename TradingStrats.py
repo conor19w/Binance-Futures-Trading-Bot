@@ -531,3 +531,4 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,predicti
             stoplossval = 1.35 * ATR[-1]
             takeprofitval = 3 * ATR[-1]
     return stoplossval,takeprofitval
+ 
