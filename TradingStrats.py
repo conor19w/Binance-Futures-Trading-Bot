@@ -1,9 +1,12 @@
+import pandas as pd
 import talib as ta
 import numpy as np
-
+from ta.momentum import stochrsi_d,stochrsi_k
+import math
 def StochRSIMACD(prediction1,CloseStream,signal1,signal2):
     Close = np.array(CloseStream)
-    fastk, fastd = ta.STOCHRSI(Close)
+    fastd = np.array(stochrsi_d(pd.Series(CloseStream)))
+    fastk = np.array(stochrsi_k(pd.Series(CloseStream)))
     RSI = ta.RSI(Close)
     macd, macdsignal, macdhist = ta.MACD(Close)
     ##buy signal
@@ -48,7 +51,8 @@ def tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1):
     EMA50 = ta.EMA(Close,timeperiod=50)
     EMA14 = ta.EMA(Close,timeperiod=14)
     EMA8 = ta.EMA(Close,timeperiod=8)
-    fastk, fastd = ta.STOCHRSI(Close)
+    fastd = np.array(stochrsi_d(pd.Series(CloseStream)))
+    fastk = np.array(stochrsi_k(pd.Series(CloseStream)))
     ##buy signal
     if (Close[-1]>EMA8[-1]>EMA14[-1]>EMA50[-1]) and ((fastk[-1]>fastd[-1]) and (fastk[-2]<fastd[-2])): #and (fastk[-1]<80 and fastd[-1]<80):
         signal1=1
@@ -197,12 +201,14 @@ def RSIStochEMA200(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,
     Close = np.array(CloseStream)
     High = np.array(HighStream)
     Low = np.array(LowStream)
-    fastk, fastd = ta.STOCHRSI(Close)
+    fastd = np.array(stochrsi_d(pd.Series(CloseStream)))
+    fastk = np.array(stochrsi_k(pd.Series(CloseStream)))
     RSI = ta.RSI(Close)
     EMA200 = ta.EMA(Close,timeperiod=200)
-    largestRSI=RSI[len(RSI)-51]
-    largestLow=Close[len(Close)-51] #Low[len(Low)-51] #Close[len(Close)-51]
-    for i in range(len(RSI)-50,len(RSI)):
+    EMA50 = ta.EMA(Close,timeperiod=50)
+    largestRSI=RSI[len(RSI)-16]
+    largestLow=Close[len(Close)-16] #Low[len(Low)-51] #Close[len(Close)-51]
+    for i in range(len(RSI)-15,len(RSI)):
         if Close[i]>largestLow and Close[-1]>EMA200[-1]:
             largestLow=Close[i] ##Low
             if RSI[i]<largestRSI:
@@ -216,22 +222,47 @@ def RSIStochEMA200(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,
                 signal1=0
             largestRSI=RSI[i]
     ##Bullish Divergence
-    if signal1==1 and fastk[-1]>fastd[-1] and fastk[-2]<fastd[-2] and Close[-1]>EMA200[-1]:
+    if signal1==1 and fastk[-1]>fastd[-1] and fastk[-2]<fastd[-2] and Close[-1]>EMA200[-1] and Close[-1]>EMA50[-1]:
         prediction1=1
         signal1=-99
 
     ##Bearish Divergence
-    elif signal1==0 and fastk[-1]<fastd[-1] and fastk[-2]>fastd[-2] and Close[-1]<EMA200[-1]:
+    elif signal1==0 and fastk[-1]<fastd[-1] and fastk[-2]>fastd[-2] and Close[-1]<EMA200[-1] and Close[-1]<EMA50[-1]:
         prediction1=0
         signal1=-99
+
     if currentPos!=-99:
         signal1=-99
         signal2=-99
 
+    return prediction1, signal1, 4
+
+
+##############################################################################################################
+
+def stochBB(prediction1,CloseStream):
+    Close = np.array(CloseStream)
+
+    fastd = np.array(stochrsi_d(pd.Series(CloseStream)))
+    fastk = np.array(stochrsi_k(pd.Series(CloseStream)))
+
+    #print(fastd[-1],fastk[-1])
+    upperband, middleband, lowerband = ta.BBANDS(Close, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
+    percent_B= (Close[-1]-lowerband[-1])/(upperband[-1]-lowerband[-1]) #(Current Price - Lower Band) / (Upper Band - Lower Band)
+    percent_B1 = (Close[-2]-lowerband[-2])/(upperband[-2]-lowerband[-2]) #(Current Price - Lower Band) / (Upper Band - Lower Band)
+    percent_B2 = (Close[-3] - lowerband[-3]) / (upperband[-3] - lowerband[-3])  # (Current Price - Lower Band) / (Upper Band - Lower Band)
+    percent_B3 = (Close[-4] - lowerband[-4]) / (upperband[-4] - lowerband[-4])  # (Current Price - Lower Band) / (Upper Band - Lower Band)
+    #print(percent_B)
+    if fastk[-1]<.2 and fastd[-1]<.2 and (fastk[-1]>fastd[-1] and fastk[-2]<fastd[-2])   and (percent_B<0 or percent_B1<0 or percent_B2<0 or percent_B3<0):# or percent_B2<.05):
+        prediction1=1
+    elif fastk[-1]>.8 and fastd[-1]>.8 and (fastk[-1]<fastd[-1] and fastk[-2]>fastd[-2])  and (percent_B>1 or percent_B1>1 or percent_B2>1 or percent_B3>1):# or percent_B2>1):
+        prediction1=0
+
+    return prediction1,6
 
 
 
-    return prediction1, signal1, 1
+
 
 
 def SARMACD200EMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1):
@@ -366,7 +397,6 @@ def TripleEMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,predic
     return takeprofitval, stoplossval, prediction1, signal1
 
 
-
 def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,Type):
     ##Average True Range with multipliers
     if Type==1:
@@ -375,11 +405,11 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,predicti
         Low = np.array(LowStream)
         ATR = ta.ATR(High, Low, Close, timeperiod=14)
         if prediction1 == 0 and CurrentPos == -99:
-            stoplossval = 2 * ATR[-1]
-            takeprofitval = 5 * ATR[-1]
+            stoplossval = 1.5 * ATR[-1]
+            takeprofitval = 8 * ATR[-1]
         elif prediction1 == 1 and CurrentPos == -99:
-            stoplossval = 2 * ATR[-1]
-            takeprofitval = 5 * ATR[-1]
+            stoplossval = 1.5 * ATR[-1]
+            takeprofitval = 8 * ATR[-1]
 
     ## Highest/Lowest Close in last 30 periods
     elif Type==2:
@@ -387,7 +417,7 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,predicti
         Lowswing = CloseStream[-2]
         highflag = 0
         lowflag = 0
-        for j in range(-3, -30, -1):
+        for j in range(-3, -20, -1):
             if CloseStream[j] > highswing and highflag == 0:
                 highswing = CloseStream[j]
             if CloseStream[j] < Lowswing and lowflag == 0:
@@ -411,12 +441,10 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,predicti
         highflag = 0
         lowflag = 0
         for j in range(-3, -15, -1):
-            if HighStream[j] > highswing and HighStream[j] > HighStream[j - 1] and HighStream[j] > HighStream[
-                j - 2] and highflag == 0:
+            if HighStream[j] > highswing and HighStream[j] > HighStream[j - 1] and HighStream[j] > HighStream[j - 2] and highflag == 0:
                 highswing = HighStream[j]
                 highflag = 1
-            if LowStream[j] < Lowswing and LowStream[j] < LowStream[j - 1] and LowStream[j] < LowStream[
-                j - 2] and lowflag == 0:
+            if LowStream[j] < Lowswing and LowStream[j] < LowStream[j - 1] and LowStream[j] < LowStream[j - 2] and lowflag == 0:
                 Lowswing = LowStream[j]
                 lowflag = 1
 
@@ -433,27 +461,73 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,predicti
             takeprofitval = stoplossval * 2
     ## Closest Swing Close in Last 60 periods
     elif Type == 4:
-        highswing = CloseStream[-2]
-        Lowswing = CloseStream[-2]
+        highswing = CloseStream[-1]
+        Lowswing = CloseStream[-1]
         highflag = 0
         lowflag = 0
         for j in range(-3, -60, -1):
-            if CloseStream[j] > highswing and CloseStream[j] > CloseStream[j - 1] and CloseStream[j] > CloseStream[j-2] and highflag == 0:
+            if CloseStream[j] > highswing and CloseStream[j] > CloseStream[j - 1] and CloseStream[j] > CloseStream[j - 2] and \
+                    CloseStream[j] > CloseStream[j + 2] and CloseStream[j] > CloseStream[j + 1] and highflag == 0:
                 highswing = CloseStream[j]
                 highflag = 1
-            if CloseStream[j] < Lowswing and CloseStream[j] < CloseStream[j - 1] and CloseStream[j] < CloseStream[j-2] and lowflag == 0:
+            if CloseStream[j] < Lowswing and CloseStream[j] < CloseStream[j - 1] and CloseStream[j] < CloseStream[j - 2] and \
+                    CloseStream[j] < CloseStream[j + 2] and CloseStream[j] < CloseStream[j + 1] and lowflag == 0:
                 Lowswing = CloseStream[j]
                 lowflag = 1
 
         if prediction1 == 0 and CurrentPos == -99:
-            stoplossval = (highswing - CloseStream[-1])
+            stoplossval = .5*(highswing - CloseStream[-1])
             if stoplossval < 0:
                 stoplossval *= -1
-            takeprofitval = stoplossval * 2
+            takeprofitval = stoplossval * 2.5
 
         elif prediction1 == 1 and CurrentPos == -99:
-            stoplossval = (CloseStream[-1] - Lowswing)
+            stoplossval = .5*(CloseStream[-1] - Lowswing)
             if stoplossval < 0:
                 stoplossval *= -1
-            takeprofitval = stoplossval * 2
+            takeprofitval = stoplossval * 2.5
+
+    elif Type==5:
+        Close = np.array(CloseStream)
+        High = np.array(HighStream)
+        Low = np.array(LowStream)
+        ATR = ta.ATR(High, Low, Close, timeperiod=14)
+
+        highswing = HighStream[-1]
+        Lowswing = LowStream[-1]
+        highflag = 0
+        lowflag = 0
+        for j in range(-3, -60, -1):
+            if HighStream[j] > highswing and HighStream[j] > HighStream[j - 1] and HighStream[j] > HighStream[j - 2] and HighStream[j] > HighStream[j + 2] and HighStream[j] > HighStream[j + 1] and highflag == 0:
+                highswing = HighStream[j]
+                highflag = 1
+            if LowStream[j] < Lowswing and LowStream[j] < LowStream[j - 1] and LowStream[j] < LowStream[j - 2] and LowStream[j] < LowStream[j + 2] and LowStream[j] < LowStream[j + 1] and lowflag == 0:
+                Lowswing = LowStream[j]
+                lowflag = 1
+
+        if prediction1 == 0 and CurrentPos == -99:
+            temp = (highswing - CloseStream[-1])
+            stoplossval = 1.25 * ATR[-1]
+            if temp < 0:
+                temp *= -1
+            takeprofitval = temp * 2
+
+        elif prediction1 == 1 and CurrentPos == -99:
+            temp = (CloseStream[-1] - Lowswing)
+            stoplossval = 1.25 * ATR[-1]
+            if temp < 0:
+                temp *= -1
+            takeprofitval = temp * 2
+
+    elif Type==6:
+        Close = np.array(CloseStream)
+        High = np.array(HighStream)
+        Low = np.array(LowStream)
+        ATR = ta.ATR(High, Low, Close, timeperiod=14)
+        if prediction1 == 0 and CurrentPos == -99:
+            stoplossval = 1.35 * ATR[-1]
+            takeprofitval = 3 * ATR[-1]
+        elif prediction1 == 1 and CurrentPos == -99:
+            stoplossval = 1.35 * ATR[-1]
+            takeprofitval = 3 * ATR[-1]
     return stoplossval,takeprofitval
