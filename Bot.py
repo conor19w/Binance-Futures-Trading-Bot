@@ -67,13 +67,18 @@ symbol="SOLUSDT"
 #SOCKET = "wss://stream.binance.com:9443/ws/xrpusdt@kline_1m"
 #symbol="XRPUSDT"
 
-#PRICES = "wss://stream.binance.com:9443/ws/dotusdt@ticker"
-#SOCKET = "wss://stream.binance.com:9443/ws/dotusdt@kline_1m"
-#symbol="DOTUSDT"
+PRICES = "wss://stream.binance.com:9443/ws/dotusdt@ticker"
+SOCKET = "wss://stream.binance.com:9443/ws/dotusdt@kline_1m"
+symbol="DOTUSDT"
 
 #PRICES = "wss://stream.binance.com:9443/ws/alphausdt@ticker"
 #SOCKET = "wss://stream.binance.com:9443/ws/alphausdt@kline_1m"
 #symbol = "ALPHAUSDT"
+
+
+#PRICES = "wss://stream.binance.com:9443/ws/1000shibusdt@ticker"
+#SOCKET = "wss://stream.binance.com:9443/ws/1000shibusdt@kline_1m"
+#symbol = "1000SHIBUSDT"
 
 BNBfee = "wss://stream.binance.com:9443/ws/bnbusdt@ticker"
 
@@ -159,7 +164,7 @@ trailing_stoploss=.2 ##not used
 profitgraph=[0] #for graphing the profit change over time
 pp = pprint.PrettyPrinter()
 #profitgraphy=[0]
-
+Sleep=0
 #print(symbol)
 #print(30)
 client = Client(api_secret='',api_key='') ##Binance keys needed to get historical data/ Trade on an account
@@ -187,14 +192,14 @@ leverage=35 ##leverage being used
 AccountBalance=1000 ##Start amount for paper trading
 EffectiveAccountBalance = AccountBalance*leverage
 OriginalAccountSize=copy(AccountBalance)
-OrderSIZE = .01 ##how much of account to use per trade in Decimal
+OrderSIZE = .005 ##how much of account to use per trade in Decimal
 positionSize = 0 ##altered later and sent as the orderQTY
 
 current_date = datetime.datetime.now(timezone.utc)
 current_date = current_date.replace(tzinfo=timezone.utc)
 current_date = round(float(current_date.timestamp()*1000-.5))
 
-Trading=1 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
+Trading=0 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
           ## If Trading==0 then we are paper trading a strategy on historical data
 #print(client.futures_get_all_orders(symbol=symbol)[-3])
 #x = client.futures_get_all_orders(symbol=symbol)
@@ -212,7 +217,7 @@ if Trading: ## Trade on Binance with above api key and secret key
     print("Symbol:", symbol, "Start Balance:", AccountBalance)
     async def runWS():
         async with websockets.connect(SOCKET) as websocket:
-            global Open, Close, High, Low, Volume,Profit,tradeNO,CurrentPos,positionPrice,\
+            global Sleep,Open, Close, High, Low, Volume,Profit,tradeNO,CurrentPos,positionPrice,\
                 AccountBalance,EffectiveAccountBalance,positionSize,Highestprice,prediction1, signal1, signal2, HighestUlt, Highest, \
                 stoplossval, takeprofitval,prevsignal1,prevsignal2,PrevPos
             Profit = 0
@@ -235,6 +240,16 @@ if Trading: ## Trade on Binance with above api key and secret key
                 High.append(float(kline[2]))
                 Low.append(float(kline[3]))
                 Volume.append(float(kline[7]))
+
+            y = client.futures_account_balance()
+            AccountBalance = float(y[1]['balance'])
+
+            try:
+                bnb = await getBNBfee()
+                printProfit(symbol, bnb)
+            except Exception as e:
+                pass
+
             while True:
                 try:
                     try:
@@ -270,9 +285,9 @@ if Trading: ## Trade on Binance with above api key and secret key
                             #prediction1,Type1 = TS.Fractal(Close,Low,High,signal1,prediction1)
                             #prediction1, signal1, signal2, HighestUlt, Highest, Type1 = TS.UltOscMACD(prediction1,Close,High, Low,signal1, signal2,HighestUlt, Highest)
                             #prediction1, signal1, Type1 = TS.RSIStochEMA200(prediction1,Close,High,Low,signal1,signal2,CurrentPos)
-                            prediction1,Type1 = TS.Fractal2(Close,Low,High,signal1,prediction1)
+                            #prediction1,Type1 = TS.Fractal2(Close,Low,High,signal1,prediction1)
 
-                            
+                            prediction1, Type1 = stochBB(prediction1, Close)
 
                             stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, Close, High,Low, prediction1, CurrentPos, Type1) ##This function sets the stoploss and takeprofit based off the Type1 variable returned by the above functions
 
@@ -290,7 +305,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 ##Check that stoploss and takeprofit are set:
                                 try:
                                     if client.futures_get_all_orders(symbol=symbol)[-1]['status']!='NEW' or client.futures_get_all_orders(symbol=symbol)[-2]['status']!='NEW':
-                                        print("Stop Price:",round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
+                                        print("Order not sent, Attempted Stop Price:",round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
                                         order2 = client.futures_create_order(
                                             symbol=symbol,
                                             side=SIDE_BUY,
@@ -306,17 +321,22 @@ if Trading: ## Trade on Binance with above api key and secret key
                                             quantity=-1*float(x['positionAmt']))
                                 except BinanceAPIException as d:
                                     if d.message=='Order would immediately trigger.':
+                                        print("Order would immediately Trigger, Cancelling and sleeping for 5 minutes")
                                         order4= client.futures_create_order(
                                             symbol=symbol,
                                             side=SIDE_BUY,
                                             type=FUTURE_ORDER_TYPE_MARKET,
                                             quantity=-1*float(x['positionAmt']))
+                                        time.sleep(300)  ##sleep for 5 minutes
+                                        Sleep=1
+                                        break
 
                             elif float(x['positionAmt']) > 0:
                                 CurrentPos = 1  ##in a long
                                 ##Check that stoploss and takeprofit are set:
                                 try:
                                     if client.futures_get_all_orders(symbol=symbol)[-1]['status'] != 'NEW' or client.futures_get_all_orders(symbol=symbol)[-2]['status'] != 'NEW':
+                                        print("Order not sent, Attempted Stop Price:",round(float(x['entryPrice']) - current_stoplossval - (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
                                         ##stoploss
                                         order2 = client.futures_create_order(
                                             symbol=symbol,
@@ -334,11 +354,15 @@ if Trading: ## Trade on Binance with above api key and secret key
                                             quantity=float(x['positionAmt']))
                                 except BinanceAPIException as d:
                                     if d.message=='Order would immediately trigger.':
+                                        print("Order would immediately Trigger, Cancelling and sleeping for 5 minutes")
                                         order4= client.futures_create_order(
                                             symbol=symbol,
                                             side=SIDE_SELL,
                                             type=FUTURE_ORDER_TYPE_MARKET,
                                             quantity=float(x['positionAmt']))
+                                        time.sleep(300) ##sleep for 5 minutes
+                                        Sleep = 1
+                                        break
 
                             LP = await getLastPrice()
 
@@ -388,7 +412,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                                 #print("Margin:", positionPrice - Close[-1])
                                 # print("Date:",DateStream[-1])
                                 try:
-                                    printProfit(symbol,bnb)
+                                    printProfit(symbol, bnb)
                                 except Exception as e:
                                     pass
                             # if prevProfit!=Profit:
@@ -403,6 +427,9 @@ if Trading: ## Trade on Binance with above api key and secret key
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                     print(exc_type, fname, exc_tb.tb_lineno)
+
+
+
 
 
     async def getLastPrice():
@@ -422,19 +449,26 @@ if Trading: ## Trade on Binance with above api key and secret key
     def printProfit(S,bnb):
         global Profit,tradeNO,stoplossval,takeprofitval,Close,AccountBalance
         data = client.futures_account_trades(symbol=S)
-        commission = []
+        commissionbnb = []
+        comission = []
         PNL = []
         # pp.pprint(data)
         for j in data:
-            if float(j['time']) > float(current_date):
-                #print(i)
-                commission.append(j['commission'])
+            if float(j['time']) < float(current_date):
+                # print(i)
+                if j['commissionAsset'] == 'BNB':
+                    commissionbnb.append(j['commission'])
+                else:
+                    comission.append(j['commission'])
                 PNL.append(j['realizedPnl'])
-        for x in commission:
-            Profit -= float(x)*float(bnb) ##rough calculation, not accurate as bnb/usdt pair fluctuating
+        for x in commissionbnb:
+            Profit -= (float(x) * bnb)
+        for x in comission:
+            Profit -= float(x)
         for x in PNL:
             Profit += float(x)
-        print("Account Balance: ", AccountBalance, "Profit:", Profit, "PV:", (Profit * 100) / (tradeNO * Close[-1]),"Stoploss:",stoplossval, "TakeProfit:", takeprofitval)
+        print("Account Balance: ", AccountBalance, "Profit:", Profit)
+        print("PV:", (Profit * 100) / (tradeNO * Close[-1]),"Stoploss:",stoplossval, "TakeProfit:", takeprofitval)
         Profit=0
 
     async def Order(q, side1, s,stoploss,takeprofit,CP):
@@ -452,6 +486,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                         timeInForce=TIME_IN_FORCE_IOC,
                         quantity=q)
                     x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                    print("x[-1]['status']:",x[-1]['status'])
                     if x[-1]['status'] == 'FILLED':
                         ##stoploss:
                         #print("avPrice:", (x[-1]['avgPrice']))
@@ -513,6 +548,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                         quantity=q)
 
                     x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                    print("x[-1]['status']:",x[-1]['status'])
                     if x[-1]['status'] == 'FILLED':
                         #print("avPrice:", (float(x[-1]['avgPrice'])))
                         #print("attempted Stoploss:",round((float(x[-1]['avgPrice'])) + stoploss + 5 * math.pow(10, -CP - 1), CP))
@@ -585,42 +621,42 @@ if Trading: ## Trade on Binance with above api key and secret key
 
 
     run()
+    if Sleep == 1:
+        Sleep = 0
+        print("Done Sleeping")
+        run()
 else:       ## Paper Trading, exact same as above but simulated trading with graphs
-
-    stocks=0
-    if stocks:
-        ##load in csv file
-        df = pd.read_csv(f'C:\\Users\\conor\\Desktop\\AMZN.csv')
-        Close = df["Close"]
-        Open = df["Open"]
-        High = df["High"]
-        Low = df["Low"]
-        Volume = df["Volume"]
-    else:
-        #symbol = "BTCUSDT"
-        #symbol="ETHUSDT"
-        #symbol='SHIBUSDT'
-        #symbol='ADAUSDT'
-        #symbol='BAKEUSDT'
-        #symbol='BNBUSDT'
-        #symbol= 'SUSHIUSDT'
-        #symbol = 'SOLUSDT' ###############################
-        #symbol = 'MATICUSDT' #############################
-        symbol = 'DOGEUSDT'
-        #symbol = "XRPUSDT"
-        #symbol = "DOTUSDT"
-        #symbol = "ALPHAUSDT"
-        leverage = 35  ##leverage being used
-        AccountBalance=1000
-        print("Symbol:", symbol, "Start Balance:", AccountBalance)
-        for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str="1 month ago UTC"):  ## get KLines with 15 minute intervals for the last month
-            # print(kline)
-            Date.append(datetime.datetime.utcfromtimestamp(int(kline[0]) / 1000))
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
+    leverage = 35  ##leverage being used
+    AccountBalance = 2592
+    originalBalance=copy(AccountBalance)
+    trailing_stop = .001  ##if market dips we sell/buy
+    trailing_execution = .5  ##when to start the trailing stoploss
+    trail_start = 0
+    Use_trail_stop=0 ##turn on or off trailing stop
+    stopflag=-99
+    stops_executed=0
+    #symbol = "BTCUSDT"
+    #symbol="ETHUSDT"
+    #symbol='SHIBUSDT'
+    #symbol='ADAUSDT'
+    #symbol='BAKEUSDT'
+    #symbol='BNBUSDT'
+    #symbol= 'SUSHIUSDT'
+    #symbol = 'SOLUSDT' ###############################
+    #symbol = 'MATICUSDT' #############################
+    symbol = 'DOGEUSDT'
+    #symbol = "XRPUSDT"
+    #symbol = "DOTUSDT"
+    #symbol = "ALPHAUSDT"
+    print("Symbol:", symbol, "Start Balance:", AccountBalance)
+    for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str="1 month ago UTC"):  ## get KLines with 15 minute intervals for the last month
+        # print(kline)
+        Date.append(datetime.datetime.utcfromtimestamp(int(kline[0]) / 1000))
+        Open.append(float(kline[1]))
+        Close.append(float(kline[4]))
+        High.append(float(kline[2]))
+        Low.append(float(kline[3]))
+        Volume.append(float(kline[7]))
     for i in range(len(Close)):
         #global trailing_stoploss,Highestprice
         #DateStream = flow.dataStream(DateStream, Date[i], 1, 300)
@@ -634,13 +670,14 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
             prevProfit=copy(Profit)
             EffectiveAccountBalance = AccountBalance*leverage
             #prediction1,Type = TS.MovingAverage(CloseStream,prediction1)
-            #prediction1,signal1,signal2,Type =TS.StochRSIMACD(prediction1,CloseStream,signal1,signal2)
+            #prediction1,signal1,signal2,Type =TS.StochRSIMACD(prediction1,CloseStream,signal1,signal2) ###########################################
             #prediction1, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1)
             #prediction1,Type = TS.Fractal(CloseStream,LowStream,HighStream,signal1,prediction1)
             #prediction1,signal1,signal2,HighestUlt,Highest,Type = TS.UltOscMACD(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,HighestUlt,Highest)
             #prediction1, signal1, Type = TS.RSIStochEMA200(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,CurrentPos)
-            prediction1,Type = TS.Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1)
-            
+            #prediction1,Type = TS.Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1) ###############################################
+            prediction1,Type = TS.stochBB(prediction1,CloseStream)
+
             stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,Type)
 
             #takeprofitval, stoplossval, prediction1, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
@@ -654,63 +691,109 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
                 positionSize= (OrderSIZE*EffectiveAccountBalance)/positionPrice
                 CurrentPos = 0
                 tradeNO+=1
-                Highestprice = positionPrice
+                #Highestprice = positionPrice
                #stoplossval = positionPrice * trailing_stoploss
                 trades.append({'x':i,'y':positionPrice,'type': "sell",'current_price': positionPrice})
-                Profit -= CloseStream[len(CloseStream) - 1] * .00036
-                AccountBalance -= positionSize * CloseStream[-1] * .00036
+                Profit -= CloseStream[len(CloseStream) - 1] * .0004
+                AccountBalance -= positionSize * CloseStream[-1] * .0004
+                trail_start = trailing_execution*takeprofitval
+                stopflag = -99
             elif CurrentPos == -99 and prediction1 == 1:
                 positionPrice = CloseStream[len(CloseStream) - 1]
                 positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice
                 CurrentPos = 1
                 tradeNO += 1
-                Highestprice = positionPrice
+                #Highestprice = positionPrice
                 #stoplossval = positionPrice * trailing_stoploss
                 trades.append({'x':i,'y':positionPrice, 'type': "buy",'current_price': positionPrice})
-                Profit -= CloseStream[len(CloseStream) - 1] * .00036
-                AccountBalance -= positionSize * CloseStream[-1] * .00036
+                Profit -= CloseStream[len(CloseStream) - 1] * .0004
+                AccountBalance -= positionSize * CloseStream[-1] * .0004
+                trail_start = trailing_execution * takeprofitval
+                stopflag = -99
 
-            if Highestprice - LowStream[ - 1] < -stoplossval and CurrentPos == 0:
+            if positionPrice - HighStream[ - 1] < -stoplossval and CurrentPos == 0:
                 Profit +=-stoplossval #positionPrice-CloseStream[len(CloseStream) - 1]  ##This will be positive if the price went down
                 AccountBalance += positionSize * -stoplossval # (positionPrice-CloseStream[len(CloseStream) - 1])
                 positionPrice = CloseStream[len(CloseStream) - 1]
-                Profit -= CloseStream[-1] * .00036
-                AccountBalance-= positionSize*CloseStream[-1] * .00036
+                Profit -= CloseStream[-1] * .0004
+                AccountBalance-= positionSize*CloseStream[-1] * .0004
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "loss",'position':'short','Profit': -stoplossval*positionSize})
                 # CurrentPos = -99
                 CurrentPos = -99
+                stopflag = -99
 
-                Profit -= CloseStream[len(CloseStream) - 1] * .00036
-            elif HighStream[- 1] - Highestprice < -stoplossval and CurrentPos == 1:
+                Profit -= CloseStream[len(CloseStream) - 1] * .0004
+            elif LowStream[- 1] - positionPrice < -stoplossval and CurrentPos == 1:
                 Profit +=-stoplossval #CloseStream[len(CloseStream) - 1] - positionPrice ##This will be positive if the price went up
                 AccountBalance += positionSize* -stoplossval #(CloseStream[len(CloseStream) - 1] - positionPrice)
                 positionPrice = CloseStream[len(CloseStream) - 1]
-                Profit -= CloseStream[-1] * .00036
-                AccountBalance -= positionSize * CloseStream[-1] * .00036
+                Profit -= CloseStream[-1] * .0004
+                AccountBalance -= positionSize * CloseStream[-1] * .0004
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "loss",'position':'long','Profit': -stoplossval*positionSize})
                 # CurrentPos = -99
                 CurrentPos = -99
+                stopflag = -99
 
-                Profit -= CloseStream[len(CloseStream) - 1] * .00036
-            elif positionPrice - CloseStream[-1] > takeprofitval and CurrentPos == 0:
+                Profit -= CloseStream[len(CloseStream) - 1] * .0004
+            elif positionPrice - LowStream[-1] > takeprofitval and CurrentPos == 0 and not Use_trail_stop:
                 Profit += takeprofitval #positionPrice - CloseStream[-1]
                 AccountBalance += positionSize *  takeprofitval #(positionPrice - CloseStream[len(CloseStream) - 1])
                 correct += 1
                 positionPrice = CloseStream[-1]
-                Profit -= CloseStream[-1] * .00036
-                AccountBalance -= positionSize * CloseStream[-1] * .00036
+                Profit -= CloseStream[-1] * .0004
+                AccountBalance -= positionSize * CloseStream[-1] * .0004
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "win",'position':'short','Profit': takeprofitval*positionSize})
                 CurrentPos = -99
+                stopflag = -99
 
-            elif CloseStream[-1] - positionPrice > takeprofitval and CurrentPos == 1:
+            elif HighStream[-1] - positionPrice > takeprofitval and CurrentPos == 1 and not Use_trail_stop:
                 Profit +=  takeprofitval #CloseStream[-1] - positionPrice
                 AccountBalance += positionSize *  takeprofitval #(CloseStream[len(CloseStream) - 1] - positionPrice)
                 correct += 1
                 positionPrice = CloseStream[-1]
-                Profit -= CloseStream[-1] * .00036
-                AccountBalance -= positionSize * CloseStream[-1] * .00036
+                Profit -= CloseStream[-1] * .0004
+                AccountBalance -= positionSize * CloseStream[-1] * .0004
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "win",'position':'long','Profit': takeprofitval*positionSize})
                 CurrentPos = -99
+                stopflag = -99
+            #########################################################################################################################
+            ###########################   Trailing Stop Loss Logic:   ###############################################################
+            if positionPrice - CloseStream[-1] > trail_start and CurrentPos == 0 and Use_trail_stop:
+                ##trailing stoploss started
+                Stopflag=0
+
+            elif CloseStream[-1] - positionPrice > trail_start and CurrentPos == 1 and Use_trail_stop:
+                ##trailing stoploss started
+                Stopflag = 1
+            if stopflag ==0 and ((CloseStream[-1]-positionPrice-trail_start)/trail_start)>trailing_stop and Use_trail_stop:
+                stops_executed += 1
+                Profit += trail_start*(1-trailing_stop)#positionPrice - CloseStream[-1]
+                AccountBalance += positionSize*trail_start*(1-trailing_stop)#positionPrice - CloseStream[-1]
+                correct += 1
+                positionPrice = CloseStream[-1]
+                Profit -= CloseStream[-1] * .00036
+                AccountBalance -= positionSize * CloseStream[-1] * .00036
+                cashout.append({'x': i, 'y': CloseStream[-1], 'type': "win", 'position': 'short','Profit': takeprofitval * positionSize})
+                CurrentPos = -99
+                stopflag = -99
+            elif stopflag ==1 and ((trail_start+positionPrice-CloseStream[-1])/trail_start)<-trailing_stop and Use_trail_stop:
+                #print("Trailing stop executed")
+                stops_executed+=1
+                Profit += trail_start*(1-trailing_stop) #CloseStream[-1] - positionPrice
+                AccountBalance +=positionSize*trail_start*(1-trailing_stop) #(CloseStream[len(CloseStream) - 1] - positionPrice)
+                correct += 1
+                positionPrice = CloseStream[-1]
+                Profit -= CloseStream[-1] * .00036
+                AccountBalance -= positionSize * CloseStream[-1] * .00036
+                cashout.append({'x': i, 'y': CloseStream[-1], 'type': "win", 'position': 'long','Profit': takeprofitval * positionSize})
+                CurrentPos = -99
+                stopflag = -99
+            if stopflag==0 and CloseStream[-1] < positionPrice - trail_start and Use_trail_stop:
+                trail_start = positionPrice - CloseStream[-1]
+            elif stopflag ==1 and CloseStream[-1]>positionPrice + trail_start and Use_trail_stop:
+                trail_start = CloseStream[-1] - positionPrice
+            ################################################################################################################################
+            ################################################################################################################################
 
             if CurrentPos == 0 and CloseStream[-1] < Highestprice:
                 pass
@@ -743,12 +826,10 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
             #if prevProfit!=Profit:
             profitgraph.append(Profit)
             PrevPos=copy(CurrentPos)
-            if AccountBalance<0:
-                print("Negative account balance, No Equity")
-                break
-
+    print("Symbol:",symbol)
     print("Account Balance:", AccountBalance)
-    print("% Gain on Account:", ((AccountBalance - OriginalAccountSize) * 100) / OriginalAccountSize)
+    print("% Gain on Account:", ((AccountBalance - originalBalance) * 100) / originalBalance)
+    print("Stops Executed:",stops_executed)
     ax1 = plt.subplot2grid((6, 1), (0, 0), rowspan=5, colspan=1)
     ax2 = plt.subplot2grid((6, 1), (5, 0), rowspan=1, colspan=1)
     for trade in trades:
@@ -765,10 +846,10 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
     shortCash = 0
     for trade in cashout:
         #trade_date = mpl_dates.date2num([pd.to_datetime(trade['Date'])])[0]
-        if trade['type'] == 'win':
+        '''if trade['type'] == 'win':
             ax1.scatter(trade['x'],trade['y']-.08, c='green', label='green', s=80, edgecolors='none',marker=".") ##green dot for successful trade
         else:
-            ax1.scatter(trade['x'],trade['y']+.08, c='red', label='red', s=80, edgecolors='none', marker=".") ##red dot for unsuccessful trade
+            ax1.scatter(trade['x'],trade['y']+.08, c='red', label='red', s=80, edgecolors='none', marker=".") ##red dot for unsuccessful trade'''
 
         if trade['position']=='long' and trade['type'] == 'win':
             longwins+=1
@@ -824,9 +905,11 @@ else:       ## Paper Trading, exact same as above but simulated trading with gra
     #x, y = zip(*profitgraph)
     #ax2.plot(profitgraphx, profitgraphy)
     #plt.plot(profitgraph[:])
-    ax2.plot(profitgraph)
-
-    plt.ylabel('Dollars')
-    plt.xlabel('Time')
+    #ax2.plot(profitgraph)
+    #plt.plot(Close)
+    #plt.ylabel('Dollars')
+    #plt.xlabel('Time')
     #plt.legend(loc=2)
-    plt.show()
+    #plt.show()
+while True:
+    pass
