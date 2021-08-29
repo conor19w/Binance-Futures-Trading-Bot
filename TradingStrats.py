@@ -1,7 +1,8 @@
 import pandas as pd
 import talib as ta
 import numpy as np
-from ta.momentum import stochrsi_d,stochrsi_k
+from ta.momentum import stochrsi_d,stochrsi_k,stoch,stoch_signal,rsi
+from ta.trend import ema_indicator
 import math
 def StochRSIMACD(prediction1,CloseStream,signal1,signal2):
     Close = np.array(CloseStream)
@@ -72,35 +73,52 @@ def tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1):
 ##############################################################################################################################
 
 
-def Fractal(CloseStream,LowStream,HighStream,signal1,prediction1):
+def Fractal(CloseStream,LowStream,HighStream,prediction1):
+
     Close = np.array(CloseStream)
     High = np.array(HighStream)
     Low = np.array(LowStream)
+    stoplossval=0
+    takeprofitval=0
 
-    RSI = ta.RSI(Close)
-    EMA50 = ta.EMA(Close, timeperiod=50)
-    EMA20 = ta.EMA(Close, timeperiod=20)
+    EMA100 = np.array(ema_indicator(pd.Series(CloseStream),window=100))
+    EMA50 = np.array(ema_indicator(pd.Series(CloseStream),window=50))
+    EMA20 = np.array(ema_indicator(pd.Series(CloseStream),window=20))
 
-    if High[-5]<High[-4]<High[-3] and High[-3]>High[-2]>High[-1]:
-        signal1=0
-    elif Low[-5]>Low[-4]>Low[-3] and Low[-3]<Low[-2]<Low[-1]:
-        signal1=1
-    else:
-        signal1=-99
-
-
-
-    if signal1 and EMA50[-1]<Low[-1]<EMA20[-1]:
-        prediction1=1
-    elif signal1==0 and EMA50[-1]>High[-1]>EMA20[-1]:
+    if (High[-3]<High[-2] and High[-2]>High[-1]) and \
+            EMA20[-1]<EMA50[-1]<EMA100[-1] and EMA20[-2]<EMA50[-2]<EMA100[-2] and EMA20[-3]<EMA50[-3]<EMA100[-3] and\
+            (EMA50[-2]>High[-2]>EMA20[-2]) \
+            and Close[-3]<EMA100[-3] and Close[-2]<EMA100[-2] and Close[-1]<EMA100[-1]:
         prediction1=0
+        stoplossval=math.fabs(Close[-1]-EMA50[-1])*1.1
+        takeprofitval = 1.5 * math.fabs(Close[-1]-EMA50[-1])
+    elif (High[-3]<High[-2] and High[-2]>High[-1]) and \
+            EMA20[-1]<EMA50[-1]<EMA100[-1] and EMA20[-2]<EMA50[-2]<EMA100[-2] and EMA20[-3]<EMA50[-3]<EMA100[-3] and\
+            (EMA100[-2]>High[-2]>EMA50[-2]) \
+            and Close[-3]<EMA100[-3] and Close[-2]<EMA100[-2] and Close[-1]<EMA100[-1]:
+        prediction1=0
+        stoplossval = math.fabs(Close[-1]-EMA100[-1])*1.1
+        takeprofitval = 1.5 * math.fabs(Close[-1]-EMA100[-1])
+    elif (Low[-3] > Low[-2] and Low[-2] < Low[-1]) and \
+            EMA20[-1] > EMA50[-1] > EMA100[-1] and EMA20[-2] > EMA50[-2] > EMA100[-2] and EMA20[-3] > EMA50[-3] > \
+            EMA100[-3] and \
+            (EMA50[-2] < Low[-2] < EMA20[-2]) \
+            and Close[-3] > EMA100[-3] and Close[-2] > EMA100[-2] and Close[-1] > EMA100[-1]:
+        prediction1 = 1
+        stoplossval = math.fabs(Close[-1] - EMA50[-1]) * .9
+        takeprofitval = 1.5 * math.fabs(Close[-1]-EMA50[-1])
+    elif (Low[-3]>Low[-2] and Low[-2]<Low[-1]) and \
+            EMA20[-1]>EMA50[-1]>EMA100[-1] and EMA20[-2]>EMA50[-2]>EMA100[-2] and EMA20[-3]>EMA50[-3]>EMA100[-3] and \
+            (EMA100[-2]<Low[-2]<EMA50[-2]) \
+            and Close[-3]>EMA100[-3] and Close[-2]>EMA100[-2] and Close[-1]>EMA100[-1]:
+        prediction1=1
+        stoplossval = math.fabs(Close[-1]-EMA100[-1])*.9
+        takeprofitval = 1.5*math.fabs(Close[-1]-EMA100[-1])
     else:
-        signal1=-99
         prediction1=-99
 
 
-
-    return prediction1,1
+    return prediction1,stoplossval,takeprofitval
 
 def Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1):
     Close = np.array(CloseStream)
@@ -198,36 +216,40 @@ def UltOscMACD(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,High
 
 
 def RSIStochEMA200(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,currentPos):
+    period=100
+    CloseS = pd.Series(CloseStream)
     Close = np.array(CloseStream)
-    High = np.array(HighStream)
-    Low = np.array(LowStream)
-    fastd = np.array(stochrsi_d(pd.Series(CloseStream)))
-    fastk = np.array(stochrsi_k(pd.Series(CloseStream)))
-    RSI = ta.RSI(Close)
-    EMA200 = ta.EMA(Close,timeperiod=200)
-    EMA50 = ta.EMA(Close,timeperiod=50)
-    largestRSI=RSI[len(RSI)-16]
-    largestLow=Close[len(Close)-16] #Low[len(Low)-51] #Close[len(Close)-51]
-    for i in range(len(RSI)-15,len(RSI)):
-        if Close[i]>largestLow and Close[-1]>EMA200[-1]:
+    #High = np.array(HighStream)
+    #Low = np.array(LowStream)
+    fastk = np.array(stoch_signal(pd.Series(HighStream),pd.Series(LowStream),pd.Series(CloseStream)))
+    fastd = np.array(stoch(pd.Series(HighStream),pd.Series(LowStream),pd.Series(CloseStream)))
+    RSI = np.array(rsi(CloseS))
+    EMA200 = np.array(ema_indicator(CloseS,window=200))
+    largestRSI=RSI[len(RSI)-period]
+    largestLow=Close[len(Close)-period]
+
+    ##find hidden divergences
+    for i in range(len(RSI)-period+1,len(RSI)):
+
+        if Close[i]>largestLow:
             largestLow=Close[i] ##Low
             if RSI[i]<largestRSI:
                 ##Higher Low & Lower RSI => Bullish Divergence
                 signal1=1
             largestRSI=RSI[i]
-        elif Close[i]<largestLow and Close[-1]<EMA200[-1]:
+        elif Close[i]<largestLow:
             largestLow=Close[i] ##High
             if RSI[i]>largestRSI:
                 ##Lower High & Higher RSI => Bearish Divergence
                 signal1=0
             largestRSI=RSI[i]
     ##Bullish Divergence
-    if signal1==1 and fastk[-1]>fastd[-1] and fastk[-2]<fastd[-2] and Close[-1]>EMA200[-1] and Close[-1]>EMA50[-1]:
+    if signal1==1 and fastk[-1]>fastd[-1] and fastk[-2]<fastd[-2] and Close[-1]>EMA200[-1]:
         prediction1=1
         signal1=-99
 
     ##Bearish Divergence
-    elif signal1==0 and fastk[-1]<fastd[-1] and fastk[-2]>fastd[-2] and Close[-1]<EMA200[-1] and Close[-1]<EMA50[-1]:
+    elif signal1==0 and fastk[-1]<fastd[-1] and fastk[-2]>fastd[-2] and Close[-1]<EMA200[-1]:
         prediction1=0
         signal1=-99
 
@@ -253,9 +275,9 @@ def stochBB(prediction1,CloseStream):
     percent_B2 = (Close[-3] - lowerband[-3]) / (upperband[-3] - lowerband[-3])  # (Current Price - Lower Band) / (Upper Band - Lower Band)
     percent_B3 = (Close[-4] - lowerband[-4]) / (upperband[-4] - lowerband[-4])  # (Current Price - Lower Band) / (Upper Band - Lower Band)
     #print(percent_B)
-    if fastk[-1]<.2 and fastd[-1]<.2 and (fastk[-1]>fastd[-1] and fastk[-2]<fastd[-2])   and (percent_B<0 or percent_B1<0 or percent_B2<0 or percent_B3<0):# or percent_B2<.05):
+    if fastk[-1]<.2 and fastd[-1]<.2 and (fastk[-1]>fastd[-1] and fastk[-2]<fastd[-2])   and (percent_B<0 or percent_B1<0 or percent_B2<0):# or percent_B3<0):# or percent_B2<.05):
         prediction1=1
-    elif fastk[-1]>.8 and fastd[-1]>.8 and (fastk[-1]<fastd[-1] and fastk[-2]>fastd[-2])  and (percent_B>1 or percent_B1>1 or percent_B2>1 or percent_B3>1):# or percent_B2>1):
+    elif fastk[-1]>.8 and fastd[-1]>.8 and (fastk[-1]<fastd[-1] and fastk[-2]>fastd[-2])  and (percent_B>1 or percent_B1>1 or percent_B2>1):# or percent_B3>1):# or percent_B2>1):
         prediction1=0
 
     return prediction1,6
@@ -341,6 +363,16 @@ def SARMACD200EMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,pr
             signal1 = -99'''
 
     return takeprofitval,stoplossval,prediction1,signal1
+
+def DoubleEMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos):
+    EMA20 = np.array(ema_indicator(pd.Series(CloseStream),window=20))
+    EMA40 = np.array(ema_indicator(pd.Series(CloseStream),window=40))
+
+    if EMA20[-1]<EMA40[-1] and EMA20[-2]>EMA40[-2]:
+        prediction1 = 1
+    elif EMA20[-1]>EMA40[-1] and EMA20[-2]<EMA40[-2]:
+        prediction1 = 0
+
 
 
 def TripleEMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1):
@@ -525,10 +557,9 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,predicti
         Low = np.array(LowStream)
         ATR = ta.ATR(High, Low, Close, timeperiod=14)
         if prediction1 == 0 and CurrentPos == -99:
-            stoplossval = 1.35 * ATR[-1]
+            stoplossval = 1 * ATR[-1]
             takeprofitval = 3 * ATR[-1]
         elif prediction1 == 1 and CurrentPos == -99:
-            stoplossval = 1.35 * ATR[-1]
+            stoplossval = 1 * ATR[-1]
             takeprofitval = 3 * ATR[-1]
     return stoplossval,takeprofitval
- 
