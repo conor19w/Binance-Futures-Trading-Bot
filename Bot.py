@@ -14,9 +14,8 @@ from TradingStrats import stochBB
 from TradingStrats import SetSLTP
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
-import datetime
 import pandas as pd
-from datetime import timezone
+from datetime import timezone,datetime,date,timedelta
 from requests import exceptions
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
@@ -29,9 +28,9 @@ PRICES = "wss://stream.binance.com:9443/ws/btcusdt@ticker"
 SOCKET = "wss://stream.binance.com:9443/ws/btcusdt@kline_1m"
 symbol="BTCUSDT"
 
-#PRICES = "wss://stream.binance.com:9443/ws/ethusdt@ticker"
-#SOCKET = "wss://stream.binance.com:9443/ws/ethusdt@kline_1m"
-#symbol="ETHUSDT"
+PRICES = "wss://stream.binance.com:9443/ws/ethusdt@ticker"
+SOCKET = "wss://stream.binance.com:9443/ws/ethusdt@kline_1m"
+symbol="ETHUSDT"
 
 #SOCKET = "wss://stream.binance.com:9443/ws/ltcusdt@kline_15m"
 #symbol="LTCUSDT"
@@ -68,9 +67,9 @@ symbol="BTCUSDT"
 #SOCKET = "wss://stream.binance.com:9443/ws/xrpusdt@kline_1m"
 #symbol="XRPUSDT"
 
-#PRICES = "wss://stream.binance.com:9443/ws/dotusdt@ticker"
-#SOCKET = "wss://stream.binance.com:9443/ws/dotusdt@kline_1m"
-#symbol="DOTUSDT"
+PRICES = "wss://stream.binance.com:9443/ws/dotusdt@ticker"
+SOCKET = "wss://stream.binance.com:9443/ws/dotusdt@kline_1m"
+symbol="DOTUSDT"
 
 #PRICES = "wss://stream.binance.com:9443/ws/alphausdt@ticker"
 #SOCKET = "wss://stream.binance.com:9443/ws/alphausdt@kline_1m"
@@ -192,7 +191,7 @@ leverage=35 ##leverage being used
 AccountBalance=1000 ##Start amount for paper trading
 EffectiveAccountBalance = AccountBalance*leverage
 OriginalAccountSize=copy(AccountBalance)
-OrderSIZE = .0035 ##how much of account to use per trade in Decimal
+OrderSIZE = .025 ##how much of account to use per trade in Decimal
 positionSize = 0 ##altered later and sent as the orderQTY
 break_even = 1 ##Set a new stop once in profit to cover the trading fee and breakeven
 min_profit_accepted = .005
@@ -200,7 +199,7 @@ Order_Type = 'GTC' ##'IOC'
 Stop_ID=''
 Limit_ID=''
 Order_ID=''
-current_date = datetime.datetime.now(timezone.utc)
+current_date = datetime.now(timezone.utc)
 current_date = current_date.replace(tzinfo=timezone.utc)
 current_date = round(float(current_date.timestamp()*1000-.5))
 
@@ -219,8 +218,9 @@ print(order1)
 x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
 print(x)
 print(x[-1])'''
-print(client.get_ticker(symbol=symbol))
-client.get_ticker(symbol=symbol)
+#x = client.futures_get_all_orders(symbol=symbol)
+#print(x)
+#client.get_ticker(symbol=symbol)
 #print(client.futures_get_all_orders(symbol=symbol))
 #print(client.futures_position_information(symbol=symbol)[0])
 if Trading: ## Trade on Binance with above api key and secret key
@@ -243,10 +243,12 @@ if Trading: ## Trade on Binance with above api key and secret key
             break_even_flag=0
             #print(client.futures_get_all_orders(symbol=symbol))
             #print(order1)
+            start = datetime.now().time()
+            yesterdate = date.today()
 
             for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str="1 day ago UTC"):  ## get KLines with 15 minute intervals for the last month
                 # print(kline)
-                Date.append(datetime.datetime.utcfromtimestamp(int(kline[0]) / 1000))
+                Date.append(datetime.utcfromtimestamp(int(kline[0]) / 1000))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -273,6 +275,21 @@ if Trading: ## Trade on Binance with above api key and secret key
                         payload = json_message['k']
 
 
+                        rightnow = datetime.now().time()
+                        sec = timedelta(hours=0, minutes=0, seconds=30) ##Check every 30 seconds that limit/stop hasn't been hit
+                        if (datetime.combine(date.today(), rightnow) - datetime.combine(yesterdate, start)) > sec:
+                            start = datetime.now().time()
+                            yesterdate = date.today()
+                            if Limit_ID!='' or Stop_ID!='':
+                                x = client.futures_position_information(symbol=symbol)[0]
+                                if float(x['positionAmt'])==0:
+                                    CurrentPos = -99  ##Check if we are in a trade, if not reinitialize CurrentPos
+                                    break_even_flag = 0  ##reinitialize
+                                    Order_ID = ''
+                                    Limit_ID = ''
+                                    Stop_ID = ''
+                                    client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel open orders also
+                                    print("No Open Position Cancelling Stop/Limit")
 
                         if payload['x']: ##if payload['x']==1 then it is a new kline we have received => new OHLC data
                             Open = flow.dataStream(Open, float(payload['o']), 1, 300)
@@ -362,7 +379,7 @@ if Trading: ## Trade on Binance with above api key and secret key
 
                                 if break_even and break_even_flag==0:
                                     LastPrice = float(client.get_ticker(symbol=symbol)['lastPrice'])
-                                    if float(x['entryPrice']) - LastPrice >.4*current_takeprofitval:
+                                    if float(x['entryPrice']) - LastPrice >.5*current_takeprofitval:
                                         ###### Set new Stop if we are in profit to breakeven
                                         ##Set new Stop in Profit:
                                         try:
@@ -463,7 +480,7 @@ if Trading: ## Trade on Binance with above api key and secret key
 
                                 if break_even and break_even_flag==0:
                                     LastPrice = float(client.get_ticker(symbol=symbol)['lastPrice'])
-                                    if LastPrice - float(x['entryPrice']) >.4*takeprofitval:
+                                    if LastPrice - float(x['entryPrice']) >.5*takeprofitval:
                                         ###### Set new Stop if we are in profit to breakeven
                                         ##Set new Stop in Profit:
                                         try:
@@ -624,7 +641,6 @@ if Trading: ## Trade on Binance with above api key and secret key
         global Stop_ID,Limit_ID,Order_ID
         try:
             try:
-                x = []
                 PP = float(client.get_ticker(symbol=symbol)['lastPrice'])
                 if side1: ##Long
                     ##Place the Long
@@ -636,7 +652,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                         timeInForce=TIME_IN_FORCE_GTC,
                         quantity=q)
                     Order_ID=order1['orderId']
-                    #x = client.futures_get_all_orders(symbol=symbol, orderId=Order_ID)
+                    x = client.futures_get_all_orders(symbol=symbol, orderId=Order_ID)
                     #print("x[-1]['status']:",x[-1]['status'])
                     #if x[-1]['status'] == 'FILLED':
                         ##stoploss:
@@ -702,7 +718,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                         timeInForce=TIME_IN_FORCE_GTC,
                         quantity=q)
                     Order_ID = order1['orderId']
-                    #x = client.futures_get_all_orders(symbol=symbol, orderId=Order_ID)
+                    x = client.futures_get_all_orders(symbol=symbol, orderId=Order_ID)
                     #print("x[-1]['status']:",x[-1]['status'])
                     #if x[-1]['status'] == 'FILLED':
                         #print("avPrice:", (float(x[-1]['avgPrice'])))
@@ -844,7 +860,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 #takeprofitval, stoplossval, prediction1, signal1= TS.TripleEMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
 
                 ##If the trade won't cover the fee & profit something then don't place it
-                if (prediction1 == 1 or prediction1 == 0) and (.0075 * Close[-1] > takeprofitval):
+                if (prediction1 == 1 or prediction1 == 0) and (.005 * Close[-1] > takeprofitval):
                     prediction1 = -99
         #################################################################
             #################################################################
