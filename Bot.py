@@ -207,8 +207,8 @@ current_date = datetime.now(timezone.utc)
 current_date = current_date.replace(tzinfo=timezone.utc)
 current_date = round(float(current_date.timestamp()*1000-.5))
 Market_Orders = 0 ##Allow Market Orders if limit is not filled
-Trading=1 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
-          ## If Trading==0 then we are paper trading a strategy on historical data
+Trading=0 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
+          ## If Trading==0 then we are paper trading a strategy on historical data in the section starting line 873
 #print(client.futures_get_all_orders(symbol=symbol)[-3])
 #x = client.futures_get_all_orders(symbol=symbol)
 '''order1 = client.futures_create_order(
