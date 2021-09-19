@@ -874,14 +874,17 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     leverage = 35  ##leverage being used
     AccountBalance = 2185
     originalBalance=copy(AccountBalance)
+
+    ##Not in use currently
     trailing_stop = .001  ##if market dips we sell/buy
     trailing_execution = .5  ##when to start the trailing stoploss
     trail_start = 0
     Use_trail_stop=0 ##turn on or off trailing stop
     stopflag=-99
     stops_executed=0
-    symbol = "BTCUSDT"
-    #symbol="ETHUSDT"
+    waitflag=0 ##wait until next candlestick before checking if stoploss/ takeprofit was hit
+    #symbol = "BTCUSDT"
+    symbol="ETHUSDT"
     #symbol='SHIBUSDT'
     #symbol='ADAUSDT'
     #symbol='BAKEUSDT'
@@ -894,9 +897,9 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     #symbol = "DOTUSDT"
     #symbol = "ALPHAUSDT"
     print("Symbol:", symbol, "Start Balance:", AccountBalance)
-    for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str="1 month ago UTC"):  ## get KLines with 15 minute intervals for the last month
+    for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str="2 year ago UTC",end_str="22 month ago UTC"):  ## get KLines with 15 minute intervals for the last month
         # print(kline)
-        Date.append(datetime.utcfromtimestamp((int(kline[0]) / 1000)+60))
+        Date.append(datetime.utcfromtimestamp((round(kline[0]/1000)))+timedelta(hours=1))
         Open.append(float(kline[1]))
         Close.append(float(kline[4]))
         High.append(float(kline[2]))
@@ -919,25 +922,25 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 #prediction1,signal1,signal2,Type =TS.StochRSIMACD(prediction1,CloseStream,signal1,signal2) ###########################################
                 #prediction1, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1)
                 #prediction1,signal1,signal2,HighestUlt,Highest,Type = TS.UltOscMACD(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,HighestUlt,Highest)
-                prediction1, signal1, Type,loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction1,CloseStream,HighStream,LowStream,signal1,CurrentPos)
+                #prediction1, signal1, Type,loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction1,CloseStream,HighStream,LowStream,signal1,CurrentPos)
                 '''if loc1!=-99:
                     print("Bearish Divergence found:",DateStream[loc1],"to",DateStream[loc1_1])
                 if loc2!=-99:
                     print("Bullish Divergence found:",DateStream[loc2],"to",DateStream[loc2_2])'''
-                for x in peaks:
-                    print("Peak at ",DateStream[x],"RSI:",RSI[x])
+                #for x in peaks:
+                 #   print("Peak at ",DateStream[x],"RSI:",RSI[x])
                 #prediction1,Type = TS.Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1) ###############################################
                 #prediction1,Type = TS.stochBB(prediction1,CloseStream)
                 #prediction1, Type = TS.goldenCross(prediction1,CloseStream)
 
-                stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,Type)
-
-                #prediction1,stoplossval,takeprofitval = TS.Fractal(CloseStream, LowStream, HighStream,prediction1)
+                #stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,Type)
+                #prediction1,stoplossval,takeprofitval = TS.fibMACD(prediction1, CloseStream, OpenStream)
+                prediction1,stoplossval,takeprofitval = TS.Fractal(CloseStream, LowStream, HighStream,prediction1)
                 #takeprofitval, stoplossval, prediction1, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
                 #takeprofitval, stoplossval, prediction1, signal1= TS.TripleEMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
 
                 ##If the trade won't cover the fee & profit something then don't place it
-                if (prediction1 == 1 or prediction1 == 0) and (.005 * Close[-1] > takeprofitval):
+                if (prediction1 == 1 or prediction1 == 0) and (.00125 * Close[-1] > takeprofitval):
                     prediction1 = -99
         #################################################################
             #################################################################
@@ -954,6 +957,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 AccountBalance -= positionSize * CloseStream[-1] * .0004
                 trail_start = trailing_execution*takeprofitval
                 stopflag = -99
+                waitflag = 1
             elif CurrentPos == -99 and prediction1 == 1:
                 positionPrice = CloseStream[len(CloseStream) - 1]
                 positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice
@@ -966,13 +970,13 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 AccountBalance -= positionSize * CloseStream[-1] * .0004
                 trail_start = trailing_execution * takeprofitval
                 stopflag = -99
-
+                waitflag = 1
             ############### break-even:
             #if CurrentPos==0 and break_even and positionPrice-CloseStream[-1] > .0025*positionPrice:
 
 
 
-            if positionPrice - HighStream[ - 1] < -stoplossval and CurrentPos == 0:
+            if positionPrice - HighStream[ - 1] < -stoplossval and CurrentPos == 0 and not waitflag:
                 Profit +=-stoplossval #positionPrice-CloseStream[len(CloseStream) - 1]  ##This will be positive if the price went down
                 AccountBalance += positionSize * -stoplossval # (positionPrice-CloseStream[len(CloseStream) - 1])
                 positionPrice = CloseStream[len(CloseStream) - 1]
@@ -984,7 +988,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 stopflag = -99
 
                 Profit -= CloseStream[len(CloseStream) - 1] * .0004
-            elif LowStream[- 1] - positionPrice < -stoplossval and CurrentPos == 1:
+            elif LowStream[- 1] - positionPrice < -stoplossval and CurrentPos == 1 and not waitflag:
                 Profit +=-stoplossval #CloseStream[len(CloseStream) - 1] - positionPrice ##This will be positive if the price went up
                 AccountBalance += positionSize* -stoplossval #(CloseStream[len(CloseStream) - 1] - positionPrice)
                 positionPrice = CloseStream[len(CloseStream) - 1]
@@ -996,7 +1000,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 stopflag = -99
 
                 Profit -= CloseStream[len(CloseStream) - 1] * .0004
-            elif positionPrice - LowStream[-1] > takeprofitval and CurrentPos == 0 and (not Use_trail_stop):
+            elif positionPrice - LowStream[-1] > takeprofitval and CurrentPos == 0 and (not Use_trail_stop) and (not waitflag):
                 Profit += takeprofitval #positionPrice - CloseStream[-1]
                 AccountBalance += positionSize *  takeprofitval #(positionPrice - CloseStream[len(CloseStream) - 1])
                 correct += 1
@@ -1007,7 +1011,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 CurrentPos = -99
                 stopflag = -99
 
-            elif HighStream[-1] - positionPrice > takeprofitval and CurrentPos == 1 and (not Use_trail_stop):
+            elif HighStream[-1] - positionPrice > takeprofitval and CurrentPos == 1 and (not Use_trail_stop) and (not waitflag):
                 Profit +=  takeprofitval #CloseStream[-1] - positionPrice
                 AccountBalance += positionSize *  takeprofitval #(CloseStream[len(CloseStream) - 1] - positionPrice)
                 correct += 1
@@ -1055,7 +1059,8 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 trail_start = CloseStream[-1] - positionPrice
             ################################################################################################################################
             ################################################################################################################################
-
+            if CurrentPos!=-99 and waitflag:
+                waitflag=0
             if CurrentPos == 0 and CloseStream[-1] < Highestprice:
                 pass
                 #Highestprice = CloseStream[-1]
@@ -1077,9 +1082,11 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             if CurrentPos!=PrevPos:
                 signal1=-99
                 signal2=-99
-                print("Current Position:",CurrentPos,"\n")
-                print("Margin:",positionPrice-CloseStream[-1])
-                #print("Date:",DateStream[-1])
+                print("\n")
+                print("Current Position:",CurrentPos)
+                print("Time:",DateStream[-1])
+                #print("Time Max",DateStream[max_pos])
+                #print("Time Min", DateStream[min_pos])
                 try:
                     print("Account Balance: ", AccountBalance,"Order Size:",positionSize,"PV:",(Profit * 100) / (tradeNO * CloseStream[-1]),"Stoploss:",stoplossval,"TakeProfit:",takeprofitval)
                 except Exception as e:
@@ -1087,7 +1094,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             #if prevProfit!=Profit:
             profitgraph.append(Profit)
             PrevPos=copy(CurrentPos)
-    print("Symbol:",symbol)
+    print("\nSymbol:",symbol)
     print("Account Balance:", AccountBalance)
     print("% Gain on Account:", ((AccountBalance - originalBalance) * 100) / originalBalance)
     print("Stops Executed:",stops_executed)
