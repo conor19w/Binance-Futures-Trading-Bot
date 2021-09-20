@@ -883,8 +883,11 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     stopflag=-99
     stops_executed=0
     waitflag=0 ##wait until next candlestick before checking if stoploss/ takeprofit was hit
-    #symbol = "BTCUSDT"
-    symbol="ETHUSDT"
+    fee = .0004
+    Open1 = []
+    Close1 = []
+    symbol = "BTCUSDT"
+    #symbol="ETHUSDT"
     #symbol='SHIBUSDT'
     #symbol='ADAUSDT'
     #symbol='BAKEUSDT'
@@ -897,7 +900,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     #symbol = "DOTUSDT"
     #symbol = "ALPHAUSDT"
     print("Symbol:", symbol, "Start Balance:", AccountBalance)
-    for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str="2 year ago UTC",end_str="22 month ago UTC"):  ## get KLines with 15 minute intervals for the last month
+    for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str="1 year ago UTC"):  ## get KLines with 15 minute intervals for the last month
         # print(kline)
         Date.append(datetime.utcfromtimestamp((round(kline[0]/1000)))+timedelta(hours=1))
         Open.append(float(kline[1]))
@@ -919,10 +922,12 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             EffectiveAccountBalance = AccountBalance*leverage
             if CurrentPos== -99:
                 #prediction1,Type = TS.MovingAverage(CloseStream,prediction1)
-                #prediction1,signal1,signal2,Type =TS.StochRSIMACD(prediction1,CloseStream,signal1,signal2) ###########################################
+                #prediction1,signal1,signal2,Type =TS.StochRSI_RSIMACD(prediction1,CloseStream,signal1,signal2) ###########################################
+                #prediction1,Type = TS.StochRSIMACD(prediction1, CloseStream,HighStream,LowStream)  ###########################################
                 #prediction1, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1)
                 #prediction1,signal1,signal2,HighestUlt,Highest,Type = TS.UltOscMACD(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,HighestUlt,Highest)
                 #prediction1, signal1, Type,loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction1,CloseStream,HighStream,LowStream,signal1,CurrentPos)
+                prediction1,Type=TS.tripleEMA(CloseStream,OpenStream,prediction1)
                 '''if loc1!=-99:
                     print("Bearish Divergence found:",DateStream[loc1],"to",DateStream[loc1_1])
                 if loc2!=-99:
@@ -933,10 +938,17 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 #prediction1,Type = TS.stochBB(prediction1,CloseStream)
                 #prediction1, Type = TS.goldenCross(prediction1,CloseStream)
 
-                #stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,Type)
-                #prediction1,stoplossval,takeprofitval = TS.fibMACD(prediction1, CloseStream, OpenStream)
-                prediction1,stoplossval,takeprofitval = TS.Fractal(CloseStream, LowStream, HighStream,prediction1)
+                stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,Type)
+
+                #prediction1,stoplossval,takeprofitval,max_pos,min_pos = TS.fibMACD(prediction1, CloseStream, OpenStream,HighStream,LowStream)
+                #if prediction1==0 or prediction1==1 and CurrentPos==-99:
+                #    print("\nMax:",DateStream[max_pos])
+                #    print("Min:",DateStream[min_pos])
+
+                #prediction1,stoplossval,takeprofitval = TS.Fractal(CloseStream, LowStream, HighStream,OpenStream,prediction1)
+
                 #takeprofitval, stoplossval, prediction1, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
+
                 #takeprofitval, stoplossval, prediction1, signal1= TS.TripleEMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
 
                 ##If the trade won't cover the fee & profit something then don't place it
@@ -953,8 +965,8 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 #Highestprice = positionPrice
                #stoplossval = positionPrice * trailing_stoploss
                 trades.append({'x':i,'y':positionPrice,'type': "sell",'current_price': positionPrice})
-                Profit -= CloseStream[len(CloseStream) - 1] * .0004
-                AccountBalance -= positionSize * CloseStream[-1] * .0004
+                Profit -= CloseStream[len(CloseStream) - 1] * fee
+                AccountBalance -= positionSize * CloseStream[-1] * fee
                 trail_start = trailing_execution*takeprofitval
                 stopflag = -99
                 waitflag = 1
@@ -966,8 +978,8 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 #Highestprice = positionPrice
                 #stoplossval = positionPrice * trailing_stoploss
                 trades.append({'x':i,'y':positionPrice, 'type': "buy",'current_price': positionPrice})
-                Profit -= CloseStream[len(CloseStream) - 1] * .0004
-                AccountBalance -= positionSize * CloseStream[-1] * .0004
+                Profit -= CloseStream[len(CloseStream) - 1] * fee
+                AccountBalance -= positionSize * CloseStream[-1] * fee
                 trail_start = trailing_execution * takeprofitval
                 stopflag = -99
                 waitflag = 1
@@ -976,37 +988,35 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
 
 
 
-            if positionPrice - HighStream[ - 1] < -stoplossval and CurrentPos == 0 and not waitflag:
+            if positionPrice - HighStream[ - 1] < -stoplossval and CurrentPos == 0 and (not waitflag):
                 Profit +=-stoplossval #positionPrice-CloseStream[len(CloseStream) - 1]  ##This will be positive if the price went down
                 AccountBalance += positionSize * -stoplossval # (positionPrice-CloseStream[len(CloseStream) - 1])
                 positionPrice = CloseStream[len(CloseStream) - 1]
-                Profit -= CloseStream[-1] * .0004
-                AccountBalance-= positionSize*CloseStream[-1] * .0004
+                Profit -= CloseStream[-1] * fee
+                AccountBalance-= positionSize*CloseStream[-1] * fee
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "loss",'position':'short','Profit': -stoplossval*positionSize})
                 # CurrentPos = -99
                 CurrentPos = -99
                 stopflag = -99
 
-                Profit -= CloseStream[len(CloseStream) - 1] * .0004
-            elif LowStream[- 1] - positionPrice < -stoplossval and CurrentPos == 1 and not waitflag:
+            elif LowStream[- 1] - positionPrice < -stoplossval and CurrentPos == 1 and (not waitflag):
                 Profit +=-stoplossval #CloseStream[len(CloseStream) - 1] - positionPrice ##This will be positive if the price went up
                 AccountBalance += positionSize* -stoplossval #(CloseStream[len(CloseStream) - 1] - positionPrice)
                 positionPrice = CloseStream[len(CloseStream) - 1]
-                Profit -= CloseStream[-1] * .0004
-                AccountBalance -= positionSize * CloseStream[-1] * .0004
+                Profit -= CloseStream[-1] * fee
+                AccountBalance -= positionSize * CloseStream[-1] * fee
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "loss",'position':'long','Profit': -stoplossval*positionSize})
                 # CurrentPos = -99
                 CurrentPos = -99
                 stopflag = -99
 
-                Profit -= CloseStream[len(CloseStream) - 1] * .0004
             elif positionPrice - LowStream[-1] > takeprofitval and CurrentPos == 0 and (not Use_trail_stop) and (not waitflag):
                 Profit += takeprofitval #positionPrice - CloseStream[-1]
                 AccountBalance += positionSize *  takeprofitval #(positionPrice - CloseStream[len(CloseStream) - 1])
                 correct += 1
                 positionPrice = CloseStream[-1]
-                Profit -= CloseStream[-1] * .0004
-                AccountBalance -= positionSize * CloseStream[-1] * .0004
+                Profit -= CloseStream[-1] * fee
+                AccountBalance -= positionSize * CloseStream[-1] * fee
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "win",'position':'short','Profit': takeprofitval*positionSize})
                 CurrentPos = -99
                 stopflag = -99
@@ -1016,8 +1026,8 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 AccountBalance += positionSize *  takeprofitval #(CloseStream[len(CloseStream) - 1] - positionPrice)
                 correct += 1
                 positionPrice = CloseStream[-1]
-                Profit -= CloseStream[-1] * .0004
-                AccountBalance -= positionSize * CloseStream[-1] * .0004
+                Profit -= CloseStream[-1] * fee
+                AccountBalance -= positionSize * CloseStream[-1] * fee
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "win",'position':'long','Profit': takeprofitval*positionSize})
                 CurrentPos = -99
                 stopflag = -99
@@ -1059,8 +1069,8 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 trail_start = CloseStream[-1] - positionPrice
             ################################################################################################################################
             ################################################################################################################################
-            if CurrentPos!=-99 and waitflag:
-                waitflag=0
+
+            waitflag=0
             if CurrentPos == 0 and CloseStream[-1] < Highestprice:
                 pass
                 #Highestprice = CloseStream[-1]
@@ -1082,8 +1092,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             if CurrentPos!=PrevPos:
                 signal1=-99
                 signal2=-99
-                print("\n")
-                print("Current Position:",CurrentPos)
+                print("\nCurrent Position:",CurrentPos)
                 print("Time:",DateStream[-1])
                 #print("Time Max",DateStream[max_pos])
                 #print("Time Min", DateStream[min_pos])
