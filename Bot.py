@@ -883,73 +883,79 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     stopflag=-99
     stops_executed=0
     waitflag=0 ##wait until next candlestick before checking if stoploss/ takeprofit was hit
-    fee = .0004
-    Open1 = []
-    Close1 = []
-    symbol = "BTCUSDT"
+    waitflag=0 ##wait until next candlestick before checking if stoploss/ takeprofit was hit
+    fee = .00036
+
+    High_1min = []
+    Low_1min = []
+
+    #symbol = "BTCUSDT"
     #symbol="ETHUSDT"
     #symbol='SHIBUSDT'
     #symbol='ADAUSDT'
     #symbol='BAKEUSDT'
     #symbol='BNBUSDT'
     #symbol= 'SUSHIUSDT'
-    #symbol = 'SOLUSDT' ###############################
+    symbol = 'SOLUSDT' ###############################
     #symbol = 'MATICUSDT' #############################
     #symbol = 'DOGEUSDT'
     #symbol = "XRPUSDT"
     #symbol = "DOTUSDT"
     #symbol = "ALPHAUSDT"
-    print("Symbol:", symbol, "Start Balance:", AccountBalance)
-    for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str="1 year ago UTC"):  ## get KLines with 15 minute intervals for the last month
-        # print(kline)
-        Date.append(datetime.utcfromtimestamp((round(kline[0]/1000)))+timedelta(hours=1))
-        Open.append(float(kline[1]))
-        Close.append(float(kline[4]))
-        High.append(float(kline[2]))
-        Low.append(float(kline[3]))
-        Volume.append(float(kline[7]))
-    for i in range(len(Close)):
+    print("Symbol:", symbol, "Start Balance:", AccountBalance,"fee:",fee)
+    time_period = "2 month ago UTC"
+    TIME_INTERVAL = 1 ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
+                                                                    ##1min,3min,5min,15min,30min,1hr,2hr,4hr,6hr,8hr,12hr,1day,3days,1week,1month
+    Date,Open,Close,High,Low,Volume,High_1min,Low_1min = Helper.get_Klines(symbol,TIME_INTERVAL,time_period)
+    print(f"{TIME_INTERVAL} min OHLC Candle Sticks from {time_period}")
+    for i in range(len(High_1min)):
         #global trailing_stoploss,Highestprice
-        DateStream = flow.dataStream(DateStream, Date[i], 1, 300)
-        OpenStream = flow.dataStream(OpenStream, Open[i], 1, 300)
-        CloseStream = flow.dataStream(CloseStream, Close[i], 1, 300)
-        HighStream = flow.dataStream(HighStream, High[i], 1, 300)
-        LowStream = flow.dataStream(LowStream, Low[i], 1, 300)
-        VolumeStream = flow.dataStream(VolumeStream, Volume[i], 1, 300)
+        if i%TIME_INTERVAL==0 and i!=0:
+            DateStream = flow.dataStream(DateStream, Date[int(i/TIME_INTERVAL)-1], 1, 300)
+            OpenStream = flow.dataStream(OpenStream, Open[int(i/TIME_INTERVAL)-1], 1, 300)
+            CloseStream = flow.dataStream(CloseStream, Close[int(i/TIME_INTERVAL)-1], 1, 300)
+            HighStream = flow.dataStream(HighStream, High[int(i/TIME_INTERVAL)-1], 1, 300)
+            LowStream = flow.dataStream(LowStream, Low[int(i/TIME_INTERVAL)-1], 1, 300)
+            VolumeStream = flow.dataStream(VolumeStream, Volume[int(i/TIME_INTERVAL)-1], 1, 300)
         #print(len(OpenStream))
         if len(OpenStream)>=299:
             prevProfit=copy(Profit)
             EffectiveAccountBalance = AccountBalance*leverage
             if CurrentPos== -99:
-                #prediction1,Type = TS.MovingAverage(CloseStream,prediction1)
-                #prediction1,signal1,signal2,Type =TS.StochRSI_RSIMACD(prediction1,CloseStream,signal1,signal2) ###########################################
-                #prediction1,Type = TS.StochRSIMACD(prediction1, CloseStream,HighStream,LowStream)  ###########################################
-                #prediction1, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1)
-                #prediction1,signal1,signal2,HighestUlt,Highest,Type = TS.UltOscMACD(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,HighestUlt,Highest)
-                #prediction1, signal1, Type,loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction1,CloseStream,HighStream,LowStream,signal1,CurrentPos)
-                prediction1,Type=TS.tripleEMA(CloseStream,OpenStream,prediction1)
-                '''if loc1!=-99:
-                    print("Bearish Divergence found:",DateStream[loc1],"to",DateStream[loc1_1])
-                if loc2!=-99:
-                    print("Bullish Divergence found:",DateStream[loc2],"to",DateStream[loc2_2])'''
-                #for x in peaks:
-                 #   print("Peak at ",DateStream[x],"RSI:",RSI[x])
-                #prediction1,Type = TS.Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1) ###############################################
-                #prediction1,Type = TS.stochBB(prediction1,CloseStream)
-                #prediction1, Type = TS.goldenCross(prediction1,CloseStream)
+                if i%TIME_INTERVAL==0 and i!=0:
+                
+                    # prediction1,Type = TS.StochRSIMACD(prediction1, CloseStream,HighStream,LowStream)  ###########################################
+                    # prediction1, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction1)
+                    # prediction1,signal1,signal2,HighestUlt,Highest,Type = TS.UltOscMACD(prediction1,CloseStream,HighStream,LowStream,signal1,signal2,HighestUlt,Highest)
+                    prediction1, signal1, Type,loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction1,CloseStream,HighStream,LowStream,signal1,CurrentPos)
+                    # prediction1,Type=TS.tripleEMA(CloseStream,OpenStream,prediction1)
+                    '''if loc1!=-99:
+                        print("Bearish Divergence found:",DateStream[loc1],"to",DateStream[loc1_1])
+                    if loc2!=-99:
+                        print("Bullish Divergence found:",DateStream[loc2],"to",DateStream[loc2_2])'''
+                    # for x in peaks:
+                    #   print("Peak at ",DateStream[x],"RSI:",RSI[x])
+                    # prediction1,Type = TS.Fractal2(CloseStream,LowStream,HighStream,signal1,prediction1) ###############################################
+                    # prediction1,Type = TS.stochBB(prediction1,CloseStream)
+                    # prediction1, Type = TS.goldenCross(prediction1,CloseStream)
 
-                stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,Type)
+                    stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval, CloseStream, HighStream,LowStream, prediction1, CurrentPos, Type)
 
-                #prediction1,stoplossval,takeprofitval,max_pos,min_pos = TS.fibMACD(prediction1, CloseStream, OpenStream,HighStream,LowStream)
-                #if prediction1==0 or prediction1==1 and CurrentPos==-99:
-                #    print("\nMax:",DateStream[max_pos])
-                #    print("Min:",DateStream[min_pos])
+                    #prediction1,stoplossval,takeprofitval,max_pos,min_pos = TS.fibMACD(prediction1, CloseStream, OpenStream,HighStream,LowStream)
+                    # if prediction1==0 or prediction1==1 and CurrentPos==-99:
+                    #    print("\nMax:",DateStream[max_pos])
+                    #    print("Min:",DateStream[min_pos])
 
-                #prediction1,stoplossval,takeprofitval = TS.Fractal(CloseStream, LowStream, HighStream,OpenStream,prediction1)
+                    # prediction1,stoplossval,takeprofitval = TS.Fractal(CloseStream, LowStream, HighStream,OpenStream,prediction1)
 
-                #takeprofitval, stoplossval, prediction1, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
+                    # takeprofitval, stoplossval, prediction1, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
 
-                #takeprofitval, stoplossval, prediction1, signal1= TS.TripleEMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
+                    # takeprofitval, stoplossval, prediction1, signal1= TS.TripleEMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction1,CurrentPos,signal1)
+
+                else:
+                    prediction1=-99
+
+
 
                 ##If the trade won't cover the fee & profit something then don't place it
                 if (prediction1 == 1 or prediction1 == 0) and (.00125 * Close[-1] > takeprofitval):
@@ -988,7 +994,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
 
 
 
-            if positionPrice - HighStream[ - 1] < -stoplossval and CurrentPos == 0 and (not waitflag):
+            if positionPrice - High_1min[i] < -stoplossval and CurrentPos == 0 and (not waitflag):
                 Profit +=-stoplossval #positionPrice-CloseStream[len(CloseStream) - 1]  ##This will be positive if the price went down
                 AccountBalance += positionSize * -stoplossval # (positionPrice-CloseStream[len(CloseStream) - 1])
                 positionPrice = CloseStream[len(CloseStream) - 1]
@@ -999,7 +1005,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 CurrentPos = -99
                 stopflag = -99
 
-            elif LowStream[- 1] - positionPrice < -stoplossval and CurrentPos == 1 and (not waitflag):
+            elif Low_1min[i] - positionPrice < -stoplossval and CurrentPos == 1 and (not waitflag):
                 Profit +=-stoplossval #CloseStream[len(CloseStream) - 1] - positionPrice ##This will be positive if the price went up
                 AccountBalance += positionSize* -stoplossval #(CloseStream[len(CloseStream) - 1] - positionPrice)
                 positionPrice = CloseStream[len(CloseStream) - 1]
@@ -1010,7 +1016,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 CurrentPos = -99
                 stopflag = -99
 
-            elif positionPrice - LowStream[-1] > takeprofitval and CurrentPos == 0 and (not Use_trail_stop) and (not waitflag):
+            elif positionPrice - Low_1min[i] > takeprofitval and CurrentPos == 0 and (not Use_trail_stop) and (not waitflag):
                 Profit += takeprofitval #positionPrice - CloseStream[-1]
                 AccountBalance += positionSize *  takeprofitval #(positionPrice - CloseStream[len(CloseStream) - 1])
                 correct += 1
@@ -1021,7 +1027,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 CurrentPos = -99
                 stopflag = -99
 
-            elif HighStream[-1] - positionPrice > takeprofitval and CurrentPos == 1 and (not Use_trail_stop) and (not waitflag):
+            elif High_1min[i] - positionPrice > takeprofitval and CurrentPos == 1 and (not Use_trail_stop) and (not waitflag):
                 Profit +=  takeprofitval #CloseStream[-1] - positionPrice
                 AccountBalance += positionSize *  takeprofitval #(CloseStream[len(CloseStream) - 1] - positionPrice)
                 correct += 1
@@ -1103,7 +1109,8 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             #if prevProfit!=Profit:
             profitgraph.append(Profit)
             PrevPos=copy(CurrentPos)
-    print("\nSymbol:",symbol)
+    print("\nSymbol:",symbol,"fee:",fee)
+    print(f"{TIME_INTERVAL} min OHLC Candle Sticks from {time_period}")
     print("Account Balance:", AccountBalance)
     print("% Gain on Account:", ((AccountBalance - originalBalance) * 100) / originalBalance)
     print("Stops Executed:",stops_executed)
