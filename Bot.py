@@ -931,10 +931,10 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
         if len(OpenStream)>=299:
             prevProfit=copy(Profit)
             EffectiveAccountBalance = AccountBalance*leverage
+            prediction=-99
             if CurrentPos== -99:
                 if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
                     break_even_flag=0
-                    prediction=-99
                     #prediction,signal1,signal2,Type =TS.StochRSI_RSIMACD(prediction,CloseStream,signal1,signal2) ###########################################
                     # prediction,Type = TS.StochRSIMACD(prediction, CloseStream,HighStream,LowStream)  ###########################################
                     # prediction, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction)
