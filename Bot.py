@@ -1138,7 +1138,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     df['cum_roll_max'] = df['cum_return'].cummax()
     df['drawdown'] = df['cum_roll_max'] - df['cum_return']
     df['drawdown %'] = df['drawdown']/df['cum_roll_max']
-    max_dd = df['drawdown %'].max()
+    max_dd = df['drawdown %'].max()*100
 
     CAGR = (df['cum_return'].iloc[-1])**(1/time_CAGR)-1
     vol = df['daily_return'].std() * np.sqrt(365)
