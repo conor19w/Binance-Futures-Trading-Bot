@@ -896,12 +896,13 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     High_1min = []
     Low_1min = []
     Close_1min=[]
+    Date_1min = []
     AccountBalance = 500
-    time_period = "1 week ago UTC"
+    time_period = "3 month ago UTC"
     TIME_INTERVAL = 5  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
     originalBalance = copy(AccountBalance)
     waitflag = 0  ##wait until next candlestick before checking if stoploss/ takeprofit was hit
-    fee = .0004
+    fee = .00036
 
     #symbol = "BTCUSDT"
     #symbol="ETHUSDT"
@@ -910,13 +911,13 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     #symbol='BAKEUSDT'
     #symbol='BNBUSDT'
     #symbol= 'SUSHIUSDT'
-    symbol = 'SOLUSDT' ###############################
+    #symbol = 'SOLUSDT' ###############################
     #symbol = 'MATICUSDT' #############################
-    #symbol = 'DOGEUSDT'
+    symbol = 'DOGEUSDT'
     #symbol = "XRPUSDT"
     #symbol = "DOTUSDT"
     #symbol = "ALPHAUSDT"
-    Date, Open, Close, High, Low, Volume, High_1min, Low_1min, Close_1min = Helper.get_Klines(symbol, TIME_INTERVAL,time_period)
+    Date, Open, Close, High, Low, Volume, High_1min, Low_1min, Close_1min, Date_1min = Helper.get_Klines(symbol, TIME_INTERVAL,time_period)
     print("Symbol:", symbol, "Start Balance:", AccountBalance,"fee:",fee)
     break_even=0 ##whether or not to move the stoploss into profit based of settings below
     break_even_flag=0 ##flag don't change
@@ -937,11 +938,31 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
 
     ##variables for sharpe ratio
     day_start_equity = AccountBalance
-    day_return = 0
+    month_return = 0
+    monthly_return = []
     Daily_return = []
     trade_Profit = []
     #print(len(High_1min))
     print(f"{TIME_INTERVAL} min OHLC Candle Sticks from {time_period}")
+    start=0
+    #print(len(Date_1min),len(High_1min))
+    for i in range(len(High_1min)):
+        if Date_1min[i] == Date[0]:
+            print("Dates Aligned")
+            start = i
+            break
+    #print(High_1min)
+    High_1min = High_1min[start:]
+    Low_1min = Low_1min[start:]
+    Date_1min = Date_1min[start:]
+    Close_1min = Close_1min[start:]
+    Date = Date[0:]
+    Open = Open[0:]
+    Close = Close[0:]
+    High = High[0:]
+    Low = Low[0:]
+    Volume = Volume[0:]
+    #print(High_1min)
     for i in range(len(High_1min)):
         #global trailing_stoploss,Highestprice
         if i%TIME_INTERVAL==0 and i!=0:
@@ -959,12 +980,14 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             if CurrentPos== -99:
                 if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
                     break_even_flag=0
-                    #prediction,signal1,signal2,Type =TS.StochRSI_RSIMACD(prediction,CloseStream,signal1,signal2) 
+                    #prediction,signal1,signal2,Type =TS.StochRSI_RSIMACD(prediction,CloseStream,signal1,signal2) ###########################################
                     #prediction,Type = TS.StochRSIMACD(prediction, CloseStream,HighStream,LowStream)  ###########################################
-                    prediction, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction)
+                    #prediction, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction)
                     # prediction,signal1,signal2,HighestUlt,Highest,Type = TS.UltOscMACD(prediction,CloseStream,HighStream,LowStream,signal1,signal2,HighestUlt,Highest)
                     #prediction, signal1, Type,loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction,CloseStream,HighStream,LowStream,signal1,CurrentPos)
                     # prediction,Type=TS.tripleEMA(CloseStream,OpenStream,prediction)
+                    prediction, Type = TS.breakout(prediction,CloseStream,VolumeStream,invert=1)
+                    #prediction, Type = TS.fakeout(prediction, CloseStream, VolumeStream, invert=1)
                     '''if loc1!=-99:
                         print("Bearish Divergence found:",DateStream[loc1],"to",DateStream[loc1_1])
                     if loc2!=-99:
@@ -975,7 +998,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                     # prediction,Type = TS.stochBB(prediction,CloseStream)
                     # prediction, Type = TS.goldenCross(prediction,CloseStream)
 
-                    stoplossval, takeprofitval = TS.SetSLTP(stoplossval, takeprofitval, CloseStream, HighStream,LowStream, prediction, CurrentPos, Type)
+                    stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, CloseStream, HighStream,LowStream, prediction, CurrentPos, Type)
 
                     #prediction,stoplossval,takeprofitval,max_pos,min_pos = TS.fibMACD(prediction, CloseStream, OpenStream,HighStream,LowStream)
                     # if prediction==0 or prediction==1 and CurrentPos==-99:
@@ -1008,6 +1031,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 trades.append({'x':i,'y':positionPrice,'type': "sell",'current_price': positionPrice})
                 Profit -= CloseStream[len(CloseStream) - 1] * fee
                 AccountBalance -= positionSize * CloseStream[-1] * fee
+                month_return -= positionSize * CloseStream[-1] * fee
                 waitflag = 1
             elif CurrentPos == -99 and prediction == 1:
                 positionPrice = CloseStream[len(CloseStream) - 1]
@@ -1019,6 +1043,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 trades.append({'x':i,'y':positionPrice, 'type': "buy",'current_price': positionPrice})
                 Profit -= CloseStream[len(CloseStream) - 1] * fee
                 AccountBalance -= positionSize * CloseStream[-1] * fee
+                month_return -= positionSize * CloseStream[-1] * fee
                 waitflag = 1
             ############### break-even:
             #if CurrentPos==0 and break_even and positionPrice-CloseStream[-1] > .0025*positionPrice:
@@ -1027,11 +1052,12 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             if positionPrice - High_1min[i] < -stoplossval and CurrentPos == 0 and (not waitflag):
                 trade_Profit.append((-stoplossval/AccountBalance)*100)
                 Profit +=-stoplossval #positionPrice-CloseStream[len(CloseStream) - 1]  ##This will be positive if the price went down
-                #day_return-=stoplossval
+                month_return-=positionSize *stoplossval
                 AccountBalance += positionSize * -stoplossval # (positionPrice-CloseStream[len(CloseStream) - 1])
                 positionPrice = CloseStream[len(CloseStream) - 1]
                 Profit -= CloseStream[-1] * fee
-                AccountBalance-= positionSize*CloseStream[-1] * fee
+                AccountBalance-= positionSize * CloseStream[-1] * fee
+                month_return -= positionSize * CloseStream[-1] * fee
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "loss",'position':'short','Profit': -stoplossval*positionSize})
                 # CurrentPos = -99
                 CurrentPos = -99
@@ -1040,11 +1066,12 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             elif Low_1min[i] - positionPrice < -stoplossval and CurrentPos == 1 and (not waitflag):
                 trade_Profit.append((-stoplossval / AccountBalance) * 100)
                 Profit +=-stoplossval #CloseStream[len(CloseStream) - 1] - positionPrice ##This will be positive if the price went up
-                #day_return -= stoplossval
+                month_return -= positionSize *stoplossval
                 AccountBalance += positionSize* -stoplossval #(CloseStream[len(CloseStream) - 1] - positionPrice)
                 positionPrice = CloseStream[len(CloseStream) - 1]
                 Profit -= CloseStream[-1] * fee
                 AccountBalance -= positionSize * CloseStream[-1] * fee
+                month_return -= positionSize * CloseStream[-1] * fee
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "loss",'position':'long','Profit': -stoplossval*positionSize})
                 # CurrentPos = -99
                 CurrentPos = -99
@@ -1053,12 +1080,13 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             elif positionPrice - Low_1min[i] > takeprofitval and CurrentPos == 0 and (not waitflag):
                 trade_Profit.append((takeprofitval / AccountBalance) * 100)
                 Profit += takeprofitval #positionPrice - CloseStream[-1]
-                #day_return += takeprofitval
+                month_return += positionSize *takeprofitval
                 AccountBalance += positionSize *  takeprofitval #(positionPrice - CloseStream[len(CloseStream) - 1])
                 correct += 1
                 positionPrice = CloseStream[-1]
                 Profit -= CloseStream[-1] * fee
                 AccountBalance -= positionSize * CloseStream[-1] * fee
+                month_return -= positionSize * CloseStream[-1] * fee
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "win",'position':'short','Profit': takeprofitval*positionSize})
                 CurrentPos = -99
                 stopflag = -99
@@ -1066,12 +1094,13 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             elif High_1min[i] - positionPrice > takeprofitval and CurrentPos == 1 and (not waitflag):
                 trade_Profit.append((takeprofitval / AccountBalance) * 100)
                 Profit +=  takeprofitval #CloseStream[-1] - positionPrice
-                #day_return += takeprofitval
+                month_return += positionSize *takeprofitval
                 AccountBalance += positionSize *  takeprofitval #(CloseStream[len(CloseStream) - 1] - positionPrice)
                 correct += 1
                 positionPrice = CloseStream[-1]
                 Profit -= CloseStream[-1] * fee
                 AccountBalance -= positionSize * CloseStream[-1] * fee
+                month_return -= positionSize * CloseStream[-1] * fee
                 cashout.append({'x': i, 'y': CloseStream[-1], 'type': "win",'position':'long','Profit': takeprofitval*positionSize})
                 CurrentPos = -99
                 stopflag = -99
@@ -1115,12 +1144,17 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 Daily_return.append(AccountBalance)#(day_return/day_start_equity)
                 #day_return=0
                 #day_start_equity=AccountBalance
-
+            if i%43800==0 and i!=0 and ((time_period[0] == '1' and time_period[2] == 'y') or (time_period[0] == '12' and time_period[2] == 'm')):
+                monthly_return.append(month_return)
+                month_return=0
+            elif i==len(High_1min)-1 and ((time_period[0] == '1' and time_period[2] == 'y') or (time_period[0] == '12' and time_period[2] == 'm')):
+                monthly_return.append(month_return)
+                month_return = 0
             if CurrentPos!=PrevPos:
                 signal1=-99
                 signal2=-99
                 print("\nCurrent Position:",CurrentPos)
-                print("Time:",DateStream[-1])
+                print("Time:",Date_1min[i])
                 #print("Time Max",DateStream[max_pos])
                 #print("Time Min", DateStream[min_pos])
                 try:
@@ -1140,7 +1174,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     df['drawdown %'] = df['drawdown']/df['cum_roll_max']
     max_dd = df['drawdown %'].max()*100
 
-    CAGR = (df['cum_return'].iloc[-1])**(1/time_CAGR)-1
+    CAGR = ((df['cum_return'].iloc[-1])**(1/time_CAGR)-1)*100
     vol = df['daily_return'].std() * np.sqrt(365)
     neg_vol = df[df['daily_return']<0]['daily_return'].std()* np.sqrt(365)
     Sharpe_ratio = (CAGR-risk_free_rate)/vol
@@ -1154,14 +1188,21 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     print("Account Balance:", AccountBalance)
     print("% Gain on Account:", ((AccountBalance - originalBalance) * 100) / originalBalance)
     print("Total Returns:",AccountBalance-start_equity,"\n")
+    month=0
+    print("Monthly Returns")
+    for x in ["month 1","month 2","month 3","month 4","month 5","month 6","month 7","month 8","month 9","month 10","month 11","month 12"]:
+        try:
+            print(f"{x}: {monthly_return[month]}")
+            month+=1
+        except:
+            pass
 
-
-    print(f"Annualized Volatility: {vol}%")
-    print(f"CAGR: {CAGR}%")
-    print("Sharpe Ratio:",Sharpe_ratio)
-    print("Sortino Ratio:",sortino_ratio)
-    print("Calmar Ratio:",calmar_ratio)
-    print(f"Max Drawdown: {max_dd}%")
+    print(f"Annualized Volatility: {round(vol,4)}%")
+    print(f"CAGR: {round(CAGR,4)}%")
+    print("Sharpe Ratio:",round(Sharpe_ratio,4))
+    print("Sortino Ratio:",round(sortino_ratio,4))
+    print("Calmar Ratio:",round(calmar_ratio,4))
+    print(f"Max Drawdown: {round(max_dd,4)}%")
     #ax1 = plt.subplot2grid((6, 1), (0, 0), rowspan=5, colspan=1)
     #ax2 = plt.subplot2grid((6, 1), (5, 0), rowspan=1, colspan=1)
     '''for trade in trades:
