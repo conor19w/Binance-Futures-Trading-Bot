@@ -912,7 +912,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     Invert = [1, 1, 1, 0, 0]#, 1, 1]
 
     ##pairTrading
-    pair_Trading = 1  ##Needed to backtest the pairtrading Long-Short strategy, switch off for any other strategy
+    pair_Trading = 0  ##Needed to backtest the pairtrading Long-Short strategy, switch off for any other strategy
     if pair_Trading:
         symbol = ['BNBUSDT','XRPUSDT']
 
