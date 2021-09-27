@@ -1043,8 +1043,6 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         # prediction[j],signal1,signal2,HighestUlt,Highest,Type[j] = TS.UltOscMACD(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,signal2,HighestUlt,Highest)
                         #prediction[j], signal1, Type[j],loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
                         # prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
-                        prediction[j], Type[j] = TS.breakout(prediction[j],CloseStream[j],VolumeStream[j],invert=1)
-                        #prediction[j], Type[j] = TS.fakeout(prediction[j], CloseStream[j], VolumeStream[j], invert=1)
                         '''if loc1!=-99:
                             print("Bearish Divergence found:",DateStream[loc1],"to",DateStream[loc1_1])
                         if loc2!=-99:
@@ -1055,8 +1053,8 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         # prediction[j],Type[j] = TS.stochBB(prediction[j],CloseStream[j])
                         # prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
 
-                        stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j], HighStream[j],LowStream[j], prediction[j], CurrentPos[j], Type[j])
-                        #prediction[j],stoplossval[j],takeprofitval[j],max_pos,min_pos = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
+                        #stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j], HighStream[j],LowStream[j], prediction[j], CurrentPos[j], Type[j])
+                        prediction[j],stoplossval[j],takeprofitval[j],max_pos,min_pos = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
                         # if prediction[j]==0 or prediction[j]==1 and CurrentPos[j]==-99:
                         #    print("\nMax:",DateStream[j][max_pos])
                         #    print("Min:",DateStream[j][min_pos])
