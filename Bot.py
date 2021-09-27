@@ -897,19 +897,25 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     Low_1min = []
     Close_1min= []
     Date_1min = []
-    # symbol = "BTCUSDT"
-    # symbol="ETHUSDT"
-    # symbol='SHIBUSDT'
-    # symbol='ADAUSDT'
-    # symbol='BAKEUSDT'
-    # symbol='BNBUSDT'
-    # symbol= 'SUSHIUSDT'
-    # symbol = 'SOLUSDT' ###############################
-    # symbol = 'MATICUSDT' #############################
-    symbol = ['DOGEUSDT', 'SOLUSDT','ADAUSDT']
-    # symbol = "XRPUSDT"
-    # symbol = "DOTUSDT"
-    # symbol = "ALPHAUSDT"
+    symbol = ["BTCUSDT"]
+    #symbol=["ETHUSDT"]
+    #symbol=['ADAUSDT']
+    #symbol=['BAKEUSDT']
+    #symbol=['BNBUSDT']
+    #symbol= ['SUSHIUSDT']
+    #symbol = ['SOLUSDT'] ###############################
+    #symbol = ['MATICUSDT'] #############################
+    # symbol = ["XRPUSDT"]
+    # symbol = ["DOTUSDT"]
+    # symbol = ["ALPHAUSDT"]
+    symbol = ['DOGEUSDT', 'SOLUSDT','ADAUSDT','BTCUSDT','ETHUSDT']#,"BNBUSDT","XRPUSDT"]
+    Invert = [1, 1, 1, 0, 0]#, 1, 1]
+
+    ##pairTrading
+    pair_Trading = 1  ##Needed to backtest the pairtrading Long-Short strategy, switch off for any other strategy
+    if pair_Trading:
+        symbol = ['BNBUSDT','XRPUSDT']
+
     Type = []
     stoplossval = []
     takeprofitval = []
@@ -918,10 +924,9 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     positionPrice = []
     PrevPos = []
     prediction = []
-
-    AccountBalance = 500
-    time_period = "1 week ago UTC"
-    TIME_INTERVAL = 5  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
+    AccountBalance = 2335
+    time_period = "3 month ago UTC"
+    TIME_INTERVAL = 15  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
     originalBalance = copy(AccountBalance)
     waitflag = 0  ##wait until next candlestick before checking if stoploss/ takeprofit was hit
     fee = .00036
@@ -1018,7 +1023,6 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
         High[i] = High[i][:len(High[0])]
         Low[i] = Low[i][:len(Low[0])]
         Volume[i] = Volume[i][:len(Volume[0])]
-
     for i in range(len(High_1min[0])):
         #global trailing_stoploss,Highestprice
         if i%TIME_INTERVAL==0 and i!=0:
@@ -1034,7 +1038,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             prev_Account_Bal=copy(AccountBalance)
             EffectiveAccountBalance = AccountBalance*leverage
             for j in range(len(prediction)):
-                if CurrentPos[j]== -99:
+                if CurrentPos[j]== -99 and not pair_Trading:
                     if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
                         break_even_flag=0
                         #prediction[j],signal1,signal2,Type[j] =TS.StochRSI_RSIMACD(prediction[j],CloseStream[j],signal1,signal2) ###########################################
@@ -1042,7 +1046,8 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         #prediction[j], signal1, signal2, Type[j] = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction[j])
                         # prediction[j],signal1,signal2,HighestUlt,Highest,Type[j] = TS.UltOscMACD(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,signal2,HighestUlt,Highest)
                         #prediction[j], signal1, Type[j],loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
-                        # prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
+                        prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
+                        
                         '''if loc1!=-99:
                             print("Bearish Divergence found:",DateStream[loc1],"to",DateStream[loc1_1])
                         if loc2!=-99:
@@ -1053,8 +1058,8 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         # prediction[j],Type[j] = TS.stochBB(prediction[j],CloseStream[j])
                         # prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
 
-                        #stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j], HighStream[j],LowStream[j], prediction[j], CurrentPos[j], Type[j])
-                        prediction[j],stoplossval[j],takeprofitval[j],max_pos,min_pos = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
+                        stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j], HighStream[j],LowStream[j], prediction[j], CurrentPos[j], Type[j])
+                        #prediction[j],stoplossval[j],takeprofitval[j],max_pos,min_pos = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
                         # if prediction[j]==0 or prediction[j]==1 and CurrentPos[j]==-99:
                         #    print("\nMax:",DateStream[j][max_pos])
                         #    print("Min:",DateStream[j][min_pos])
@@ -1065,10 +1070,14 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
 
                         # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.TripleEMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
 
-                else:
+                elif not pair_Trading:
                     prediction[j]=-99
 
-
+                elif pair_Trading and CurrentPos[0]==CurrentPos[1]==-99:
+                    ##Pair Trading
+                    prediction,Type = TS.pairTrading(prediction,CloseStream[0],CloseStream[1])
+                    stoplossval[0], takeprofitval[0] = SetSLTP(stoplossval[0], takeprofitval[0], CloseStream[0],HighStream[0], LowStream[0], prediction[0],CurrentPos[0], Type[0])
+                    stoplossval[1], takeprofitval[1] = SetSLTP(stoplossval[1], takeprofitval[1], CloseStream[1],HighStream[1], LowStream[1], prediction[1],CurrentPos[1], Type[1])
                 ##If the trade won't cover the fee & profit something then don't place it
                 if (prediction[j] == 1 or prediction[j] == 0) and (.00125 * Close_1min[j][-1] > takeprofitval[j]):
                     prediction[j] = -99
@@ -1203,7 +1212,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                     # print("Time Min", DateStream[min_pos])
                     try:
                         print("Account Balance: ", AccountBalance, "Order Size:", positionSize[j], "PV:",
-                              (Profit * 100) / (tradeNO * CloseStream[j][-1]), "Stoploss:", [j], "TakeProfit:",
+                              (Profit * 100) / (tradeNO * CloseStream[j][-1]), "Stoploss:", stoplossval[j], "TakeProfit:",
                               takeprofitval[j])
                     except Exception as e:
                         pass
@@ -1233,27 +1242,28 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     max_dd = df['drawdown %'].max()*100
 
     CAGR = ((df['cum_return'].iloc[-1])**(1/time_CAGR)-1)*100
-    vol = df['daily_return'].std() * np.sqrt(365)
-    neg_vol = df[df['daily_return']<0]['daily_return'].std()* np.sqrt(365)
+    vol = (df['daily_return'].std() * np.sqrt(365))*100
+    neg_vol = (df[df['daily_return']<0]['daily_return'].std()* np.sqrt(365))*100
     Sharpe_ratio = (CAGR-risk_free_rate)/vol
     sortino_ratio = (CAGR - risk_free_rate)/neg_vol
     calmar_ratio = CAGR/max_dd
-    for j in range(len(symbol)):
-        print("\nSymbol:",symbol[j],"fee:",fee,"Order Size:",OrderSIZE)
-        if break_even:
-            print("Moving Stoploss ON")
-        print(f"{TIME_INTERVAL} min OHLC Candle Sticks from {time_period}")
-        print("Account Balance:", AccountBalance)
-        print("% Gain on Account:", ((AccountBalance - originalBalance) * 100) / originalBalance)
-        print("Total Returns:",AccountBalance-start_equity,"\n")
-        month=0
+
+    print("\nSymbol(s):",symbol,"fee:",fee,"Order Size:",OrderSIZE)
+    if break_even:
+        print("Moving Stoploss ON")
+    print(f"{TIME_INTERVAL} min OHLC Candle Sticks from {time_period}")
+    print("Account Balance:", AccountBalance)
+    print("% Gain on Account:", ((AccountBalance - originalBalance) * 100) / originalBalance)
+    print("Total Returns:",AccountBalance-start_equity,"\n")
+    month=0
+    if len(monthly_return)>0:
         print("Monthly Returns")
-        for x in ["month 1","month 2","month 3","month 4","month 5","month 6","month 7","month 8","month 9","month 10","month 11","month 12"]:
-            try:
-                print(f"{x}: {monthly_return[month]}")
-                month+=1
-            except:
-                pass
+    for x in ["month 1","month 2","month 3","month 4","month 5","month 6","month 7","month 8","month 9","month 10","month 11","month 12"]:
+        try:
+            print(f"{x}: {monthly_return[month]}")
+            month+=1
+        except:
+            pass
 
     print(f"Annualized Volatility: {round(vol,4)}%")
     print(f"CAGR: {round(CAGR,4)}%")
@@ -1338,7 +1348,10 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     plt.plot(profitgraph)
     #ax2.plot(profitgraph)
     #plt.plot(Close)
-    plt.title(symbol)
+    if not pair_Trading:
+        plt.title(f"{symbol}: {TIME_INTERVAL}min CandleSticks from {time_period}")
+    else:
+        plt.title(f"Pair Trading {symbol}: {TIME_INTERVAL}min CandleSticks from {time_period}")
     plt.ylabel('Dollars')
     plt.xlabel('# Trades')
     #plt.legend(loc=2)
