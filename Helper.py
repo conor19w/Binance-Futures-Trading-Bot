@@ -10,6 +10,9 @@ def get_Klines(symbol,TIME_INTERVAL,time_period):
     Volume = []
     High_1min = []
     Low_1min = []
+    Close_1min = []
+    Open_1min = []
+    Date_1min = []
     ##klines for candlestick patterns and TA
     if TIME_INTERVAL==1:
         for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=time_period):
@@ -135,7 +138,10 @@ def get_Klines(symbol,TIME_INTERVAL,time_period):
     ##klines used for stoploss and takeprofit
     for kline in client.get_historical_klines_generator(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=time_period):
         # print(kline)
-        #Date.append(datetime.utcfromtimestamp((round(kline[0]/1000)))+timedelta(hours=1))
+        Date_1min.append(datetime.utcfromtimestamp((round(kline[0]/1000)))+timedelta(hours=1))
+        Open_1min.append(float(kline[1]))
         High_1min.append(float(kline[2]))
         Low_1min.append(float(kline[3]))
-    return Date,Open,Close,High,Low,Volume,High_1min,Low_1min
+        Close_1min.append(float(kline[4]))
+
+    return Date,Open,Close,High,Low,Volume,High_1min,Low_1min,Close_1min,Open_1min,Date_1min
