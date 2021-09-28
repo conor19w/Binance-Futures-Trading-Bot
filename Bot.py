@@ -896,6 +896,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     High_1min = []
     Low_1min = []
     Close_1min= []
+    Open_1min = []
     Date_1min = []
     symbol = ["BTCUSDT"]
     #symbol=["ETHUSDT"]
@@ -908,13 +909,12 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     # symbol = ["XRPUSDT"]
     # symbol = ["DOTUSDT"]
     # symbol = ["ALPHAUSDT"]
-    symbol = ['DOGEUSDT', 'SOLUSDT','ADAUSDT','BTCUSDT','ETHUSDT']#,"BNBUSDT","XRPUSDT"]
-    Invert = [1, 1, 1, 0, 0]#, 1, 1]
-
+    symbol = ['DOGEUSDT', 'SOLUSDT','ETHUSDT','OMGUSDT','ADAUSDT','BTCUSDT']#,'OMGUSDT']#,'ADAUSDT']#,'BTCUSDT']#,"BNBUSDT","XRPUSDT"]
+    #symbol = ['BATUSDT']
     ##pairTrading
     pair_Trading = 0  ##Needed to backtest the pairtrading Long-Short strategy, switch off for any other strategy
     if pair_Trading:
-        symbol = ['BNBUSDT','XRPUSDT']
+        symbol = ['SOLUSDT','BTCUSDT']
 
     Type = []
     stoplossval = []
@@ -925,7 +925,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     PrevPos = []
     prediction = []
     AccountBalance = 2335
-    time_period = "3 month ago UTC"
+    time_period = "1 year ago UTC"
     TIME_INTERVAL = 15  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
     originalBalance = copy(AccountBalance)
     waitflag = 0  ##wait until next candlestick before checking if stoploss/ takeprofit was hit
@@ -948,7 +948,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
 
 
     for i in range(len(symbol)):
-        Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp, High_1min_temp, Low_1min_temp, Close_1min_temp, Date_1min_temp = Helper.get_Klines(symbol[i], TIME_INTERVAL,time_period)
+        Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp, High_1min_temp, Low_1min_temp, Close_1min_temp,Open_1min_temp, Date_1min_temp = Helper.get_Klines(symbol[i], TIME_INTERVAL,time_period)
         Date.append(Date_temp)
         Open.append(Open_temp)
         Close.append(Close_temp)
@@ -958,6 +958,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
         High_1min.append(High_1min_temp)
         Low_1min.append(Low_1min_temp)
         Close_1min.append(Close_1min_temp)
+        Open_1min.append(Open_1min_temp)
         Date_1min.append(Date_1min_temp)
     print("Symbols:", symbol, "Start Balance:", AccountBalance,"fee:",fee)
     break_even=0 ##whether or not to move the stoploss into profit based of settings below
@@ -1000,6 +1001,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 Low_1min[i] = Low_1min[i][j:]
                 Date_1min[i] = Date_1min[i][j:]
                 Close_1min[i] = Close_1min[i][j:]
+                Open_1min[i] = Open_1min[i][j:]
                 #start_1min.append(j)
                 break
         for j in range(len(Date[i])):
@@ -1017,13 +1019,14 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
         Low_1min[i] = Low_1min[i][:len(Low_1min[0])]
         Date_1min[i] = Date_1min[i][:len(Date_1min[0])]
         Close_1min[i] = Close_1min[i][:len(Close_1min[0])]
+        Open_1min[i] = Open_1min[i][:len(Open_1min[0])]
         Date[i] = Date[i][:len(Date[0])]
         Open[i] = Open[i][:len(Open[0])]
         Close[i] = Close[i][:len(Close[0])]
         High[i] = High[i][:len(High[0])]
         Low[i] = Low[i][:len(Low[0])]
         Volume[i] = Volume[i][:len(Volume[0])]
-    for i in range(len(High_1min[0])):
+    for i in range(len(High_1min[0])-1):
         #global trailing_stoploss,Highestprice
         if i%TIME_INTERVAL==0 and i!=0:
             for j in range(len(High_1min)):
@@ -1046,8 +1049,9 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         #prediction[j], signal1, signal2, Type[j] = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction[j])
                         # prediction[j],signal1,signal2,HighestUlt,Highest,Type[j] = TS.UltOscMACD(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,signal2,HighestUlt,Highest)
                         #prediction[j], signal1, Type[j],loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
-                        prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
-                        
+                        # prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
+                        prediction[j], Type[j] = TS.breakout(prediction[j],CloseStream[j],VolumeStream[j],symbol[j])
+                        #prediction[j], Type[j] = TS.fakeout(prediction[j], CloseStream[j], VolumeStream[j], symbol[j])
                         '''if loc1!=-99:
                             print("Bearish Divergence found:",DateStream[loc1],"to",DateStream[loc1_1])
                         if loc2!=-99:
@@ -1085,28 +1089,28 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             #################################################################
 
                 if CurrentPos[j] == -99 and prediction[j] == 0:
-                    positionPrice[j] = CloseStream[j][len(CloseStream[j]) - 1]
+                    positionPrice[j] = Open_1min[j][i+1]##next open candle #CloseStream[j][len(CloseStream[j]) - 1]
                     positionSize[j]= (OrderSIZE*EffectiveAccountBalance)/positionPrice[j]
                     CurrentPos[j] = 0
                     tradeNO+=1
                     #Highestprice = positionPrice
                    #stoplossval = positionPrice * trailing_stoploss
                     trades.append({'x':i,'y':positionPrice[j],'type': "sell",'current_price': positionPrice[j]})
-                    Profit -= CloseStream[j][len(CloseStream[j]) - 1] * fee
-                    AccountBalance -= positionSize[j] * CloseStream[j][-1] * fee
-                    month_return -= positionSize[j] * CloseStream[j][-1] * fee
+                    Profit -= Open_1min[j][i+1] * fee
+                    AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
+                    month_return -= positionSize[j] * Open_1min[j][i+1] * fee
                     waitflag = 1
-                elif CurrentPos[j] == -99 and prediction[j] == 1:
-                    positionPrice[j] = CloseStream[j][len(CloseStream[j]) - 1]
+                elif CurrentPos[j] == -99 and prediction[j] == 1: 
+                    positionPrice[j] = Open_1min[j][i+1] ##next open candle
                     positionSize[j] = (OrderSIZE * EffectiveAccountBalance) / positionPrice[j]
                     CurrentPos[j] = 1
                     tradeNO += 1
                     #Highestprice = positionPrice
                     #stoplossval = positionPrice * trailing_stoploss
                     trades.append({'x':i,'y':positionPrice[j], 'type': "buy",'current_price': positionPrice[j]})
-                    Profit -= CloseStream[j][len(CloseStream[j]) - 1] * fee
-                    AccountBalance -= positionSize[j] * CloseStream[j][-1] * fee
-                    month_return -= positionSize[j] * CloseStream[j][-1] * fee
+                    Profit -= Open_1min[j][i+1] * fee
+                    AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
+                    month_return -= positionSize[j] * Open_1min[j][i+1] * fee
                     waitflag = 1
                 ############### break-even:
                 #if CurrentPos==0 and break_even and positionPrice-CloseStream[-1] > .0025*positionPrice:
