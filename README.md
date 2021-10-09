@@ -1,5 +1,5 @@
 # Binance-Futures-Trading-Bot
-## Technical Analysis driven Crypto Trading bot on Binance Futures📈🚀
+## Technical Analysis driven Crypto Trading bot on Binance Futures 📈 ₿ 🚀
 * Utilizes [python-Binance](https://python-binance.readthedocs.io/en/latest/) Client to execute orders and pull data from Binance
 * Write your own functions to implement your TA strategies ie. decide trade entries and execute Orders
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
