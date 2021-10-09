@@ -206,7 +206,7 @@ Order_ID=''
 current_date = datetime.now(timezone.utc)
 current_date = current_date.replace(tzinfo=timezone.utc)
 current_date = round(float(current_date.timestamp()*1000-.5))
-Market_Orders = 1 ##Allow Market Orders if limit is not filled
+Market_Orders = 1 ## Use Market Orders instead of limit orders
 Trading=0 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
           ## If Trading==0 then we are paper trading a strategy on historical data
 successful_Trades=0
