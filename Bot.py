@@ -448,20 +448,20 @@ if Trading: ## Trade on Binance with above api key and secret key
 
                             ######################## These are some trading strategies I have coded up as functions, found in TradingStrats.py #######################################
 
-                            #prediction,Type1 = TS.MovingAverage(Close,prediction)
-                            #prediction,signal1,signal2,Type1 =TS.StochRSI_RSIMACD(prediction,Close,signal1,signal2)
-                            prediction, Type1 = TS.breakout(prediction, Close, Volume, symbol)
-                            #prediction, signal1, signal2, Type1 = TS.tripleEMAStochasticRSIATR(Close,signal1,signal2,prediction)
+                            #prediction,Type = TS.MovingAverage(Close,prediction)
+                            #prediction,signal1,signal2,Type =TS.StochRSI_RSIMACD(prediction,Close,signal1,signal2)
+                            prediction, Type = TS.breakout(prediction, Close, Volume, symbol)
+                            #prediction, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(Close,signal1,signal2,prediction)
                             #prediction,stoplossval,takeprofitval = TS.Fractal(Close,Low,High,prediction)
                             #prediction, stoplossval, takeprofitval = TS.fibMACD(prediction,Close,Open)
-                            #prediction, signal1, Type1 = TS.RSIStochEMA(prediction, Close, High, Low,signal1, CurrentPos)
-                            #prediction, signal1, signal2, HighestUlt, Highest, Type1 = TS.UltOscMACD(prediction,Close,High, Low,signal1, signal2,HighestUlt, Highest)
-                            #prediction, signal1, Type1 = TS.RSIStochEMA200(prediction,Close,High,Low,signal1,signal2,CurrentPos)
-                            #prediction,Type1 = TS.Fractal2(Close,Low,High,signal1,prediction)
+                            #prediction, signal1, Type = TS.RSIStochEMA(prediction, Close, High, Low,signal1, CurrentPos)
+                            #prediction, signal1, signal2, HighestUlt, Highest, Type = TS.UltOscMACD(prediction,Close,High, Low,signal1, signal2,HighestUlt, Highest)
+                            #prediction, signal1, Type = TS.RSIStochEMA200(prediction,Close,High,Low,signal1,signal2,CurrentPos)
+                            #prediction,Type = TS.Fractal2(Close,Low,High,signal1,prediction)
 
-                            #prediction, Type1 = stochBB(prediction, Close)
+                            #prediction, Type = stochBB(prediction, Close)
 
-                            stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, Close, High,Low, prediction, CurrentPos, Type1) ##This function sets the stoploss and takeprofit based off the Type1 variable returned by the above functions
+                            stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, Close, High,Low, prediction, CurrentPos, Type) ##This function sets the stoploss and takeprofit based off the Type1 variable returned by the above functions
 
                             ##These trading strategies have custom stoploss & takeprofits:
                             #takeprofitval, stoplossval, prediction, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,Close,High,Low,prediction,CurrentPos,signal1)
