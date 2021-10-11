@@ -4,6 +4,15 @@
 * Utilizes [ta](https://technical-analysis-library-in-python.readthedocs.io/en/latest/) library to calculate Technical indicators
 * Write your own functions to implement your TA strategies
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
+
+## Binance Setup
+---
+* Create a [Binance Account](https://accounts.binance.com/en/register?ref=UZBGCD6U) (This link uses my refferal & would be greatly appreciated)
+* __Enable Two-factor Authentication in the security section to keep your crypto safe.__
+* Create a new API key under the API Management section.
+* Whitelist your IP address to further secure your account, and so that your API keys don't expire after 1 month.
+* Fill in your api keys into api_secret and api_key on [line 3](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/ce99ed94bba7a1b82385d3e504c41f2c82a342d3/Helper.py#L3) in Helper.py for backtesting purposes, and [line 171](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/ce99ed94bba7a1b82385d3e504c41f2c82a342d3/Bot.py#L171) in Bot.py for live trading.
+
 ### Back test strategies in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
 ---
 * Fill in API keys on [line 3](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/ce99ed94bba7a1b82385d3e504c41f2c82a342d3/Helper.py#L3) in Helper.py
@@ -36,3 +45,7 @@ kline_15m refers to candlestick data with 15 minute intervals, see [kline/Candle
 * Custom Strategies should return 'prediction' to indicate the strategy's decision to go short (0), go long (1), go flat (-99).
 * For stop loss and take profit you must calculate and assign values to stoplossval and takeprofitval respectively, some pre-coded stoploss functions are already encapsulated in the [SetSLTP()](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/120baa9bb0b6f17d31daedb5769428b95ee3930e/TradingStrats.py#L750) function you may use this by getting your custom strategy to return a Type parameter corresponding to the Type in SetSLTP() or else set these in a custom function of your own. 
 __Note: Stop loss and Take profit should be the margin of increase/decrease not the target price.__
+
+# Contact me
+If you have any querys about anything, or need me to explain any blocks of code reach out to me at wconor539@gmail.com.
+If you have any suggestions or requests please reach out to me as well.
