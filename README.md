@@ -11,6 +11,7 @@
 * Create a [Binance Account](https://accounts.binance.com/en/register?ref=UZBGCD6U) (This link uses my refferal & would be greatly appreciated)
 * __Enable Two-factor Authentication in the security section to keep your crypto safe.__
 * Create a new API key under the API Management section.
+*  [✓] Read Info [✓] Enable Trading [X] Enable Withdrawals
 * Whitelist your IP address to further secure your account, and so that your API keys don't expire after 1 month.
 * Fill in your api keys into api_secret and api_key on [line 3](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/ce99ed94bba7a1b82385d3e504c41f2c82a342d3/Helper.py#L3) in Helper.py for backtesting purposes, and [line 171](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/ce99ed94bba7a1b82385d3e504c41f2c82a342d3/Bot.py#L171) in Bot.py for live trading.
 
