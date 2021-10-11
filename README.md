@@ -29,6 +29,8 @@
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 * Fill in API keys on [line 171](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/ce99ed94bba7a1b82385d3e504c41f2c82a342d3/Bot.py#L171) in Bot.py
 * Switch Trading On at [line 210](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/120baa9bb0b6f17d31daedb5769428b95ee3930e/Bot.py#L210)
+* To trade a coin not listed at the top of the script we must add an elif symbol clause after [line 138](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/388680abb3688855ec2f03a23b56f6e7fc91b3d2/Bot.py#L138) in Bot.py specifying Coin_precision (how many decimal point places the price of the coin is measured in)
+& Order_precision (how many decimal point places orders are measured in). __Note: some coins have no decimal places in order quantity, in this case we set Order_precision = 0.__
 * Ensure correct 'symbol' and 'SOCKET' is uncommented at the top of the script ex:
 SOCKET = "wss://fstream.binance.com:9443/ws/btcusdt@kline_15m"
 symbol="BTCUSDT"
