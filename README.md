@@ -4,6 +4,7 @@
 * Utilizes [ta](https://technical-analysis-library-in-python.readthedocs.io/en/latest/) library to calculate Technical indicators
 * Write your own functions to implement your TA strategies
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
+* If you enjoy the repo please share it around to friends & tweet about it using the twitter icon above 😃
 
 ## Binance Setup
 ---
