@@ -47,5 +47,5 @@ kline_15m refers to candlestick data with 15 minute intervals, see [kline/Candle
 __Note: Stop loss and Take profit should be the margin of increase/decrease not the target price.__
 
 # Contact me
-If you have any querys about anything, or need me to explain any blocks of code reach out to me at wconor539@gmail.com.
-If you have any suggestions or requests please reach out to me as well.
+* If you have any querys about anything, or need me to explain any blocks of code please reach out to me at wconor539@gmail.com.
+* If you have any suggestions or requests please reach out to me as well.
