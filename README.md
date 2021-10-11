@@ -33,7 +33,8 @@ __Run strategies at your own risk I am not responsible for your trading decision
 SOCKET = "wss://fstream.binance.com:9443/ws/btcusdt@kline_15m"
 symbol="BTCUSDT"
 kline_15m refers to candlestick data with 15 minute intervals, see [kline/Candlestick chart intervals](https://binance-docs.github.io/apidocs/spot/en/#kline-candlestick-streams) in the binance docs for valid klines intervals.
-  * Adjust 'OrderSIZE' line 196 and 'leverage' line 192 as you see fit, adjusting the leverage only changes the EffectiveAccountBalance variable in the script, you must manually adjust the leverage on the exchange currently. __Note: OrderSIZE just helps scale trades in reality you may be risking more than your desired percentage, this will be decided by your stoploss values implemented__
+* Ensure the interval matches your choice above in the call to [futures_historical_klines()](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/388680abb3688855ec2f03a23b56f6e7fc91b3d2/Bot.py#L257) on line 257 in Bot.py.
+* Adjust 'OrderSIZE' line 196 and 'leverage' line 192 as you see fit, adjusting the leverage only changes the EffectiveAccountBalance variable in the script, you must manually adjust the leverage on the exchange currently. __Note: OrderSIZE just helps scale trades in reality you may be risking more than your desired percentage, this will be decided by your stoploss values implemented__
 * The Market_Orders switch on line 209 decides whether to use market orders (1) or to use limit orders (0).
 * Now we select our trading strategy, one which we have thoroughly Backtested in the section starting on line 449.
 * Custom Strategies must return a 'prediction' variable either 1, 0, or -99 to go long, short or flat respectively. 
