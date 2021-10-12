@@ -751,7 +751,7 @@ if Trading: ## Trade on Binance with above api key and secret key
         try:
             try:
                 if side1 and Market==0: ##Long
-                    PP = float(client.get_ticker(symbol=symbol)['lastPrice']) * 1.0007  ##So last price more likely to fill
+                    PP = float(client.get_ticker(symbol=s)['lastPrice']) * 1.0007  ##So last price more likely to fill
                     ##Place the Long
                     order1 = client.futures_create_order(
                         symbol=s,
@@ -761,7 +761,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                         timeInForce=TIME_IN_FORCE_GTC,
                         quantity=q)
                     Order_ID=order1['orderId']
-                    x = client.futures_get_all_orders(symbol=symbol, orderId=Order_ID)
+                    x = client.futures_get_all_orders(symbol=s, orderId=Order_ID)
                     ##stoploss
                     order2 = client.futures_create_order(symbol=s,
                         side=SIDE_SELL,
@@ -780,7 +780,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                     Limit_ID=order3['orderId']
 
                 elif side1==0 and Market==0: ##Short
-                    PP = float(client.get_ticker(symbol=symbol)['lastPrice']) * .9993  ##So last price more likely to fill
+                    PP = float(client.get_ticker(symbol=s)['lastPrice']) * .9993  ##So last price more likely to fill
                     ##Place the short
                     order1 = client.futures_create_order(
                         symbol=s,
@@ -790,7 +790,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                         timeInForce=TIME_IN_FORCE_GTC,
                         quantity=q)
                     Order_ID = order1['orderId']
-                    x = client.futures_get_all_orders(symbol=symbol, orderId=Order_ID)
+                    x = client.futures_get_all_orders(symbol=s, orderId=Order_ID)
                     #print("x[-1]['status']:",x[-1]['status'])
                     #if x[-1]['status'] == 'FILLED':
                         #print("avPrice:", (float(x[-1]['avgPrice'])))
@@ -812,7 +812,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                         quantity=float(x[-1]['executedQty']))
                     Limit_ID=order3['orderId']
                 elif side1 and Market:
-                    client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel open orders
+                    client.futures_cancel_all_open_orders(symbol=s)  ##cancel open orders
                     ##Market order so we don't miss the move
                     order1 = client.futures_create_order(
                         symbol=s,
@@ -820,7 +820,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                         type=FUTURE_ORDER_TYPE_MARKET,
                         quantity=q)
                     Order_ID=order1['orderId']
-                    x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                    x = client.futures_get_all_orders(symbol=s, orderId=order1['orderId'])
                     ##stoploss:
                     order2 = client.futures_create_order(
                         symbol=s,
@@ -840,7 +840,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                     Limit_ID=order3['orderId']
 
                 elif side1==0 and Market:
-                    client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel open orders
+                    client.futures_cancel_all_open_orders(symbol=s)  ##cancel open orders
                     ##Market order so we don't miss the move
                     order1 = client.futures_create_order(
                         symbol=s,
@@ -848,7 +848,7 @@ if Trading: ## Trade on Binance with above api key and secret key
                         type=FUTURE_ORDER_TYPE_MARKET,
                         quantity=q)
                     Order_ID=order1['orderId']
-                    x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
+                    x = client.futures_get_all_orders(symbol=s, orderId=order1['orderId'])
                     ##Stoploss
                     order2 = client.futures_create_order(
                         symbol=s,
