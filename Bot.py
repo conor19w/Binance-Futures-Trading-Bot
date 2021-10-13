@@ -13,131 +13,14 @@ import TradingStrats as TS
 from TradingStrats import SetSLTP
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
+from binance import ThreadedWebsocketManager,AsyncClient
 import pandas as pd
 import numpy as np
 from datetime import timezone,datetime,date,timedelta
 import Helper
+import API_keys
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
-
-
-##Different coins we can trade,
-# kline_15m - OHLC for 15 min intervals, Change accordingly
-
-#PRICES = "wss://fstream.binance.com:9443/ws/btcusdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/btcusdt@kline_15m"
-#symbol="BTCUSDT"
-
-#PRICES = "wss://fstream.binance.com:9443/ws/ethusdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/ethusdt@kline_15m"
-#symbol="ETHUSDT"
-
-#PRICES = "wss://fstream.binance.com:9443/ws/ltcusdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/ltcusdt@kline_3m"
-#symbol="LTCUSDT"
-
-PRICES = "wss://fstream.binance.com:9443/ws/solusdt@ticker"
-SOCKET = "wss://fstream.binance.com:9443/ws/solusdt@kline_15m"
-symbol="SOLUSDT"
-
-#PRICES = "wss://fstream.binance.com:9443/ws/bnbusdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/bnbusdt@kline_3m"
-#symbol="BNBUSDT"
-
-#PRICES = "wss://fstream.binance.com:9443/ws/adausdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/adausdt@kline_15m"
-#symbol="ADAUSDT"
-
-#PRICES = "wss://stream.binance.com:9443/ws/dogeusdt@ticker"
-#SOCKET = "wss://stream.binance.com:9443/ws/dogeusdt@kline_15m"
-#symbol="DOGEUSDT"
-
-#PRICES = "wss://fstream.binance.com:9443/ws/maticusdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/maticusdt@kline_1m" ##############Price not increased by tick size error
-#symbol="MATICUSDT"
-
-#PRICES = "wss://fstream.binance.com:9443/ws/bakeusdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/bakeusdt@kline_15m"
-#symbol="BAKEUSDT"
-
-#PRICES = "wss://fstream.binance.com:9443/ws/sushiusdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/sushiusdt@kline_1m"
-#symbol="SUSHIUSDT"
-
-
-
-#PRICES = "wss://fstream.binance.com:9443/ws/dotusdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/dotusdt@kline_1m"
-#symbol="DOTUSDT"
-
-#PRICES = "wss://fstream.binance.com:9443/ws/alphausdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/alphausdt@kline_1m"
-#symbol = "ALPHAUSDT"
-
-#PRICES = "wss://fstream.binance.com:9443/ws/xrpusdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/xrpusdt@kline_1m"
-#symbol="XRPUSDT"
-
-#PRICES = "wss://fstream.binance.com:9443/ws/omgusdt@ticker"
-#SOCKET = "wss://fstream.binance.com:9443/ws/omgusdt@kline_15m"
-#symbol = "OMGUSDT"
-
-
-if symbol=='BTCUSDT':
-    Coin_precision = 2
-    Order_precision = 2
-
-elif symbol == 'ETHUSDT':
-    Coin_precision = 2
-    Order_precision = 2
-
-elif symbol == 'LTCUSDT':
-    Coin_precision = 2
-    Order_precision = 3
-
-elif symbol == 'SOLUSDT':
-    Coin_precision = 3
-    Order_precision = 0
-
-elif symbol == 'BNBUSDT':
-    Coin_precision = 2
-    Order_precision = 2
-
-elif symbol == 'ADAUSDT':
-    Coin_precision = 4
-    Order_precision = 0
-
-elif symbol == 'DOGEUSDT':
-    Coin_precision = 5
-    Order_precision = 0
-
-elif symbol == 'MATICUSDT':
-    Coin_precision = 4
-    Order_precision = 0
-
-elif symbol == "BAKEUSDT":
-    Coin_precision = 4
-    Order_precision = 0
-
-elif symbol =="SHIBUSDT":
-    Coin_precision = 5
-    Order_precision = 0
-
-elif symbol =="XRPUSDT":
-    Coin_precision = 4
-    Order_precision = 1
-
-elif symbol == "SUSHIUSDT":
-    Coin_precision = 3
-    Order_precision = 0
-
-elif symbol == "DOTUSDT":
-    Coin_precision = 3
-    Order_precision = 1
-
-elif symbol =="ALPHAUSDT":
-    Coin_precision = 4
-    Order_precision = 0
 
 #data.reset_index(level=0, inplace=True)
 trades = deque(maxlen=100000) ##keep track of shorts/Longs for graphing
@@ -168,8 +51,9 @@ pp = pprint.PrettyPrinter()
 Sleep=0
 #print(symbol)
 #print(30)
-client = Client(api_key='',api_secret='') ##Binance keys needed to get historical data/ Trade on an account
-
+client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
+twm = ThreadedWebsocketManager(api_key=API_keys.api_key,api_secret=API_keys.api_secret)
+twm.start()
 
 #OrderSize = 100
 tradeNO=0 ##number of trades
@@ -189,533 +73,458 @@ prediction2=-99
 Highest=-999
 
 
-leverage=35 ##leverage being used
-AccountBalance=1000 ##Start amount for paper trading
-EffectiveAccountBalance = AccountBalance*leverage
-OriginalAccountSize=copy(AccountBalance)
-OrderSIZE = .02 ##how much of account to use per trade in Decimal, not correct as leverage is used and depends on the stoploss settings used
+
+AccountBalance=-99 ##Start amount for paper trading
+EffectiveAccountBalance = -99
 positionSize = 0 ##altered later and sent as the orderQTY
-break_even = 0 ##Set a new stop once in profit to cover the trading fee and breakeven
-break_Even_Stage = [.4,.6,1.5,1.5] ##at what percentage of take profit to set new stop which corresponds to break_even_Amount
-break_even_Amount = [.1,.2,.4,.65]  ##what to set the new stop loss at
-min_profit_accepted = .0015
-Order_Type = 'GTC' ##'IOC'
 Stop_ID=''
 Limit_ID=''
 Order_ID=''
 current_date = datetime.now(timezone.utc)
 current_date = current_date.replace(tzinfo=timezone.utc)
 current_date = round(float(current_date.timestamp()*1000-.5))
-Market_Orders = 1 ## Use Market Orders instead of limit orders
-Trading=0 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
-          ## If Trading==0 then we are paper trading a strategy on historical data
 successful_Trades=0
 prevProfit = 0
-#print(client.futures_get_all_orders(symbol=symbol)[-3])
-#x = client.futures_get_all_orders(symbol=symbol)
-'''order1 = client.futures_create_order(
-                            symbol=symbol,
-                            side=SIDE_BUY,
-                            type=FUTURE_ORDER_TYPE_LIMIT,
-                            timeInForce='GTC',
-                            price=.01,
-                            quantity=5000)
-print(order1)
-x = client.futures_get_all_orders(symbol=symbol, orderId=order1['orderId'])
-print(x)
-print(x[-1])'''
-#x = client.futures_get_all_orders(symbol=symbol)
-#print(x)
-#client.get_ticker(symbol=symbol)
-#print(client.futures_get_all_orders(symbol=symbol))
-#print(client.futures_position_information(symbol=symbol)[0])
-#pp.pprint(client.futures_get_all_orders(symbol=symbol))
+minuteFlag = 0
+
+### Settings ###############
+Market_Orders = 1 ##Allow Market Orders if limit is not filled
+Trading=1 ##Actually trade on Binance, If Trading==1 then we are trading a strategy using the api keys specified above
+          ## If Trading==0 then we are paper trading a strategy on historical data
+leverage=35 ##leverage being used
+OrderSIZE = .02 ##how much of account to use per trade in Decimal, not correct as leverage is used and depends on the stoploss settings used
+break_even = 0 ##Set a new stop once in profit to cover the trading fee and breakeven
+break_Even_Stage = [.4,.6] ##at what percentage (In decimal)
+                                    # of take profit to set new stop which corresponds to break_even_Amount
+                                    # Note:setting 1.5 makes that stage disabled as trades
+                                     # will never reach 150% of takeprofit
+break_even_Amount = [.1,.2]  ##what to set the new stop loss at
+min_profit_accepted = .0015
+Order_Type = 'GTC' ##'IOC' ##not currently used
+start_string = '1 day ago UTC' ##buffer of historical data to download before starting the script
+Interval = '1m' ##Time interval over which we want to trade, valid Intervals: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w
+
+##Different coins we can trade, can add more in Helper.py
+#symbol="BTCUSDT"
+#symbol="ETHUSDT"
+#symbol="LTCUSDT"
+symbol="SOLUSDT"
+#symbol="BNBUSDT"
+#symbol="ADAUSDT"
+#symbol="DOGEUSDT"
+#symbol="BAKEUSDT"
+#symbol="SUSHIUSDT"
+#symbol="DOTUSDT"
+#symbol = "ALPHAUSDT"
+#symbol="XRPUSDT"
+#symbol = "OMGUSDT"
+
+Coin_precision,Order_precision = Helper.get_coin_attrib(symbol)
 
 if Trading: ## Trade on Binance with above api key and secret key
     print("Symbol:", symbol, "Start Balance:", AccountBalance)
-    async def runWS():
-        async with websockets.connect(SOCKET) as websocket:
-            global Sleep,Open, Close, High, Low, Volume,Profit,tradeNO,CurrentPos,positionPrice,\
-                AccountBalance,EffectiveAccountBalance,positionSize,Highestprice,prediction, signal1, signal2, HighestUlt, Highest, \
-                stoplossval, takeprofitval,prevsignal1,prevsignal2,PrevPos,Stop_ID,Order_ID,Limit_ID,prevProfit
-            Profit = 0
-            tradeNO = 0
-            CurrentPos = -99
-            positionPrice = 0
-            minuteFlag = 0 ##flag to signal new incoming kline
-            current_stoplossval = 0
-            current_takeprofitval = 0
-            TimeCount=0
-            TTC = 0
-            timer = 0
-            break_Even_Flag=0
-            #print(client.futures_get_all_orders(symbol=symbol))
-            #print(order1)
-            start = datetime.now().time()
-            yesterdate = date.today()
+    def runWS():
+        global Sleep,Date,Open, Close, High, Low, Volume,Profit,tradeNO,CurrentPos,positionPrice,\
+            AccountBalance,EffectiveAccountBalance,positionSize,Highestprice,prediction, signal1, signal2, HighestUlt, Highest, \
+            stoplossval, takeprofitval,prevsignal1,prevsignal2,PrevPos,Stop_ID,Order_ID,Limit_ID,prevProfit,minuteFlag
+        Profit = 0
+        tradeNO = 0
+        CurrentPos = -99
+        positionPrice = 0
+        current_stoplossval = 0
+        current_takeprofitval = 0
+        TimeCount=0
+        TTC = 0
+        timer = 0
+        break_Even_Flag=0
+        #print(client.futures_get_all_orders(symbol=symbol))
+        #print(order1)
+        start = datetime.now().time()
+        yesterdate = date.today()
 
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str="2 week ago UTC"):  ## get KLines with 15 minute intervals for the last month
-                # print(kline)
-                Date.append(datetime.utcfromtimestamp(int(kline[0]) / 1000))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
+        Date,Open,Close,High,Low,Volume = Helper.get_historical(symbol,start_string,Interval)
 
-            y = client.futures_account_balance()
-            AccountBalance = float(y[1]['balance'])
+        y = client.futures_account_balance()
+        AccountBalance = float(y[1]['balance'])
+        EffectiveAccountBalance = AccountBalance * leverage
 
-            '''try:
-                bnb = await getBNBfee()
-                printProfit(symbol, bnb)
-            except Exception as e:
-                pass'''
+        try:
+            if client.futures_position_information(symbol=symbol)[0]['positionAmt']!=0:
+                y = client.futures_get_all_orders(symbol=symbol)
+                Order_ID = y[-3]['orderId']
+                Stop_ID = y[-2]['orderId']
+                Limit_ID = y[-1]['orderId']
+        except:
+            pass
+        ## setup websocket:
+        if Interval == '1m':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_1MINUTE)
+        elif Interval == '3m':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_3MINUTE)
+        elif Interval == '5m':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_5MINUTE)
+        elif Interval == '15m':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_15MINUTE)
+        elif Interval == '30m':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_30MINUTE)
+        elif Interval == '1h':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_1HOUR)
+        elif Interval == '2h':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_2HOUR)
+        elif Interval == '4h':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_4HOUR)
+        elif Interval == '6h':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_6HOUR)
+        elif Interval == '8h':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_8HOUR)
+        elif Interval == '12h':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_12HOUR)
+        elif Interval == '1d':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_1DAY)
+        elif Interval == '3d':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_3DAY)
+        elif Interval == '1w':
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
+                                           interval=AsyncClient.KLINE_INTERVAL_1WEEK)
+        while True:
             try:
-                if client.futures_position_information(symbol=symbol)[0]['positionAmt']!=0:
-                    y = client.futures_get_all_orders(symbol=symbol)
-                    Order_ID = y[-3]['orderId']
-                    Stop_ID = y[-2]['orderId']
-                    Limit_ID = y[-1]['orderId']
-            except:
-                pass
-
-            while True:
                 try:
-                    try:
-                        #pp.pprint(x)
-                        #print(client.futures_position_information(symbol=symbol)[0])
+                    #########################################################################################
+                    ######################## Runs every 30 seconds ##########################################
+                    rightnow = datetime.now().time()
+                    sec = timedelta(hours=0, minutes=0, seconds=30)
+                    if (datetime.combine(date.today(), rightnow) - datetime.combine(yesterdate, start)) > sec:
+                        start = datetime.now().time()
+                        yesterdate = date.today()
+                        if Order_ID!='':
 
-                        message = await asyncio.create_task(websocket.recv()) ##pull klines
-                        json_message = json.loads(message)
-                        payload = json_message['k']
-
-
-
-                        #########################################################################################
-                        ######################## Runs every 30 seconds ##########################################
-                        rightnow = datetime.now().time()
-                        sec = timedelta(hours=0, minutes=0, seconds=30)
-                        if (datetime.combine(date.today(), rightnow) - datetime.combine(yesterdate, start)) > sec:
-                            start = datetime.now().time()
-                            yesterdate = date.today()
-                            if Order_ID!='':
-
-                                if client.futures_get_all_orders(symbol=symbol, orderId=Order_ID)[-1]['status'] == 'PARTIALLY FILLED':
-                                    client.futures_cancel_order(symbol=symbol,orderId=Order_ID)  ##cancel leftover order
-
-                                y = client.futures_position_information(symbol=symbol)[0]
-                                if float(y['positionAmt']) == 0:
-                                    CurrentPos = -99  ##Check if we are in a trade, if not reinitialize CurrentPos
-                                    break_Even_Flag = 0  ##reinitialize
-                                    Order_ID = ''
-                                    Limit_ID = ''
-                                    Stop_ID = ''
-                                    client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel open orders also
-
-                                elif float(y['positionAmt']) < 0:
-                                    CurrentPos = 0  ##in a short
-                                    ##Check that stoploss and takeprofit are set:
-                                    try:
-                                        if Stop_ID == '':
-                                            # print("Z1: Stop Order not sent, trying again Attempting Stop Price:",round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_BUY,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=-1 * float(y['positionAmt']),
-                                                stopPrice=round(float(y['entryPrice']) + current_stoplossval + (
-                                                            5 * math.pow(10, -Coin_precision - 1)), Coin_precision))
-                                            Stop_ID = order2['orderId']
-                                        if Limit_ID == '':
-                                            # print("Z1: Limit Order not sent, trying again Attempting Limit Price:",round(float(x['entryPrice']) - current_takeprofitval, Coin_precision))
-                                            order3 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_BUY,
-                                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                                price=round(float(y['entryPrice']) - current_takeprofitval, Coin_precision),
-                                                timeInForce=TIME_IN_FORCE_GTC,
-                                                quantity=-1 * float(y['positionAmt']))
-                                            Limit_ID = order3['orderId']
-                                    except BinanceAPIException as d:
-                                        pass
-                                        if d.message == 'Order would immediately trigger.':
-                                            print(
-                                                "Order would immediately Trigger, Cancelling and sleeping for 5 minutes")
-                                            order4 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_BUY,
-                                                type=FUTURE_ORDER_TYPE_MARKET,
-                                                quantity=-1 * float(y['positionAmt']))
-                                            time.sleep(300)  ##sleep for 5 minutes
-                                            Sleep = 1
-                                            break
-                                elif float(y['positionAmt']) > 0:
-                                    CurrentPos = 1  ##in a long
-                                    ##Check that stoploss and takeprofit are set:
-                                    try:
-                                        if Stop_ID == '':
-                                            # print("Z2: Stop Order not sent, trying again Attempting Stop Price:",round(float(x['entryPrice']) - current_stoplossval - (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
-                                            ##stoploss
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_SELL,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=float(y['positionAmt']),
-                                                stopPrice=round(float(y['entryPrice']) - current_stoplossval - (
-                                                            5 * math.pow(10, -Coin_precision - 1)), Coin_precision))
-                                            Stop_ID = order2['orderId']
-                                            ##takeprofit:
-                                        if Limit_ID == '':
-                                            # print("Z2: Limit Order not sent, trying again Attempting Limit Price:",round(float(x['entryPrice']) + current_takeprofitval, Coin_precision))
-                                            order3 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_SELL,
-                                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                                price=round(float(y['entryPrice']) + current_takeprofitval,
-                                                            Coin_precision),
-                                                timeInForce=TIME_IN_FORCE_GTC,
-                                                quantity=float(y['positionAmt']))
-                                            Limit_ID = order3['orderId']
-                                    except BinanceAPIException as d:
-                                        pass
-                                        if d.message == 'Order would immediately trigger.':
-                                            print(
-                                                "Order would immediately Trigger, Cancelling and sleeping for 5 minutes")
-                                            order4 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_SELL,
-                                                type=FUTURE_ORDER_TYPE_MARKET,
-                                                quantity=float(y['positionAmt']))
-                                            time.sleep(300)  ##sleep for 5 minutes
-                                            Sleep = 1
-                                            break
-                            ##Check every 30 seconds that limit/stop hasn't been hit
-                            if Limit_ID!='' or Stop_ID!='':
-                                y = client.futures_position_information(symbol=symbol)[0]
-                                if float(y['positionAmt'])==0:
-                                    CurrentPos = -99  ##Check if we are in a trade, if not reinitialize CurrentPos
-                                    break_Even_Flag = 0  ##reinitialize
-                                    Order_ID = ''
-                                    Limit_ID = ''
-                                    Stop_ID = ''
-                                    client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel open orders also
-                                    print("No Open Position Cancelling Stop/Limit")
-                            ##Check if Order was made but not hit, then maybe place market order
-                            elif Order_ID!='' and Market_Orders==1:
-                                y = client.futures_position_information(symbol=symbol)[0]
-
-                                if float(y['positionAmt']) == 0 and CurrentPos==0: ##No position was opened so place market order
-                                    client.futures_cancel_order(symbol=symbol)  ##cancel Orders
-                                    if Order_precision != 0:
-                                        await Order(round(positionSize,Order_precision),0,symbol,
-                                                    current_stoplossval,current_takeprofitval,
-                                                    Coin_precision,Market=1)
-                                    else:
-                                        await Order(round(positionSize), 0, symbol,
-                                                    current_stoplossval, current_takeprofitval,
-                                                    Coin_precision, Market=1)
-
-                                elif float(y['positionAmt']) == 0 and CurrentPos == 1:  ##No position was opened so place market order
-                                    client.futures_cancel_order(symbol=symbol)  ##cancel Orders
-                                    if Order_precision != 0:
-                                        await Order(round(positionSize,Order_precision), 1, symbol,
-                                                    current_stoplossval, current_takeprofitval,
-                                                    Coin_precision, Market=1)
-                                    else:
-                                        await Order(round(positionSize), 1, symbol,
-                                                    current_stoplossval, current_takeprofitval,
-                                                    Coin_precision, Market=1)
-                        ###############################################################################################################
-                        ###############################################################################################################
-
-                        if payload['x']: ##if payload['x']==1 then it is a new kline we have received => new OHLC data
-                            Open = flow.dataStream(Open, float(payload['o']), 1, 300)
-                            Close = flow.dataStream(Close, float(payload['c']), 1, 300)
-                            High = flow.dataStream(High, float(payload['h']), 1, 300)
-                            Low = flow.dataStream(Low, float(payload['l']), 1, 300)
-                            Volume = flow.dataStream(Volume, float(payload['q']), 1, 300)
-                            minuteFlag = 1 ##new OHLC data so check Strategy for signals of entry points
-
-                        if minuteFlag: ##new OHLC data
-
-                            y = client.futures_account_balance()
-                            AccountBalance = float(y[1]['balance'])
-                            EffectiveAccountBalance = AccountBalance*leverage ##Get Account Balance when multiplied by leverage to use for deciding positionSize based of OrderSIZE above
-
-                            minuteFlag = 0 ##switch off flag
-                            prediction=-99 ##reinitialize
-
-                            ######################## These are some trading strategies I have coded up as functions, found in TradingStrats.py #######################################
-
-                            #prediction,Type = TS.MovingAverage(Close,prediction)
-                            #prediction,signal1,signal2,Type =TS.StochRSI_RSIMACD(prediction,Close,signal1,signal2)
-                            prediction, Type = TS.breakout(prediction, Close, Volume, symbol)
-                            #prediction, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(Close,signal1,signal2,prediction)
-                            #prediction,stoplossval,takeprofitval = TS.Fractal(Close,Low,High,prediction)
-                            #prediction, stoplossval, takeprofitval = TS.fibMACD(prediction,Close,Open)
-                            #prediction, signal1, Type = TS.RSIStochEMA(prediction, Close, High, Low,signal1, CurrentPos)
-                            #prediction, signal1, signal2, HighestUlt, Highest, Type = TS.UltOscMACD(prediction,Close,High, Low,signal1, signal2,HighestUlt, Highest)
-                            #prediction, signal1, Type = TS.RSIStochEMA200(prediction,Close,High,Low,signal1,signal2,CurrentPos)
-                            #prediction,Type = TS.Fractal2(Close,Low,High,signal1,prediction)
-
-                            #prediction, Type = stochBB(prediction, Close)
-
-                            stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, Close, High,Low, prediction, CurrentPos, Type) ##This function sets the stoploss and takeprofit based off the Type1 variable returned by the above functions
-
-                            ##These trading strategies have custom stoploss & takeprofits:
-                            #takeprofitval, stoplossval, prediction, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,Close,High,Low,prediction,CurrentPos,signal1)
-                            #takeprofitval, stoplossval, prediction, signal1= TS.TripleEMA(stoplossval, takeprofitval,Close,High,Low,prediction,CurrentPos,signal1)
-
-                            if (prediction == 1 or prediction == 0) and (min_profit_accepted * Close[-1] > takeprofitval):
-                                prediction = -99
+                            if client.futures_get_all_orders(symbol=symbol, orderId=Order_ID)[-1]['status'] == 'PARTIALLY FILLED':
+                                client.futures_cancel_order(symbol=symbol,orderId=Order_ID)  ##cancel leftover order
 
                             y = client.futures_position_information(symbol=symbol)[0]
+                            if float(y['positionAmt']) == 0:
+                                CurrentPos = -99  ##Check if we are in a trade, if not reinitialize CurrentPos
+                                break_Even_Flag = 0  ##reinitialize
+                                Order_ID = ''
+                                Limit_ID = ''
+                                Stop_ID = ''
+                                client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel open orders also
 
-                            #print("position Amount:",x)
-                            #time.sleep(5)
-                            if float(y['positionAmt']) < 0:
+                            elif float(y['positionAmt']) < 0:
                                 CurrentPos = 0  ##in a short
-                                if break_even and break_Even_Flag==0:
-                                    #LastPrice = float(client.get_ticker(symbol=symbol)['lastPrice'])
-                                    if float(y['entryPrice']) - Close[-1] >break_Even_Stage[0]*current_takeprofitval:
-                                        ###### Set new Stop if we are in profit to breakeven
-                                        ##Set new Stop in Profit:
-                                        try:
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_BUY,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=-1 * float(y['positionAmt']),
-                                                stopPrice=round(float(y['entryPrice']) - break_even_Amount[0] * current_takeprofitval + 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
-                                            if order2['status']=="NEW":
-                                                client.futures_cancel_order(symbol=symbol,orderId=Stop_ID)
-                                                print(f"New Stop placed at {break_even_Amount[0]}x(take profit)")
-                                                break_Even_Flag = 1
-                                                Stop_ID=order2['orderId']
-                                        except BinanceAPIException as d:
-                                            if d.message=='Order would immediately trigger.':
-                                                print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
-
-                                if break_even and break_Even_Flag<=1:
-                                    #LastPrice = float(client.get_ticker(symbol=symbol)['lastPrice'])
-                                    if float(y['entryPrice']) - Close[-1] >break_Even_Stage[1]*current_takeprofitval:
-                                        ###### Set new Stop if we are in profit to breakeven
-                                        ##Set new Stop in Profit:
-                                        try:
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_BUY,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=-1 * float(y['positionAmt']),
-                                                stopPrice=round(float(y['entryPrice']) - break_even_Amount[1] * current_takeprofitval + 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
-                                            if order2['status']=="NEW":
-                                                client.futures_cancel_order(symbol=symbol, orderId=Stop_ID)
-                                                print(f"New Stop placed at {break_even_Amount[1]}x(takeprofit)")
-                                                break_Even_Flag = 2
-                                                Stop_ID=order2['orderId']
-                                        except BinanceAPIException as d:
-                                            if d.message=='Order would immediately trigger.':
-                                                print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
-
-                                if break_even and break_Even_Flag<=2:
-
-                                    if float(y['entryPrice']) - Close[-1] >break_Even_Stage[2]*takeprofitval:
-                                        ###### Set new Stop if we are in profit to breakeven
-                                        ##Set new Stop in Profit:
-                                        try:
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_BUY,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=-1 * float(y['positionAmt']),
-                                                stopPrice=round(float(y['entryPrice']) - break_even_Amount[2] * current_takeprofitval + 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
-                                            if order2['status']=="NEW":
-                                                client.futures_cancel_order(symbol=symbol,orderId=Stop_ID)
-                                                print(f"New Stop placed at {break_even_Amount[2]}x(takeprofit)")
-                                                break_Even_Flag = 3
-                                                Stop_ID=order2['orderId']
-                                        except BinanceAPIException as d:
-                                            if d.message=='Order would immediately trigger.':
-                                                print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
-
-                                if break_even and break_Even_Flag<=3:
-
-                                    if float(y['entryPrice']) - Close[-1] >break_Even_Stage[3]*takeprofitval:
-                                        ###### Set new Stop if we are in profit to breakeven
-                                        ##Set new Stop in Profit:
-                                        try:
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_BUY,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=-1 * float(y['positionAmt']),
-                                                stopPrice=round(float(y['entryPrice']) - break_even_Amount[3] * current_takeprofitval + 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
-                                            if order2['status']=="NEW":
-                                                client.futures_cancel_order(symbol=symbol,orderId=Stop_ID)
-                                                print(f"New Stop placed at {break_even_Amount[3]}x(takeprofit)")
-                                                break_Even_Flag = 4
-                                                Stop_ID=order2['orderId']
-                                        except BinanceAPIException as d:
-                                            if d.message=='Order would immediately trigger.':
-                                                print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
-
+                                ##Check that stoploss and takeprofit are set:
+                                try:
+                                    if Stop_ID == '':
+                                        # print("Z1: Stop Order not sent, trying again Attempting Stop Price:",round(float(x['entryPrice']) + current_stoplossval + (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
+                                        order2 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_BUY,
+                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                            quantity=-1 * float(y['positionAmt']),
+                                            stopPrice=round(float(y['entryPrice']) + current_stoplossval + (
+                                                        5 * math.pow(10, -Coin_precision - 1)), Coin_precision))
+                                        Stop_ID = order2['orderId']
+                                    if Limit_ID == '':
+                                        # print("Z1: Limit Order not sent, trying again Attempting Limit Price:",round(float(x['entryPrice']) - current_takeprofitval, Coin_precision))
+                                        order3 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_BUY,
+                                            type=FUTURE_ORDER_TYPE_LIMIT,
+                                            price=round(float(y['entryPrice']) - current_takeprofitval, Coin_precision),
+                                            timeInForce=TIME_IN_FORCE_GTC,
+                                            quantity=-1 * float(y['positionAmt']))
+                                        Limit_ID = order3['orderId']
+                                except BinanceAPIException as d:
+                                    pass
+                                    if d.message == 'Order would immediately trigger.':
+                                        print(
+                                            "Order would immediately Trigger, Cancelling and sleeping for 5 minutes")
+                                        order4 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_BUY,
+                                            type=FUTURE_ORDER_TYPE_MARKET,
+                                            quantity=-1 * float(y['positionAmt']))
+                                        time.sleep(300)  ##sleep for 5 minutes
+                                        Sleep = 1
+                                        break
                             elif float(y['positionAmt']) > 0:
                                 CurrentPos = 1  ##in a long
-                                if break_even and break_Even_Flag==0:
-                                    #LastPrice = float(client.get_ticker(symbol=symbol)['lastPrice'])
-                                    if Close[-1] - float(y['entryPrice']) >break_Even_Stage[0]*takeprofitval:
-                                        ###### Set new Stop if we are in profit to breakeven
-                                        ##Set new Stop in Profit:
-                                        try:
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_SELL,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=float(y['positionAmt']),
-                                                stopPrice=round(float(y['entryPrice']) + break_even_Amount[0] * current_takeprofitval - 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
-                                            if order2['status']=="NEW":
-                                                client.futures_cancel_order(symbol=symbol,orderId=Stop_ID)  ##cancel open orders also
-                                                print(f"New Stop placed at {break_even_Amount[0]}x(take profit)")
-                                                break_Even_Flag = 1
-                                                Stop_ID=order2['orderId']
-                                        except BinanceAPIException as d:
-                                            if d.message=='Order would immediately trigger.':
-                                                print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
-
-                                if break_even and break_Even_Flag<=1:
-                                    #LastPrice = float(client.get_ticker(symbol=symbol)['lastPrice'])
-
-                                    if Close[-1] - float(y['entryPrice']) >break_Even_Stage[1]*takeprofitval:
-                                        ###### Set new Stop if we are in profit to breakeven
-                                        ##Set new Stop in Profit:
-                                        try:
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_SELL,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=float(y['positionAmt']),
-                                                stopPrice=round(float(y['entryPrice']) + current_takeprofitval * break_even_Amount[1] - 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
-                                            if order2['status']=="NEW":
-                                                client.futures_cancel_order(symbol=symbol,orderId=Stop_ID)  ##cancel open orders also
-                                                print(f"New Stop placed at {break_even_Amount[1]}x(takeprofit)")
-                                                break_Even_Flag = 2
-                                                Stop_ID=order2['orderId']
-                                        except BinanceAPIException as d:
-                                            if d.message=='Order would immediately trigger.':
-                                                print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
-
-                                if break_even and break_Even_Flag<=2:
-                                    #LastPrice = float(client.get_ticker(symbol=symbol)['lastPrice'])
-
-                                    if Close[-1] - float(y['entryPrice']) >break_Even_Stage[2]*takeprofitval:
-                                        ###### Set new Stop if we are in profit to breakeven
-                                        ##Set new Stop in Profit:
-                                        try:
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_SELL,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=float(y['positionAmt']),
-                                                stopPrice=round(float(y['entryPrice']) + current_takeprofitval * break_even_Amount[2] - 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
-                                            if order2['status']=="NEW":
-                                                client.futures_cancel_order(symbol=symbol,orderId=Stop_ID)  ##cancel open orders also
-                                                print(f"New Stop placed at {break_even_Amount[2]}x(takeprofit)")
-                                                break_Even_Flag = 3
-                                                Stop_ID=order2['orderId']
-                                        except BinanceAPIException as d:
-                                            if d.message=='Order would immediately trigger.':
-                                                print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
-
-                                if break_even and break_Even_Flag<=3:
-                                    #LastPrice = float(client.get_ticker(symbol=symbol)['lastPrice'])
-                                    if Close[-1] - float(y['entryPrice']) >break_Even_Stage[3]*takeprofitval:
-                                        ###### Set new Stop if we are in profit to breakeven
-                                        ##Set new Stop in Profit:
-                                        try:
-                                            order2 = client.futures_create_order(
-                                                symbol=symbol,
-                                                side=SIDE_SELL,
-                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                quantity=float(y['positionAmt']),
-                                                stopPrice=round(float(y['entryPrice']) + current_takeprofitval * break_even_Amount[3] - 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
-                                            if order2['status']=="NEW":
-                                                client.futures_cancel_order(symbol=symbol,orderId=Stop_ID)  ##cancel open orders also
-                                                print(f"New Stop placed at {break_even_Amount[3]}x(takeprofit)")
-                                                break_Even_Flag = 4
-                                                Stop_ID=order2['orderId']
-                                        except BinanceAPIException as d:
-                                            if d.message=='Order would immediately trigger.':
-                                                print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
-                                                ##get rid of partially filled orders
-
-
-                            if CurrentPos == -99 and prediction == 0:  ##not in a trade but want to enter a short position
-                                LP = float(client.get_ticker(symbol=symbol)['lastPrice'])
-                                positionPrice = LP
-                                positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice ##work out OrderQTY
-                                #print(positionSize)
-                                CurrentPos = 0
-                                Highestprice = positionPrice
-                                # stoplossval = positionPrice * trailing_stoploss
-                                #trades.append({'x': i, 'y': positionPrice, 'type': "sell",'current_price': positionPrice})
-                                ##Stoploss and takeprofit in case the stop/limit order isn't filled
-                                current_stoplossval = copy(stoplossval)
-                                current_takeprofitval = copy(takeprofitval)
-
-                                ##Create Order on Binance
-                                if Order_precision!=0:
-                                    await Order(round(positionSize,Order_precision), 0, symbol,stoplossval,takeprofitval,Coin_precision,Market_Orders)
-                                else:
-                                    await Order(round(positionSize), 0, symbol, stoplossval, takeprofitval, Coin_precision,Market_Orders)
-
-                            elif CurrentPos == -99 and prediction == 1: ##not in a trade but want to enter a Long position
-                                LP = float(client.get_ticker(symbol=symbol)['lastPrice'])
-                                positionPrice = LP
-                                positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice ##work out OrderQTY
-                                CurrentPos = 1
-                                Highestprice = positionPrice
-                                # stoplossval = positionPrice * trailing_stoploss
-                                #trades.append({'x': i, 'y': positionPrice, 'type': "buy",'current_price': positionPrice})
-                                ##Stoploss and takeprofit in case the stop/limit order isn't filled
-                                current_stoplossval = copy(stoplossval)
-                                current_takeprofitval = copy(takeprofitval)
-
-                                ##Create Order on Binance
-                                if Order_precision!=0:
-                                    await Order(round(positionSize,Order_precision), 1, symbol,stoplossval,takeprofitval,Coin_precision,Market_Orders)
-                                else:
-                                    await Order(round(positionSize), 1, symbol, stoplossval, takeprofitval,Coin_precision,Market_Orders)
-
-
-
-                            if CurrentPos != PrevPos:
-                                if PrevPos!=-99:
-                                    tradeNO+=1
-                                bnb = float(client.get_ticker(symbol="BNBUSDT")['lastPrice'])
-                                signal1 = -99
-                                signal2 = -99
-                                print("Current Position:", CurrentPos)
-                                #print("Margin:", positionPrice - Close[-1])
-                                # print("Date:",DateStream[-1])
+                                ##Check that stoploss and takeprofit are set:
                                 try:
-                                    prevProfit = printProfit(symbol, bnb,prevProfit)
-                                except Exception as e:
+                                    if Stop_ID == '':
+                                        # print("Z2: Stop Order not sent, trying again Attempting Stop Price:",round(float(x['entryPrice']) - current_stoplossval - (5 * math.pow(10, -Coin_precision - 1)),Coin_precision))
+                                        ##stoploss
+                                        order2 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                            quantity=float(y['positionAmt']),
+                                            stopPrice=round(float(y['entryPrice']) - current_stoplossval - (
+                                                        5 * math.pow(10, -Coin_precision - 1)), Coin_precision))
+                                        Stop_ID = order2['orderId']
+                                        ##takeprofit:
+                                    if Limit_ID == '':
+                                        # print("Z2: Limit Order not sent, trying again Attempting Limit Price:",round(float(x['entryPrice']) + current_takeprofitval, Coin_precision))
+                                        order3 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_LIMIT,
+                                            price=round(float(y['entryPrice']) + current_takeprofitval,
+                                                        Coin_precision),
+                                            timeInForce=TIME_IN_FORCE_GTC,
+                                            quantity=float(y['positionAmt']))
+                                        Limit_ID = order3['orderId']
+                                except BinanceAPIException as d:
                                     pass
-                            # if prevProfit!=Profit:
-                            #profitgraph.append(Profit)
-                            PrevPos = copy(CurrentPos)
+                                    if d.message == 'Order would immediately trigger.':
+                                        print("Order would immediately Trigger, Cancelling and sleeping for 5 minutes")
+                                        order4 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_MARKET,
+                                            quantity=float(y['positionAmt']))
+                                        time.sleep(300)  ##sleep for 5 minutes
+                                        Sleep = 1
+                                        break
+                        ##Check every 30 seconds that limit/stop hasn't been hit
+                        if Limit_ID!='' or Stop_ID!='':
+                            y = client.futures_position_information(symbol=symbol)[0]
+                            if float(y['positionAmt'])==0:
+                                CurrentPos = -99  ##Check if we are in a trade, if not reinitialize CurrentPos
+                                break_Even_Flag = 0  ##reinitialize
+                                Order_ID = ''
+                                Limit_ID = ''
+                                Stop_ID = ''
+                                client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel open orders also
+                                print("No Open Position Cancelling Stop/Limit")
+                        ##Check if Order was made but not hit, then maybe place market order
+                        elif Order_ID!='' and Market_Orders==1:
+                            y = client.futures_position_information(symbol=symbol)[0]
 
-                    except BinanceAPIException as e:  # BinanceAPIException
-                        print(e.status_code)
-                        print(e.message)
+                            if float(y['positionAmt']) == 0 and CurrentPos==0: ##No position was opened so place market order
+                                client.futures_cancel_order(symbol=symbol)  ##cancel Orders
+                                if Order_precision != 0:
+                                    Order(round(positionSize,Order_precision),0,symbol,
+                                                current_stoplossval,current_takeprofitval,
+                                                Coin_precision,Market=1)
+                                else:
+                                    Order(round(positionSize), 0, symbol,
+                                                current_stoplossval, current_takeprofitval,
+                                                Coin_precision, Market=1)
 
-                except Exception as e:  # Check for Errors in Code
-                    print(e)
-                    exc_type, exc_obj, exc_tb = sys.exc_info()
-                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    print(exc_type, fname, exc_tb.tb_lineno)
+                            elif float(y['positionAmt']) == 0 and CurrentPos == 1:  ##No position was opened so place market order
+                                client.futures_cancel_order(symbol=symbol)  ##cancel Orders
+                                if Order_precision != 0:
+                                    Order(round(positionSize,Order_precision), 1, symbol,
+                                                current_stoplossval, current_takeprofitval,
+                                                Coin_precision, Market=1)
+                                else:
+                                    Order(round(positionSize), 1, symbol,
+                                                current_stoplossval, current_takeprofitval,
+                                                Coin_precision, Market=1)
+                    ###############################################################################################################
+                    ###############################################################################################################
 
+                    if minuteFlag: ##new OHLC data
+                        y = client.futures_account_balance()
+                        AccountBalance = float(y[1]['balance'])
+                        EffectiveAccountBalance = AccountBalance*leverage ##Get Account Balance when multiplied by leverage to use for deciding positionSize based of OrderSIZE above
+
+                        minuteFlag = 0 ##switch off flag
+                        prediction=-99 ##reinitialize
+
+                        ######################## These are some trading strategies I have coded up as functions, found in TradingStrats.py #######################################
+
+                        #prediction,Type = TS.MovingAverage(Close,prediction)
+                        #prediction,signal1,signal2,Type =TS.StochRSI_RSIMACD(prediction,Close,signal1,signal2)
+                        prediction, Type = TS.breakout(prediction, Close, Volume, symbol)
+                        #prediction, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(Close,signal1,signal2,prediction)
+                        #prediction,stoplossval,takeprofitval = TS.Fractal(Close,Low,High,prediction)
+                        #prediction, stoplossval, takeprofitval = TS.fibMACD(prediction,Close,Open)
+                        #prediction, signal1, Type = TS.RSIStochEMA(prediction, Close, High, Low,signal1, CurrentPos)
+                        #prediction, signal1, signal2, HighestUlt, Highest, Type = TS.UltOscMACD(prediction,Close,High, Low,signal1, signal2,HighestUlt, Highest)
+                        #prediction, signal1, Type = TS.RSIStochEMA200(prediction,Close,High,Low,signal1,signal2,CurrentPos)
+                        #prediction,Type = TS.Fractal2(Close,Low,High,signal1,prediction)
+
+                        #prediction, Type = stochBB(prediction, Close)
+
+                        stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, Close, High,Low, prediction, CurrentPos, Type) ##This function sets the stoploss and takeprofit based off the Type variable returned by the above functions
+
+                        ##These trading strategies have custom stoploss & takeprofits:
+                        #takeprofitval, stoplossval, prediction, signal1= TS.SARMACD200EMA(stoplossval, takeprofitval,Close,High,Low,prediction,CurrentPos,signal1)
+                        #takeprofitval, stoplossval, prediction, signal1= TS.TripleEMA(stoplossval, takeprofitval,Close,High,Low,prediction,CurrentPos,signal1)
+
+                        if (prediction == 1 or prediction == 0) and (min_profit_accepted * Close[-1] > takeprofitval):
+                            prediction = -99
+
+                        y = client.futures_position_information(symbol=symbol)[0]
+
+                        if float(y['positionAmt']) < 0:
+                            CurrentPos = 0  ##in a short
+                            if break_even and break_Even_Flag==0:
+                                if float(y['entryPrice']) - Close[-1] >break_Even_Stage[0]*current_takeprofitval:
+                                    ###### Set new Stop if we are in profit to breakeven
+                                    ##Set new Stop in Profit:
+                                    try:
+                                        order2 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_BUY,
+                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                            quantity=-1 * float(y['positionAmt']),
+                                            stopPrice=round(float(y['entryPrice']) - break_even_Amount[0] * current_takeprofitval + 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
+                                        if order2['status']=="NEW":
+                                            client.futures_cancel_order(symbol=symbol,orderId=Stop_ID)
+                                            print(f"New Stop placed at {break_even_Amount[0]}x(take profit)")
+                                            break_Even_Flag = 1
+                                            Stop_ID=order2['orderId']
+                                    except BinanceAPIException as d:
+                                        if d.message=='Order would immediately trigger.':
+                                            print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
+
+                            if break_even and break_Even_Flag<=1:
+                                if float(y['entryPrice']) - Close[-1] >break_Even_Stage[1]*current_takeprofitval:
+                                    ###### Set new Stop if we are in profit to breakeven
+                                    ##Set new Stop in Profit:
+                                    try:
+                                        order2 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_BUY,
+                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                            quantity=-1 * float(y['positionAmt']),
+                                            stopPrice=round(float(y['entryPrice']) - break_even_Amount[1] * current_takeprofitval + 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
+                                        if order2['status']=="NEW":
+                                            client.futures_cancel_order(symbol=symbol, orderId=Stop_ID)
+                                            print(f"New Stop placed at {break_even_Amount[1]}x(takeprofit)")
+                                            break_Even_Flag = 2
+                                            Stop_ID=order2['orderId']
+                                    except BinanceAPIException as d:
+                                        if d.message=='Order would immediately trigger.':
+                                            print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
+
+                        elif float(y['positionAmt']) > 0:
+                            CurrentPos = 1  ##in a long
+                            if break_even and break_Even_Flag==0:
+                                if Close[-1] - float(y['entryPrice']) >break_Even_Stage[0]*takeprofitval:
+                                    ###### Set new Stop if we are in profit to breakeven
+                                    ##Set new Stop in Profit:
+                                    try:
+                                        order2 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                            quantity=float(y['positionAmt']),
+                                            stopPrice=round(float(y['entryPrice']) + break_even_Amount[0] * current_takeprofitval - 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
+                                        if order2['status']=="NEW":
+                                            client.futures_cancel_order(symbol=symbol,orderId=Stop_ID)  ##cancel open orders also
+                                            print(f"New Stop placed at {break_even_Amount[0]}x(take profit)")
+                                            break_Even_Flag = 1
+                                            Stop_ID=order2['orderId']
+                                    except BinanceAPIException as d:
+                                        if d.message=='Order would immediately trigger.':
+                                            print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
+
+                            if break_even and break_Even_Flag<=1:
+                                if Close[-1] - float(y['entryPrice']) >break_Even_Stage[1]*takeprofitval:
+                                    ###### Set new Stop if we are in profit to breakeven
+                                    ##Set new Stop in Profit:
+                                    try:
+                                        order2 = client.futures_create_order(
+                                            symbol=symbol,
+                                            side=SIDE_SELL,
+                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                            quantity=float(y['positionAmt']),
+                                            stopPrice=round(float(y['entryPrice']) + current_takeprofitval * break_even_Amount[1] - 5 * math.pow(10, -Coin_precision - 1), Coin_precision))
+                                        if order2['status']=="NEW":
+                                            client.futures_cancel_order(symbol=symbol,orderId=Stop_ID)  ##cancel open orders also
+                                            print(f"New Stop placed at {break_even_Amount[1]}x(takeprofit)")
+                                            break_Even_Flag = 2
+                                            Stop_ID=order2['orderId']
+                                    except BinanceAPIException as d:
+                                        if d.message=='Order would immediately trigger.':
+                                            print("New Stop not placed as order would trigger immediately")#, LastPrice:",LastPrice)
+
+                        if CurrentPos == -99 and prediction == 0:  ##not in a trade but want to enter a short position
+                            LP = float(client.get_ticker(symbol=symbol)['lastPrice'])
+                            positionPrice = LP
+                            positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice ##work out OrderQTY
+                            #print(positionSize)
+                            CurrentPos = 0
+                            Highestprice = positionPrice
+                            ##Stoploss and takeprofit in case the stop/limit order isn't filled
+                            current_stoplossval = copy(stoplossval)
+                            current_takeprofitval = copy(takeprofitval)
+
+                            ##Create Order on Binance
+                            if Order_precision!=0:
+                                Order(round(positionSize,Order_precision), 0, symbol,stoplossval,takeprofitval,Coin_precision,Market_Orders)
+                            else:
+                                Order(round(positionSize), 0, symbol, stoplossval, takeprofitval, Coin_precision,Market_Orders)
+
+                        elif CurrentPos == -99 and prediction == 1: ##not in a trade but want to enter a Long position
+                            LP = float(client.get_ticker(symbol=symbol)['lastPrice'])
+                            positionPrice = LP
+                            positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice ##work out OrderQTY
+                            CurrentPos = 1
+                            Highestprice = positionPrice
+                            ##Stoploss and takeprofit in case the stop/limit order isn't filled
+                            current_stoplossval = copy(stoplossval)
+                            current_takeprofitval = copy(takeprofitval)
+
+                            ##Create Order on Binance
+                            if Order_precision!=0:
+                                Order(round(positionSize,Order_precision), 1, symbol,stoplossval,takeprofitval,Coin_precision,Market_Orders)
+                            else:
+                                Order(round(positionSize), 1, symbol, stoplossval, takeprofitval,Coin_precision,Market_Orders)
+
+                        if CurrentPos != PrevPos:
+                            if PrevPos!=-99:
+                                tradeNO+=1
+                            bnb = float(client.get_ticker(symbol="BNBUSDT")['lastPrice'])
+                            signal1 = -99
+                            signal2 = -99
+                            print("Current Position:", CurrentPos)
+                            try:
+                                prevProfit = printProfit(symbol, bnb,prevProfit)
+                            except Exception as e:
+                                pass
+                        PrevPos = copy(CurrentPos)
+
+                except BinanceAPIException as e:  # BinanceAPIException
+                    print(e.status_code)
+                    print(e.message)
+
+            except Exception as e:  # Check for Errors in Code
+                print(e)
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
+
+
+    def handle_socket_message(msg):
+        global minuteFlag,Open,Close,High,Low,Volume
+        # print(msg)
+        payload = msg['k']
+        if payload['x'] and msg['ps'] == symbol:
+            # Date[0] = flow.dataStream(Date[0], int(coin1[0]), 1, 300)
+            Open = flow.dataStream(Open, float(payload['o']), 1, 300)
+            Close = flow.dataStream(Close, float(payload['c']), 1, 300)
+            High = flow.dataStream(High, float(payload['h']), 1, 300)
+            Low = flow.dataStream(Low, float(payload['l']), 1, 300)
+            Volume = flow.dataStream(Volume, float(payload['q']), 1, 300)
+            minuteFlag = 1
 
     def printProfit(S,bnb,previous_Profit):
         global Profit,tradeNO,stoplossval,takeprofitval,Close,AccountBalance,successful_Trades
@@ -746,7 +555,7 @@ if Trading: ## Trade on Binance with above api key and secret key
         Profit=0
         return previous_Profit
 
-    async def Order(q, side1, s,stoploss,takeprofit,CP,Market):
+    def Order(q, side1, s,stoploss,takeprofit,CP,Market):
         global Stop_ID,Limit_ID,Order_ID
         try:
             try:
@@ -878,7 +687,7 @@ if Trading: ## Trade on Binance with above api key and secret key
 
     def run():
         try:
-            asyncio.get_event_loop().run_until_complete(runWS())
+            runWS()
         except Exception as e:
             #print("Error:",e)
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -919,16 +728,18 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     #symbol = ['DOGEUSDT', 'SOLUSDT','OMGUSDT','ADAUSDT','XRPUSDT','ETHUSDT','BTCUSDT','MATICUSDT','BNBUSDT','BAKEUSDT']#,'OMGUSDT']#,'ADAUSDT']#,'BTCUSDT']#,"BNBUSDT","XRPUSDT"]
 
 
-    ############################## pairTrading ##################################################
-    pair_Trading = 0  ##Switch to backtest the pairtrading Long-Short strategy, switch off for any other strategy
+    ############################## pairTrading ##############################################
+    pair_Trading = 1  ##Switch to backtest the pairtrading Long-Short strategy, switch off for any other strategy
     TPSL = 0 ## type of take profit for pair trading
     percent_TP = .08 ##percent to takeprofit if TPSL switched on
     percent_SL = .01 ##percent to stoploss if TPSL switched on
     log = 0 ###log prices, not recommended as implementation may be wrong, something i'm working on understanding better
     Close_pos = 0 ##flag to close the position on next open if pair trading
     if pair_Trading:
-        symbol = ['SKLUSDT','ZRXUSDT']
+        symbol = ['LITUSDT','SFPUSDT']
     #################################################################################################################
+    STOP = 1  ##If strategy SLTP of type 9 multiplier for stoploss using ATR
+    TAKE = 2.5  ##If strategy SLTP of type 9 multiplier for takeprofit using ATR
 
     Highest_lowest = 0
     Type = []
@@ -940,23 +751,21 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     PrevPos = []
     prediction = []
 
-
+    OrderSIZE = .02
     AccountBalance = 2335
     leverage = 35  ##leverage being used
     test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
     test_set_length = "1 month ago UTC" ## valid strings 'x days/weeks/months/years ago UTC'
-    time_period = 12 ##time_period in same units as test_set_length above
+    time_period = 3 ##time_period in same units as test_set_length above
     TIME_INTERVAL = 15  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
-
+    profitgraph.append(AccountBalance)
 
     Hold_pos = 0 ##no TP/SL, for strategies that buy and hold turn off otherwise
-    percent = .04 ##percentage to hold out for
+    percent = .01 ##percentage to hold out for
 
     originalBalance = copy(AccountBalance)
     waitflag = 0  ##wait until next candlestick before checking if stoploss/ takeprofit was hit
     fee = .00036
-    STOP=1 ##If strategy SLTP of type 9 multiplier for stoploss using ATR
-    TAKE=2.75 ##If strategy SLTP of type 9 multiplier for takeprofit using ATR
     for i in range(len(symbol)):
         Type.append(-99)
         stoplossval.append(0)
@@ -1016,7 +825,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     monthly_return = []
     Daily_return = []
     print(f"{TIME_INTERVAL} min OHLC Candle Sticks from a period of {time_period} {period_string}")
-    
+
     ##find shortest dataset to align other datasets to:
     shortest_dataSet = [-99,99999999999] ## [which index , length of dataset]
     for i in range(len(Date_1min)):
@@ -1056,7 +865,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
         High[i] = High[i][:len(High[shortest_dataSet[0]])]
         Low[i] = Low[i][:len(Low[shortest_dataSet[0]])]
         Volume[i] = Volume[i][:len(Volume[shortest_dataSet[0]])]
-    
+
     for i in range(len(High_1min[0])-1):
         #global trailing_stoploss,Highestprice
         if i%TIME_INTERVAL==0 and i!=0:
@@ -1078,7 +887,6 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         #prediction[j],signal1,signal2,Type[j] =TS.StochRSI_RSIMACD(prediction[j],CloseStream[j],signal1,signal2) ###########################################
                         #prediction[j],Type[j] = TS.StochRSIMACD(prediction[j], CloseStream[j],HighStream[j],LowStream[j])  ###########################################
                         #prediction[j], signal1, signal2, Type[j] = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction[j])
-                        # prediction[j],signal1,signal2,HighestUlt,Highest,Type[j] = TS.UltOscMACD(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,signal2,HighestUlt,Highest)
                         #prediction[j], signal1, Type[j],loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
                         # prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
                         #prediction[j], Type[j] = TS.breakout(prediction[j],CloseStream[j],VolumeStream[j],symbol[j])
@@ -1095,19 +903,18 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         # prediction[j],Type[j] = TS.stochBB(prediction[j],CloseStream[j])
                         # prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
                         #stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
-                        #stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j], HighStream[j],LowStream[j], prediction[j], CurrentPos[j], Type[j])
                         #prediction[j],stoplossval[j],takeprofitval[j],max_pos,min_pos = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
                         # if prediction[j]==0 or prediction[j]==1 and CurrentPos[j]==-99:
                         #    print("\nMax:",DateStream[j][max_pos])
                         #    print("Min:",DateStream[j][min_pos])
 
-                        #prediction[j],stoplossval[j],takeprofitval[j] = TS.Fractal(CloseStream[j], LowStream[j], HighStream[j],OpenStream[j],prediction[j])
+                        prediction[j],stoplossval[j],takeprofitval[j] = TS.Fractal(CloseStream[j], LowStream[j], HighStream[j],OpenStream[j],prediction[j])
 
                         # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.SARMACD200EMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
 
                         # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.TripleEMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
 
-                        prediction[j],Highest_lowest,Close_pos = TS.trend_Ride(prediction[j], CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos[j], Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
+                        #prediction[j],Highest_lowest,Close_pos = TS.trend_Ride(prediction[j], CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos[j], Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
 
 
                 elif not pair_Trading:
@@ -1122,7 +929,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         plt.plot(BB2)
                         plt.show()'''
                     if not TPSL:
-                        prediction, Type, takeprofitval[0], takeprofitval[1], stoplossval[0], stoplossval[1] = TS.pairTrading(prediction, CloseStream[0], CloseStream[1], log, TPSL, percent_TP,percent_SL)
+                        prediction, Type = TS.pairTrading(prediction, CloseStream[0], CloseStream[1], log, TPSL, percent_TP,percent_SL)
                         stoplossval[0], takeprofitval[0] = SetSLTP(stoplossval[0], takeprofitval[0], CloseStream[0],HighStream[0], LowStream[0], prediction[0],CurrentPos[0], 9, SL=STOP, TP=TAKE)
                         stoplossval[1], takeprofitval[1] = SetSLTP(stoplossval[1], takeprofitval[1], CloseStream[1],HighStream[1], LowStream[1], prediction[1],CurrentPos[1], 9, SL=STOP, TP=TAKE)
                     else:
@@ -1461,4 +1268,3 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     #plt.legend(loc=2)
     plt.show()
 time.sleep(60) ##don't close for 1 min
-
