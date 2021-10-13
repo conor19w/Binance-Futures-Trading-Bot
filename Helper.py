@@ -1,6 +1,8 @@
 from binance.client import Client
+from binance.enums import *
 from datetime import timezone,datetime,date,timedelta
-client = Client(api_key='',api_secret='') ##Binance keys needed to get historical data/ Trade on an account
+import API_keys
+client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
 def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
     start_string = ""
     ##Parse test_set_length to work out the time period we are taking data from, being sure to leave the test_set alone
@@ -292,3 +294,254 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Close_1min.append(float(kline[4]))
 
     return Date,Open,Close,High,Low,Volume,High_1min,Low_1min,Close_1min,Open_1min,Date_1min
+
+def get_coin_attrib(symbol):
+    Coin_precision = -99
+    Order_precision = -99
+
+    if symbol == 'BTCUSDT':
+        Coin_precision = 2
+        Order_precision = 2
+
+    elif symbol == 'ETHUSDT':
+        Coin_precision = 2
+        Order_precision = 2
+
+    elif symbol == 'LTCUSDT':
+        Coin_precision = 2
+        Order_precision = 3
+
+    elif symbol == 'SOLUSDT':
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol == 'BNBUSDT':
+        Coin_precision = 2
+        Order_precision = 2
+
+    elif symbol == 'ADAUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == 'DOGEUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == 'MATICUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == "BAKEUSDT":
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == "SHIBUSDT":
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == "XRPUSDT":
+        Coin_precision = 4
+        Order_precision = 1
+
+    elif symbol == "SUSHIUSDT":
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol == "DOTUSDT":
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol == "ALPHAUSDT":
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == "DGBUSDT":
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == "RLCUSDT":
+        Coin_precision = 4
+        Order_precision = 1
+
+    elif symbol == "HNTUSDT":
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol == "OCEANUSDT":
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == "ZRXUSDT":
+        Coin_precision = 4
+        Order_precision = 1
+
+    elif symbol == "ONTUSDT":
+        Coin_precision = 4
+        Order_precision = 1
+
+    elif symbol == "FLMUSDT":
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == "BCHUSDT":
+        Coin_precision = 2
+        Order_precision = 3
+
+    elif symbol == "BTSUSDT":
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == "RSRUSDT":
+        Coin_precision = 6
+        Order_precision = 0
+
+    elif symbol == "BZRXUSDT":
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == "SFPUSDT":
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == "ZILUSDT":
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == "EOSUSDT":
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol == "ENJUSDT":
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == "TRXUSDT":
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == "LITUSDT":
+        Coin_precision = 3
+        Order_precision = 1
+    return Coin_precision,Order_precision
+
+def get_historical(symbol,start_string,Interval):
+    Open = []
+    High = []
+    Low = []
+    Close = []
+    Volume = []
+    Date = []
+    if Interval == '1m':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '3m':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3MINUTE,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '5m':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '15m':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '30m':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '1h':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '2h':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_2HOUR,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '4h':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_4HOUR,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '6h':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_6HOUR,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '8h':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_8HOUR,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '12h':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_12HOUR,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '1d':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '3d':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3DAY,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    elif Interval == '1w':
+        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1WEEK,start_str=start_string):
+            Date.append(int(kline[0]))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+
+    return Date,Open,Close,High,Low,Volume
