@@ -20,6 +20,7 @@
 * To back test ensure Trading is switched off on line 92.
 * Back test section starts at line 700.
 * Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. symbol = ['BTCUSDT' , 'ETHUSDT'] , this would run your strategy on BTC and ETH.
+Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * Ignore the [pair-trading](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/608d8c2a3e2525c2c89f65b0e3c1f92bdb6680c6/Bot.py#L724) section if you are executing a TA strategy
 * The [time_period](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/608d8c2a3e2525c2c89f65b0e3c1f92bdb6680c6/Bot.py#L752) variable is the length of time in the past from today to run the strategy on
 * The [TIME_INTERVAL](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/608d8c2a3e2525c2c89f65b0e3c1f92bdb6680c6/Bot.py#L753) variable is the interval for the candlesticks we want to trade on.
