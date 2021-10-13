@@ -23,9 +23,9 @@
 * Ignore the [pair-trading](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/92841dd2b8c0b8778e90b28fe887e0e19b2949e4/Bot.py#L731) section if you are executing a TA strategy
 * The [time_period](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/92841dd2b8c0b8778e90b28fe887e0e19b2949e4/Bot.py#L759) variable is the length of time in the past from today to run the strategy on
 * The [TIME_INTERVAL](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/92841dd2b8c0b8778e90b28fe887e0e19b2949e4/Bot.py#L760) variable is the interval for the candlesticks we want to trade on.
-* Next we want to choose our TA strategy, this is done after [line 886](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/92841dd2b8c0b8778e90b28fe887e0e19b2949e4/Bot.py#L886), uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). this should be returned by custom functions for the strategy to be executed correctly
+* Next we want to choose our TA strategy, this is done after [line 886](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/92841dd2b8c0b8778e90b28fe887e0e19b2949e4/Bot.py#L886), uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions you create for the strategy to be executed correctly
 * Some of the pre-coded strategies return a 'Type' variable, if a strategy returns the 'Type' variable you must call the SetSLTP() function from [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/120baa9bb0b6f17d31daedb5769428b95ee3930e/TradingStrats.py) in order to set the corresponding Stop loss value, and Take profit value, this function is found in TradingStrats.py
-* Now just run the script and wait a few minutes for it top pull the data and begin backtesting
+* Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 ### Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
 ---
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
@@ -37,14 +37,14 @@ __Run strategies at your own risk I am not responsible for your trading decision
 * Adjust 'OrderSIZE' line 95 and 'leverage' line 35 as you see fit, adjusting the leverage only changes the EffectiveAccountBalance variable in the script which will affect the order quantity, you must manually adjust the leverage on the exchange currently. __Note: OrderSIZE just helps scale trades in reality you may be risking more than your desired percentage, this will be decided by your stoploss values implemented__
 * The Market_Orders switch on line 91 decides whether to use market orders (1) or to use limit orders (0).
 * Now we select our trading strategy, one which we have thoroughly Backtested in the section starting on line 349.
-* Custom Strategies must return a 'prediction' variable either 1, 0, or -99 to go long, short or flat respectively. 
+* Custom Strategies must return a 'prediction' parameter either 1, 0, or -99 to go long, short or flat respectively. 
 * Again like in Backtesting we call our trading strategy in the form of a function, If the function returns a Type then we must call the SetSLTP() function to set our Stop loss and Take profit before sending our orders.
 * Now just run the script and your strategy is up and running.
 ### Create Custom Strategies
 ---
 * Custom Strategies Can be implemented in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
-* Custom Strategies should return 'prediction' to indicate the strategy's decision to go short (0), go long (1), go flat (-99).
-* For stop loss and take profit you must calculate and assign values to stoplossval and takeprofitval respectively, some pre-coded stoploss functions are already encapsulated in the [SetSLTP()](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/120baa9bb0b6f17d31daedb5769428b95ee3930e/TradingStrats.py#L750) function you may use this by getting your custom strategy to return a Type parameter corresponding to the Type in SetSLTP() or else set these in a custom function of your own. 
+* Custom Strategies should return 'prediction' parameter to indicate the strategy's decision to go short (0), go long (1), go flat (-99).
+* For stop loss and take profit you must calculate and assign values to stoplossval and takeprofitval respectively, some pre-coded stoploss functions are already encapsulated in the [SetSLTP()](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/120baa9bb0b6f17d31daedb5769428b95ee3930e/TradingStrats.py#L750) function you may use these by getting your custom strategy to return a Type parameter corresponding to the Type in SetSLTP() or else set these in a custom function of your own. 
 __Note: Stop loss and Take profit should be the margin of increase/decrease not the target price.__
 
 # Contact me
