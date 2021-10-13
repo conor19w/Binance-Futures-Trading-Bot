@@ -550,7 +550,10 @@ if Trading: ## Trade on Binance with above api key and secret key
         if Profit>previous_Profit:
             successful_Trades+=1
         print("Account Balance: ", AccountBalance, "Profit:", Profit)
-        print("PV:", (Profit * 100) / (tradeNO * Close[-1]),"Stoploss:",stoplossval, "TakeProfit:", takeprofitval,"Successful Trades:",successful_Trades,"Trades lost:",tradeNO-successful_Trades,"W/L ratio:",successful_Trades/tradeNO)
+        try:
+            print("PV:", (Profit * 100) / (tradeNO * Close[-1]),"Stoploss:",stoplossval, "TakeProfit:", takeprofitval,"Successful Trades:",successful_Trades,"Trades lost:",tradeNO-successful_Trades,"W/L ratio:",successful_Trades/tradeNO)
+        except:
+            pass
         previous_Profit = copy(Profit)
         Profit=0
         return previous_Profit
