@@ -3,6 +3,7 @@ from collections import deque
 import json,pprint
 import asyncio
 import time
+from joblib import load, dump
 import websockets
 import Data_flow as flow
 import sys, os
@@ -143,7 +144,10 @@ if Trading: ## Trade on Binance with above api key and secret key
         Date,Open,Close,High,Low,Volume = Helper.get_historical(symbol,start_string,Interval)
 
         y = client.futures_account_balance()
-        AccountBalance = float(y[1]['balance'])
+        for x in y:
+            if x['asset'] == 'USDT':
+                AccountBalance = float(x['balance'])   
+                
         EffectiveAccountBalance = AccountBalance * leverage
 
         try:
@@ -378,8 +382,10 @@ if Trading: ## Trade on Binance with above api key and secret key
 
             if minuteFlag: ##new OHLC data
                 y = client.futures_account_balance()
-                AccountBalance = float(y[1]['balance'])
-                EffectiveAccountBalance = AccountBalance*leverage ##Get Account Balance when multiplied by leverage to use for deciding positionSize based of OrderSIZE above
+                for x in y:
+                    if x['asset'] == 'USDT':
+                        AccountBalance = float(x['balance'])
+                EffectiveAccountBalance = AccountBalance * leverage
 
                 minuteFlag = 0 ##switch off flag
                 prediction=-99 ##reinitialize
@@ -724,10 +730,11 @@ if Trading: ## Trade on Binance with above api key and secret key
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
-            print("Error in websocket, retrying")
+            print("Error in websocket, Restarting")
             time.sleep(1)
+            bnb = float(client.get_ticker(symbol="BNBUSDT")['lastPrice'])
+            printProfit(symbol, bnb, 0)
             run()
-
 
     run()
 
@@ -767,10 +774,11 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     log = 0 ###log prices, not recommended as implementation may be wrong, something i'm working on understanding better
     Close_pos = 0 ##flag to close the position on next open if pair trading
     if pair_Trading:
-        symbol = ['LITUSDT','SFPUSDT']
+        symbol = ['FLMUSDT','TRXUSDT']
+    load_data = 1
     #################################################################################################################
     STOP = 1  ##If strategy SLTP of type 9 multiplier for stoploss using ATR
-    TAKE = 2.5  ##If strategy SLTP of type 9 multiplier for takeprofit using ATR
+    TAKE = 2.5 ##If strategy SLTP of type 9 multiplier for takeprofit using ATR
 
     Highest_lowest = 0
     Type = []
@@ -813,20 +821,47 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
         VolumeStream.append([])
         DateStream.append([])
 
-
-    for i in range(len(symbol)):
-        Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp, High_1min_temp, Low_1min_temp, Close_1min_temp,Open_1min_temp, Date_1min_temp = Helper.get_Klines(symbol[i], TIME_INTERVAL,time_period,test_set,test_set_length)
-        Date.append(Date_temp)
-        Open.append(Open_temp)
-        Close.append(Close_temp)
-        High.append(High_temp)
-        Low.append(Low_temp)
-        Volume.append(Volume_temp)
-        High_1min.append(High_1min_temp)
-        Low_1min.append(Low_1min_temp)
-        Close_1min.append(Close_1min_temp)
-        Open_1min.append(Open_1min_temp)
-        Date_1min.append(Date_1min_temp)
+    if load_data:
+        print("Loading Price Data")
+        price_data = load(f"C:\\Users\\conor\\Desktop\\plots_mean\\Equity_Curves_{TIME_INTERVAL}\\price_data.joblib")
+        #symbols = load(f"C:\\Users\\conor\\Desktop\\plots_mean\\Equity_Curves_{TIME_INTERVAL}\\symbols.joblib")
+        Date.append(copy(price_data[symbol[0]]['Date']))
+        Open.append(copy(price_data[symbol[0]]['Open']))
+        Close.append(copy(price_data[symbol[0]]['Close']))
+        High.append(copy(price_data[symbol[0]]['High']))
+        Low.append(copy(price_data[symbol[0]]['Low']))
+        Volume.append(copy(price_data[symbol[0]]['Volume']))
+        High_1min.append(copy(price_data[symbol[0]]['High_1min']))
+        Low_1min.append(copy(price_data[symbol[0]]['Low_1min']))
+        Close_1min.append(copy(price_data[symbol[0]]['Close_1min']))
+        Open_1min.append(copy(price_data[symbol[0]]['Open_1min']))
+        Date_1min.append(copy(price_data[symbol[0]]['Date_1min']))
+        Date.append(copy(price_data[symbol[1]]['Date']))
+        Open.append(copy(price_data[symbol[1]]['Open']))
+        Close.append(copy(price_data[symbol[1]]['Close']))
+        High.append(copy(price_data[symbol[1]]['High']))
+        Low.append(copy(price_data[symbol[1]]['Low']))
+        Volume.append(copy(price_data[symbol[1]]['Volume']))
+        High_1min.append(copy(price_data[symbol[1]]['High_1min']))
+        Low_1min.append(copy(price_data[symbol[1]]['Low_1min']))
+        Close_1min.append(copy(price_data[symbol[1]]['Close_1min']))
+        Open_1min.append(copy(price_data[symbol[1]]['Open_1min']))
+        Date_1min.append(copy(price_data[symbol[1]]['Date_1min']))
+        del price_data
+    else:
+        for i in range(len(symbol)):
+            Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp, High_1min_temp, Low_1min_temp, Close_1min_temp,Open_1min_temp, Date_1min_temp = Helper.get_Klines(symbol[i], TIME_INTERVAL,time_period,test_set,test_set_length)
+            Date.append(Date_temp)
+            Open.append(Open_temp)
+            Close.append(Close_temp)
+            High.append(High_temp)
+            Low.append(Low_temp)
+            Volume.append(Volume_temp)
+            High_1min.append(High_1min_temp)
+            Low_1min.append(Low_1min_temp)
+            Close_1min.append(Close_1min_temp)
+            Open_1min.append(Open_1min_temp)
+            Date_1min.append(Date_1min_temp)
     print("Symbols:", symbol, "Start Balance:", AccountBalance,"fee:",fee)
     break_even=0 ##whether or not to move the stoploss into profit based of settings below
     break_even_flag=0 ##flag don't change
@@ -933,13 +968,14 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         #prediction[j],Type[j] = TS.Fractal2(CloseStream[j],LowStream[j],HighStream[j],signal1,prediction[j]) ###############################################
                         # prediction[j],Type[j] = TS.stochBB(prediction[j],CloseStream[j])
                         # prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
-                        #stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
+                        prediction[j] , Type[j] = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
+                        stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
                         #prediction[j],stoplossval[j],takeprofitval[j],max_pos,min_pos = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
                         # if prediction[j]==0 or prediction[j]==1 and CurrentPos[j]==-99:
                         #    print("\nMax:",DateStream[j][max_pos])
                         #    print("Min:",DateStream[j][min_pos])
 
-                        prediction[j],stoplossval[j],takeprofitval[j] = TS.Fractal(CloseStream[j], LowStream[j], HighStream[j],OpenStream[j],prediction[j])
+                        #prediction[j],stoplossval[j],takeprofitval[j] = TS.Fractal(CloseStream[j], LowStream[j], HighStream[j],OpenStream[j],prediction[j])
 
                         # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.SARMACD200EMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
 
