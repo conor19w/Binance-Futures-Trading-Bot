@@ -767,7 +767,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
 
 
     ############################## pairTrading ##############################################
-    pair_Trading = 1  ##Switch to backtest the pairtrading Long-Short strategy, switch off for any other strategy
+    pair_Trading = 0  ##Switch to backtest the pairtrading Long-Short strategy, switch off for any other strategy
     TPSL = 0 ## type of take profit for pair trading
     percent_TP = .08 ##percent to takeprofit if TPSL switched on
     percent_SL = .01 ##percent to stoploss if TPSL switched on
