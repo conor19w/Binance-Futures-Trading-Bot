@@ -21,7 +21,7 @@
 * Back test section starts at line 745.
 * Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. symbol = ['BTCUSDT' , 'ETHUSDT'] , this would run your strategy on BTC and ETH.
 Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
-* Ignore the [pair-trading](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/b79c31af8096b8756dd3f6cb3983e7d61c645834/Bot.py#L769) section if you are executing a TA strategy
+* Ignore the [pair-trading](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/b79c31af8096b8756dd3f6cb3983e7d61c645834/Bot.py#L769) section and ensure pair_Trading = 0, if you are executing a TA strategy
 * The [time_period](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/b79c31af8096b8756dd3f6cb3983e7d61c645834/Bot.py#L798) variable is the length of time in the past from today excluding the test-set, to run the strategy on. This is in the same units as the test_set_length.
 * The [TIME_INTERVAL](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/b79c31af8096b8756dd3f6cb3983e7d61c645834/Bot.py#L799) variable is the interval for the candlesticks we want to trade on.
 * Next we want to choose our TA strategy, this is done after line 952 , uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions you create for the strategy to be executed correctly
