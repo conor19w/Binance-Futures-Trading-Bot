@@ -775,7 +775,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     Close_pos = 0 ##flag to close the position on next open if pair trading
     if pair_Trading:
         symbol = ['FLMUSDT','TRXUSDT']
-    load_data = 1
+    load_data = 0
     #################################################################################################################
     STOP = 1  ##If strategy SLTP of type 9 multiplier for stoploss using ATR
     TAKE = 2.5 ##If strategy SLTP of type 9 multiplier for takeprofit using ATR
