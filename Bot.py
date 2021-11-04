@@ -867,7 +867,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                     Open_1min.append(price_data['Open_1min'])
                     Date_1min.append(price_data['Date_1min'])
                 except:
-                    print("Wrong path above in price_data = load() or else Wrong path in download_Data")
+                    print("ERROR: Wrong path in download_Data.py")
                     print("Fix path issue or else turn off load_data")
                     print("Contact me if still stuck @ wconor539@gmail.com")
 
