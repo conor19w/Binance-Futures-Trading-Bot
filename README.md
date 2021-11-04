@@ -29,7 +29,7 @@ Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * Some of the pre-coded strategies return a 'Type' variable, if a strategy returns the 'Type' variable you must call the SetSLTP() function from [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/120baa9bb0b6f17d31daedb5769428b95ee3930e/TradingStrats.py) in order to set the corresponding Stop loss value, and Take profit value, this function is found in TradingStrats.py
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 
-#### Use Downloaded data for backtesting
+#### Using Downloaded data for backtesting
 ---
 * Reason to do this is to speed up backtesting 
 * Create a folder on the desktop called __price_data__.
