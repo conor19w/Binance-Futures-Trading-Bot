@@ -854,7 +854,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 try:
                     DD.get_data(TIME_INTERVAL,x,f"{time_period} {period_string} ago UTC")
                     print("Download Successful, Loading Data now")
-                    price_data = load(f"{path}\\{x}_{time_period} {period_string} ago UTC.joblib")
+                    price_data = load(path)
                     Date.append(price_data['Date'])
                     Open.append(price_data['Open'])
                     Close.append(price_data['Close'])
