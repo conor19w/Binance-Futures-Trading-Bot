@@ -1,13 +1,56 @@
-import pandas as pd
-import numpy as np
-from ta.momentum import stochrsi_d,stochrsi_k,stoch,stoch_signal,rsi
-from ta.trend import ema_indicator,macd_signal,macd,sma_indicator,adx,sma_indicator
-from ta.volatility import average_true_range,bollinger_pband,bollinger_hband,bollinger_lband,bollinger_mavg
 from ta.momentum import tsi
 import math
 import statsmodels.api as sm
 from sklearn import tree
 from statsmodels.tsa.stattools import adfuller,coint
+from math import log10, floor
+from copy import copy
+import time
+
+
+
+def single_candle_swing_pump(prediction,Close,High,Low,CurrentPos,ClosePos,count,stoploss):
+    prediction = -99
+    number_bars = 1 ##how many bars to wait until we sell
+    if High[-5]<High[-4]<High[-3] and High[-3]>High[-2]>High[-1] and CurrentPos == -99:
+        prediction = 0
+        #stoploss = 1.5*np.array(average_true_range(pd.Series(High), pd.Series(Low), pd.Series(Close)))[-1]
+    elif Low[-5]<Low[-4]<Low[-3] and Low[-3]<Low[-2]<Low[-1] and CurrentPos == -99:
+        prediction = 1
+        #stoploss = 1.5*np.array(average_true_range(pd.Series(High), pd.Series(Low), pd.Series(Close)))[-1]
+    if CurrentPos!=-99 and count==number_bars:
+        ClosePos = 1
+        count=0
+    elif CurrentPos!=-99 and count!=number_bars:
+        count+=1
+    else:
+        ClosePos = -99
+
+    return prediction,ClosePos,count,stoploss
+def RSI_trade(prediction,Close,CurrentPos,ClosePos):
+    RSI = np.array(rsi(pd.Series(Close)))
+    if RSI[-1]<30 and CurrentPos == -99: ## RSI[-2]>50 and RSI[-1]<50 and RSI[-1]>30 and CurrentPos == -99:
+        prediction = 1
+    elif RSI[-1]>70 and CurrentPos == -99: ##RSI[-2]<50 and RSI[-1]>50 and RSI[-1]<70  and CurrentPos == -99:
+        prediction = 0
+    elif CurrentPos == 0 and (RSI[-1]<30 or RSI[-1]>50):
+        ClosePos = 1
+    elif CurrentPos == 1 and (RSI[-1]>70 or RSI[-1]<50):
+        ClosePos = 1
+    else:
+        ClosePos = 0
+    return prediction,ClosePos
+
+
+
+def candle_wick(prediction,Close,Open,High,Low):
+    if Close[-5]<Close[-4]<Close[-3] and Close[-2]<Open[-2] and (High[-2]-Open[-2] + Close[-2]-Low[-2])> 15*(Open[-2]-Close[-2]) and Close[-1]<Close[-2]:
+        ##3 green candles followed by a red candle with a huge wick
+        prediction = 0
+    elif Close[-5]>Close[-4]>Close[-3] and Close[-2]>Open[-2] and (High[-2]-Close[-2] + Open[-2]-Low[-2])> 15*(Close[-2]-Open[-2]) and Close[-1]>Close[-2]:
+        ##3 red candles followed by a green candle with a huge wick
+        prediction = 1
+    return prediction,9
 
 def fibMACD(prediction,Close,Open,High,Low):
     stoplossval = 0
@@ -76,7 +119,7 @@ def fibMACD(prediction,Close,Open,High,Low):
         fib_level_4 = max_Close - .618 * (max_Close - min_Close)
         fib_level_5 = max_Close - .786 * (max_Close - min_Close)
         fib_level_6 = min_Close
- 
+
 
         fib_retracement_level_1 = fib_level_0+1.236*(max_Close - min_Close) - Close[-1]##target max_Close+1.236*(max_Close - min_Close)
         fib_retracement_level_2 = fib_level_0+1.382*(max_Close - min_Close) - Close[-1]
@@ -207,7 +250,7 @@ def fibMACD(prediction,Close,Open,High,Low):
                 takeprofitval = fib_retracement_level_6
                 stoplossval = fib_level_6*1.0001 - Close[-1]
 
-    return prediction,stoplossval,takeprofitval,max_pos,min_pos
+    return prediction,stoplossval,takeprofitval
 
 
 
@@ -352,65 +395,6 @@ def tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction):
 ##############################################################################################################################
 
 
-def Fractal(CloseStream,LowStream,HighStream,OpenStream,prediction):
-    stoplossval = 0
-    takeprofitval = 0
-    try:
-        Close = np.array(CloseStream)
-        High = np.array(HighStream)
-        Low = np.array(LowStream)
-        Open = np.array(OpenStream)
-        #RSI = np.array(rsi(pd.Series(CloseStream)))
-        #TSI = np.array(tsi(pd.Series(CloseStream)))
-        CloseS = pd.Series(CloseStream)
-        LowS = pd.Series(LowStream)
-        HighS = pd.Series(HighStream)
-        #ADX = np.array(adx(high=HighS,low=LowS,close=CloseS))
-        #EMA200 = np.array(ema_indicator(CloseS,window=200))
-        EMA100 = np.array(ema_indicator(CloseS,window=100))
-        EMA50 = np.array(ema_indicator(CloseS,window=50))
-        EMA20 = np.array(ema_indicator(CloseS,window=20))
-
-        if (High[-3]>High[-5] and High[-3]>High[-4] and High[-3]>High[-2] and High[-3]>High[-1]) and \
-                EMA20[-5]<EMA50[-5]<EMA100[-5] and EMA20[-4]<EMA50[-4]<EMA100[-4] and EMA20[-1]<EMA50[-1]<EMA100[-1] \
-                and EMA20[-2]<EMA50[-2]<EMA100[-2] and EMA20[-3]<EMA50[-3]<EMA100[-3] and\
-                (EMA50[-3]>High[-3]>EMA20[-3]) \
-                 and Close[-5]<EMA100[-5] and Close[-4]<EMA100[-4] and Close[-3]<EMA100[-3] and Close[-2]<EMA100[-2] and Close[-1]<EMA100[-1] and (Close[-2] > Open[-2] > Close[-1]):# and ADX[-1]>25:
-            prediction=0
-            stoplossval=math.fabs(Close[-1]-EMA50[-1])*1.05
-            takeprofitval = math.fabs(Close[-1]-EMA50[-1])*1.55
-        elif (High[-3]>High[-5] and High[-3]>High[-4] and High[-3]>High[-2] and High[-3]>High[-1]) and \
-                EMA20[-5]<EMA50[-5]<EMA100[-5] and EMA20[-4]<EMA50[-4]<EMA100[-4] and EMA20[-1]<EMA50[-1]<EMA100[-1]\
-                and EMA20[-2]<EMA50[-2]<EMA100[-2] and EMA20[-3]<EMA50[-3]<EMA100[-3] and\
-                (EMA100[-3]>High[-3]>EMA50[-3]) \
-                and Close[-5]<EMA100[-5] and Close[-4]<EMA100[-4] and Close[-3]<EMA100[-3] and Close[-2]<EMA100[-2] and Close[-1]<EMA100[-1] and (Close[-2] > Open[-2] > Close[-1]):# and ADX[-1]>25:
-            prediction=0
-            stoplossval = math.fabs(Close[-1]-EMA100[-1])*1.05
-            takeprofitval =   math.fabs(Close[-1]-EMA100[-1])*1.55
-        elif (Low[-3]<Low[-5] and Low[-3]<Low[-4] and Low[-3]<Low[-2] and Low[-3]<Low[-1]) and \
-                EMA20[-5] > EMA50[-5] > EMA100[-5] and EMA20[-4] > EMA50[-4] > EMA100[-4] and EMA20[-1] > EMA50[-1] > EMA100[-1]\
-                and EMA20[-2] > EMA50[-2] > EMA100[-2] and EMA20[-3] > EMA50[-3] > \
-                EMA100[-3] and \
-                (EMA50[-3] < Low[-3] < EMA20[-3]) \
-                and Close[-5] > EMA100[-5] and Close[-4] > EMA100[-4] and Close[-3] > EMA100[-3] and Close[-2] > EMA100[-2] and Close[-1] > EMA100[-1] and (Close[-2] < Open[-2] < Close[-1]):# and ADX[-1]>25:
-            prediction = 1
-            stoplossval = math.fabs(Close[-1] - EMA50[-1])*1.05
-            takeprofitval =   math.fabs(Close[-1]-EMA50[-1])*1.55
-        elif (Low[-3]<Low[-5] and Low[-3]<Low[-4] and Low[-3]<Low[-2] and Low[-3]<Low[-1]) and \
-                EMA20[-5] > EMA50[-5] > EMA100[-5] and EMA20[-4] > EMA50[-4] > EMA100[-4] and EMA20[-1]>EMA50[-1]>EMA100[-1]\
-                and EMA20[-2]>EMA50[-2]>EMA100[-2] and EMA20[-3]>EMA50[-3]>EMA100[-3] and \
-                (EMA100[-3]<Low[-3]<EMA50[-3]) \
-                and Close[-5] > EMA100[-5] and Close[-4] > EMA100[-4] and Close[-3]>EMA100[-3] and Close[-2]>EMA100[-2] and Close[-1]>EMA100[-1] and (Close[-2] < Open[-2] < Close[-1]):# and ADX[-1]>25:
-            prediction=1
-            stoplossval = math.fabs(Close[-1]-EMA100[-1])*1.05
-            takeprofitval = math.fabs(Close[-1]-EMA100[-1])*1.55
-        else:
-            prediction=-99
-    except RuntimeWarning as e:
-        pass
-
-    return prediction,stoplossval,takeprofitval
-
 
 def RSIStochEMA(prediction,CloseStream,HighStream,LowStream,signal1,currentPos):
 
@@ -496,7 +480,7 @@ def RSIStochEMA(prediction,CloseStream,HighStream,LowStream,signal1,currentPos):
         signal1=-99
         prediction=-99
 
-    return prediction, signal1, 4,loc1,location_peaks[-1],loc2,location_troughs[-1],location_peaks,RSI
+    return prediction, signal1, 4
 
 
 ##############################################################################################################
@@ -595,10 +579,10 @@ def trend_Ride(prediction,Close,High,Low,percent,current_Pos,Highest_lowest):
 
 def pairTrading(prediction,Close1,Close2,log=0,TPSL=0,percent_TP=0,percent_SL=0):
     new_Close = []
-    Close1_TP = 0
+    '''Close1_TP = 0
     Close2_TP = 0
     Close1_SL = 0
-    Close2_SL = 0
+    Close2_SL = 0'''
     #multiplier = Close1[0]/Close2[0]
     if not log:
         multiplier = (sm.OLS(Close1, Close2).fit()).params[0]
@@ -616,11 +600,11 @@ def pairTrading(prediction,Close1,Close2,log=0,TPSL=0,percent_TP=0,percent_SL=0)
     BB =np.array(bollinger_pband(pd.Series(new_Close),window_dev=3))
     #BB1 = np.array(bollinger_hband(pd.Series(new_Close),window_dev=3))
     #BB2 = np.array(bollinger_lband(pd.Series(new_Close), window_dev=3))
-    SMA20 = np.array(bollinger_mavg(pd.Series(new_Close)))
+    #SMA20 = np.array(bollinger_mavg(pd.Series(new_Close)))
     #print(BB[-1])
     if BB[-1]>1:
-        prediction = [0,1]
-        if TPSL:
+        prediction = [0,1]  # [1,0]
+        '''if TPSL:
             ##work out distance to the mean and allocate the change to get there to each series:
             #print(new_Close[-1],SMA20[-1])
             #change_in_decimal = math.fabs((new_Close[-1] - SMA20[-1])/new_Close[-1])
@@ -629,10 +613,10 @@ def pairTrading(prediction,Close1,Close2,log=0,TPSL=0,percent_TP=0,percent_SL=0)
             Close1_TP = Close1[-1]*percent_TP
             Close2_TP = Close2[-1]*percent_TP
             Close1_SL = Close1[-1] * percent_SL
-            Close2_SL = Close2[-1] * percent_SL
+            Close2_SL = Close2[-1] * percent_SL'''
     elif BB[-1]<0:
-        prediction = [1,0]
-        if TPSL:
+        prediction = [1,0] # [0,1]
+        '''if TPSL:
             ##work out distance to the mean and allocate the change to get there to each series:
             #print(new_Close[-1],SMA20[-1])
             #change_in_decimal = math.fabs((new_Close[-1] - SMA20[-1])/new_Close[-1])
@@ -642,8 +626,9 @@ def pairTrading(prediction,Close1,Close2,log=0,TPSL=0,percent_TP=0,percent_SL=0)
             Close1_TP = Close1[-1] * percent_TP
             Close2_TP = Close2[-1] * percent_TP
             Close1_SL = Close1[-1] * percent_SL
-            Close2_SL = Close2[-1] * percent_SL
-    return prediction,[9,9],Close1_TP,Close2_TP,Close1_SL,Close2_SL
+            Close2_SL = Close2[-1] * percent_SL'''
+    return prediction,[9,9] #,Close1_TP,Close2_TP,Close1_SL,Close2_SL
+
 
 def pairTrading_Crossover(prediction, Close1, Close2, CurrentPos, percent_SL=0):
     new_Close = []
@@ -669,82 +654,6 @@ def pairTrading_Crossover(prediction, Close1, Close2, CurrentPos, percent_SL=0):
             Close_pos=1
     return prediction,Close1_SL,Close2_SL,Close_pos
 
-def SARMACD200EMA(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction,CurrentPos,signal1):
-    newOrder=0
-    Close = np.array(CloseStream)
-    High = np.array(HighStream)
-    Low = np.array(LowStream)
-    SAR=ta.SAR(High,Low,acceleration=.02,maximum=.2)
-    EMA200 = ta.EMA(Close,timeperiod=200)
-    macd, macdsignal, macdhist = ta.MACD(Close)
-
-    if Close[-1]>EMA200[-1] and macd[-1]>macdsignal[-1] and macd[-2]<macdsignal[-2]:
-        signal1=1
-    elif Close[-1]<EMA200[-1] and macd[-1]<macdsignal[-1] and macd[-2]>macdsignal[-2]:
-        signal1=0
-
-
-
-
-    if signal1==1 and SAR[-1]<Close[-1] and macd[-1]>macdsignal[-1]:
-        prediction=1
-        newOrder=1
-    elif signal1==0 and SAR[-1]>Close[-1] and macd[-1]<macdsignal[-1]:
-        prediction=0
-        newOrder=1
-
-
-    if newOrder:
-        #Close = np.array(CloseStream)
-        #High = np.array(HighStream)
-        #Low = np.array(LowStream)
-        ATR = np.array(average_true_range(pd.Series(HighStream),pd.Series(LowStream),pd.Series(CloseStream)))
-        if prediction == 0 and CurrentPos == -99:
-            stoplossval = 2 * ATR[-1]
-            takeprofitval = 5 * ATR[-1]
-        elif prediction == 1 and CurrentPos == -99:
-            stoplossval = 2 * ATR[-1]
-            takeprofitval = 5 * ATR[-1]
-        '''highswing = HighStream[-2]
-        Lowswing = LowStream[-2]
-        highflag = 0
-        lowflag = 0
-        for j in range(-3, -60, -1):
-            if HighStream[j] > highswing and HighStream[j] > HighStream[j - 1] and HighStream[j] > HighStream[
-                j - 2] and highflag == 0:
-                highswing = HighStream[j]
-                highflag = 1
-            if LowStream[j] < Lowswing and LowStream[j] < LowStream[j - 1] and LowStream[j] < LowStream[
-                j - 2] and lowflag == 0:
-                Lowswing = LowStream[j]
-                lowflag = 1
-
-        if prediction == 0 and CurrentPos == -99:
-            stoplossval = (highswing - CloseStream[-1])
-            if stoplossval < 0:
-                stoplossval *= -1
-            takeprofitval = stoplossval * 2
-
-        elif prediction == 1 and CurrentPos == -99:
-            stoplossval = (CloseStream[-1] - Lowswing)
-            if stoplossval < 0:
-                stoplossval *= -1
-            takeprofitval = stoplossval * 2'''
-        '''if prediction == 0 and CurrentPos == -99:
-            stoplossval = SAR[-1] - CloseStream[-1]
-            if stoplossval > 0.007 * CloseStream[-1]:
-                stoplossval = 0.007 * CloseStream[-1]
-            takeprofitval = 1.5*stoplossval
-            signal1=-99
-
-        elif prediction == 1 and CurrentPos == -99:
-            stoplossval = CloseStream[-1] - SAR[-1]
-            if stoplossval > 0.007*CloseStream[-1]:
-                stoplossval = 0.007*CloseStream[-1]
-            takeprofitval = 1.5*stoplossval
-            signal1 = -99'''
-
-    return takeprofitval,stoplossval,prediction,signal1
 
 ##Function used to decide stoploss values and takeprofit values based off a type variable returned by specific strategies above
 def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,prediction,CurrentPos,Type,SL=1,TP=1):
