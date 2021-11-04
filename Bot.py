@@ -835,7 +835,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     if load_data:
         print("Loading Price Data")
         for x in symbol:
-            path = f"C:\\Users\\conor\\Desktop\\price_data\\{x}_{TIME_INTERVAL}_{test_set_length}.joblib"
+            path = f"C:\\Users\\conor\\Desktop\\price_data"
             try:
                 price_data = load(path)
                 Date.append(price_data['Date'])
@@ -854,7 +854,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 try:
                     DD.get_data(TIME_INTERVAL,x,f"{time_period} {period_string} ago UTC")
                     print("Download Successful, Loading Data now")
-                    price_data = load(f"C:\\Users\\conor\\Desktop\\price_data\\{x}_{TIME_INTERVAL}_{test_set_length}.joblib")
+                    price_data = load(f"{path}\\{x}_{TIME_INTERVAL}_{test_set_length}.joblib")
                     Date.append(price_data['Date'])
                     Open.append(price_data['Open'])
                     Close.append(price_data['Close'])
