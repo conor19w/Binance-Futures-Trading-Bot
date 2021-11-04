@@ -20,7 +20,8 @@ import numpy as np
 from datetime import timezone,datetime,date,timedelta
 import Helper
 import API_keys
-#import personal_strats as PS
+import personal_strats as PS
+import download_Data as DD
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
 
@@ -31,7 +32,7 @@ signals= deque(maxlen=100000) ##when a siganl occured , NOT IN USE
 Open=[]
 High=[]
 Low=[]
-Close=[] 
+Close=[]
 Volume=[]
 Date=[]
 OpenStream=[]
@@ -771,9 +772,9 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     AccountBalance = 2335
     leverage = 35  ##leverage being used
     test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
-    test_set_length = "2 year ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
+    test_set_length = "1 day ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
     time_period = 1  ##time_period in same units as test_set_length above
-    TIME_INTERVAL = 60  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
+    TIME_INTERVAL = 5  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
     load_data = 1 ##load data from a file, download the data using download_Data.py
 
     ############################## pairTrading ##############################################
@@ -814,6 +815,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     break_Even_Stage = [.7,1.75]  ##if we reach this point in of profit target move stoploss to corresponding point break_even_Amount
     break_even_Amount = [.1, .4]  ##where to move the stop to
 
+    period_string, time_CAGR = Helper.get_period_String(test_set_length, time_period)
     for i in range(len(symbol)):
         Type.append(-99)
         stoplossval.append(0)
@@ -833,18 +835,43 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     if load_data:
         print("Loading Price Data")
         for x in symbol:
-            price_data = load(f"C:\\Users\\conor\\Desktop\\price_data\\{x}_{TIME_INTERVAL}_{test_set_length}.joblib")
-            Date.append(price_data['Date'])
-            Open.append(price_data['Open'])
-            Close.append(price_data['Close'])
-            High.append(price_data['High'])
-            Low.append(price_data['Low'])
-            Volume.append(price_data['Volume'])
-            High_1min.append(price_data['High_1min'])
-            Low_1min.append(price_data['Low_1min'])
-            Close_1min.append(price_data['Close_1min'])
-            Open_1min.append(price_data['Open_1min'])
-            Date_1min.append(price_data['Date_1min'])
+            path = f"C:\\Users\\conor\\Desktop\\price_data\\{x}_{TIME_INTERVAL}_{test_set_length}.joblib"
+            try:
+                price_data = load(path)
+                Date.append(price_data['Date'])
+                Open.append(price_data['Open'])
+                Close.append(price_data['Close'])
+                High.append(price_data['High'])
+                Low.append(price_data['Low'])
+                Volume.append(price_data['Volume'])
+                High_1min.append(price_data['High_1min'])
+                Low_1min.append(price_data['Low_1min'])
+                Close_1min.append(price_data['Close_1min'])
+                Open_1min.append(price_data['Open_1min'])
+                Date_1min.append(price_data['Date_1min'])
+            except:
+                print(f"Data doesnt exist in path: {path}, Downloading Data to specified path now...")
+                try:
+                    DD.get_data(TIME_INTERVAL,x,f"{time_period} {period_string} ago UTC")
+                    print("Download Successful, Loading Data now")
+                    price_data = load(f"C:\\Users\\conor\\Desktop\\price_data\\{x}_{TIME_INTERVAL}_{test_set_length}.joblib")
+                    Date.append(price_data['Date'])
+                    Open.append(price_data['Open'])
+                    Close.append(price_data['Close'])
+                    High.append(price_data['High'])
+                    Low.append(price_data['Low'])
+                    Volume.append(price_data['Volume'])
+                    High_1min.append(price_data['High_1min'])
+                    Low_1min.append(price_data['Low_1min'])
+                    Close_1min.append(price_data['Close_1min'])
+                    Open_1min.append(price_data['Open_1min'])
+                    Date_1min.append(price_data['Date_1min'])
+                except:
+                    print("Wrong path above in price_data = load() or else Wrong path in download_Data")
+                    print("Fix path issue or else turn off load_data")
+                    print("Contact me if still stuck @ wconor539@gmail.com")
+
+
     else:
         for i in range(len(symbol)):
             Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp, High_1min_temp, Low_1min_temp, Close_1min_temp,Open_1min_temp, Date_1min_temp = Helper.get_Klines(symbol[i], TIME_INTERVAL,time_period,test_set,test_set_length)
@@ -864,7 +891,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     ##variables for CAGR calculation
     start_equity = AccountBalance
 
-    period_string, time_CAGR = Helper.get_period_String(test_set_length,time_period)
+
 
     ##variables for sharpe ratio
     day_start_equity = AccountBalance
@@ -901,7 +928,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 if (CurrentPos[j]== -99 or Hold_pos) and not pair_Trading:
                     if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
                         break_even_flag=0
-                        
+
                         ##Public Strats :) :
                         ## These strats require a call to SetSLTP as they return a Type param:
 
@@ -911,6 +938,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         prediction[j], signal1, Type[j] = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
                         #prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
                         #prediction[j], Type[j] = TS.breakout(prediction[j],CloseStream[j],VolumeStream[j],symbol[j])
+                        #prediction[j],Type[j] = TS.Fractal2(CloseStream[j],LowStream[j],HighStream[j],signal1,prediction[j]) ###############################################
                         #prediction[j],Type[j] = TS.stochBB(prediction[j],CloseStream[j])
                         #prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
                         #prediction[j] , Type[j] = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
@@ -919,14 +947,14 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
 
 
                         ##These strats don't require a call to SetSLTP:
-                        
+
                         #prediction[j],stoplossval[j],takeprofitval[j] = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
                         #prediction[j],stoplossval[j],takeprofitval[j] = TS.Fractal(CloseStream[j], LowStream[j], HighStream[j],OpenStream[j],prediction[j])
                         # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.SARMACD200EMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
                         # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.TripleEMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
                         #prediction[j],Highest_lowest,Close_pos = TS.trend_Ride(prediction[j], CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos[j], Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
                         #prediction[j],Close_pos = TS.RSI_trade(prediction[j],CloseStream[j],CurrentPos[j],Close_pos)
-                        
+
                         ##########################################################################################################################################################################
                         ##########################################################################################################################################################################
                         ##Non public Strats sorry :( :
