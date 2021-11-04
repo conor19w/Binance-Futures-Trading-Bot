@@ -618,15 +618,15 @@ def get_period_String(test_set_length,time_period):
     time_CAGR = -99
     if test_set_length[2] == 'd' or test_set_length[3] == 'd' or test_set_length[4] == 'd':
         time_CAGR = time_period / 365
-        period_string = 'days'
+        period_string = 'day'
     elif test_set_length[2] == 'w' or test_set_length[3] == 'w':
         time_CAGR = time_period / 52
-        period_string = 'weeks'
+        period_string = 'week'
     elif test_set_length[2] == 'm' or test_set_length[3] == 'm':
         time_CAGR = time_period/ 12
-        period_string = 'months'
+        period_string = 'month'
     elif test_set_length[2] == 'y':
         time_CAGR = time_period
-        period_string = 'months'
+        period_string = 'year'
 
     return period_string,time_CAGR
