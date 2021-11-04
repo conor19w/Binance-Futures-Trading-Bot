@@ -20,6 +20,7 @@ import numpy as np
 from datetime import timezone,datetime,date,timedelta
 import Helper
 import API_keys
+#import personal_strats as PS
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
 
@@ -146,8 +147,8 @@ if Trading: ## Trade on Binance with above api key and secret key
         y = client.futures_account_balance()
         for x in y:
             if x['asset'] == 'USDT':
-                AccountBalance = float(x['balance'])   
-                
+                AccountBalance = float(x['balance'])
+
         EffectiveAccountBalance = AccountBalance * leverage
 
         try:
@@ -764,7 +765,16 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     #symbol = ['BATUSDT']
     #symbol = ["DOGEUSDT",'SOLUSDT']
     #symbol = ['DOGEUSDT', 'SOLUSDT','OMGUSDT','ADAUSDT','XRPUSDT','ETHUSDT','BTCUSDT','MATICUSDT','BNBUSDT','BAKEUSDT']#,'OMGUSDT']#,'ADAUSDT']#,'BTCUSDT']#,"BNBUSDT","XRPUSDT"]
+    #symbol = ['SANDUSDT']
 
+    OrderSIZE = .02
+    AccountBalance = 2335
+    leverage = 35  ##leverage being used
+    test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
+    test_set_length = "2 year ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
+    time_period = 1  ##time_period in same units as test_set_length above
+    TIME_INTERVAL = 60  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
+    load_data = 1 ##load data from a file, download the data using download_Data.py
 
     ############################## pairTrading ##############################################
     pair_Trading = 0  ##Switch to backtest the pairtrading Long-Short strategy, switch off for any other strategy
@@ -774,8 +784,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     log = 0 ###log prices, not recommended as implementation may be wrong, something i'm working on understanding better
     Close_pos = 0 ##flag to close the position on next open if pair trading
     if pair_Trading:
-        symbol = ['FLMUSDT','TRXUSDT']
-    load_data = 0
+        symbol = ['RENUSDT','ATOMUSDT']
     #################################################################################################################
     STOP = 1  ##If strategy SLTP of type 9 multiplier for stoploss using ATR
     TAKE = 2.5 ##If strategy SLTP of type 9 multiplier for takeprofit using ATR
@@ -789,22 +798,22 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     positionPrice = []
     PrevPos = []
     prediction = []
-
-    OrderSIZE = .02
-    AccountBalance = 2335
-    leverage = 35  ##leverage being used
-    test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
-    test_set_length = "1 month ago UTC" ## valid strings 'x days/weeks/months/years ago UTC'
-    time_period = 3 ##time_period in same units as test_set_length above
-    TIME_INTERVAL = 15  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
     profitgraph.append(AccountBalance)
 
+    count = 0
     Hold_pos = 0 ##no TP/SL, for strategies that buy and hold turn off otherwise
     percent = .01 ##percentage to hold out for
 
     originalBalance = copy(AccountBalance)
     waitflag = 0  ##wait until next candlestick before checking if stoploss/ takeprofit was hit
     fee = .00036
+
+    ##trailing stop variables
+    break_even = 0  ##whether or not to move the stoploss into profit based of settings below
+    break_even_flag = 0  ##flag don't change
+    break_Even_Stage = [.7,1.75]  ##if we reach this point in of profit target move stoploss to corresponding point break_even_Amount
+    break_even_Amount = [.1, .4]  ##where to move the stop to
+
     for i in range(len(symbol)):
         Type.append(-99)
         stoplossval.append(0)
@@ -823,31 +832,19 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
 
     if load_data:
         print("Loading Price Data")
-        price_data = load(f"C:\\Users\\conor\\Desktop\\plots_mean\\Equity_Curves_{TIME_INTERVAL}\\price_data.joblib")
-        #symbols = load(f"C:\\Users\\conor\\Desktop\\plots_mean\\Equity_Curves_{TIME_INTERVAL}\\symbols.joblib")
-        Date.append(copy(price_data[symbol[0]]['Date']))
-        Open.append(copy(price_data[symbol[0]]['Open']))
-        Close.append(copy(price_data[symbol[0]]['Close']))
-        High.append(copy(price_data[symbol[0]]['High']))
-        Low.append(copy(price_data[symbol[0]]['Low']))
-        Volume.append(copy(price_data[symbol[0]]['Volume']))
-        High_1min.append(copy(price_data[symbol[0]]['High_1min']))
-        Low_1min.append(copy(price_data[symbol[0]]['Low_1min']))
-        Close_1min.append(copy(price_data[symbol[0]]['Close_1min']))
-        Open_1min.append(copy(price_data[symbol[0]]['Open_1min']))
-        Date_1min.append(copy(price_data[symbol[0]]['Date_1min']))
-        Date.append(copy(price_data[symbol[1]]['Date']))
-        Open.append(copy(price_data[symbol[1]]['Open']))
-        Close.append(copy(price_data[symbol[1]]['Close']))
-        High.append(copy(price_data[symbol[1]]['High']))
-        Low.append(copy(price_data[symbol[1]]['Low']))
-        Volume.append(copy(price_data[symbol[1]]['Volume']))
-        High_1min.append(copy(price_data[symbol[1]]['High_1min']))
-        Low_1min.append(copy(price_data[symbol[1]]['Low_1min']))
-        Close_1min.append(copy(price_data[symbol[1]]['Close_1min']))
-        Open_1min.append(copy(price_data[symbol[1]]['Open_1min']))
-        Date_1min.append(copy(price_data[symbol[1]]['Date_1min']))
-        del price_data
+        for x in symbol:
+            price_data = load(f"C:\\Users\\conor\\Desktop\\price_data\\{x}_{TIME_INTERVAL}_{test_set_length}.joblib")
+            Date.append(price_data['Date'])
+            Open.append(price_data['Open'])
+            Close.append(price_data['Close'])
+            High.append(price_data['High'])
+            Low.append(price_data['Low'])
+            Volume.append(price_data['Volume'])
+            High_1min.append(price_data['High_1min'])
+            Low_1min.append(price_data['Low_1min'])
+            Close_1min.append(price_data['Close_1min'])
+            Open_1min.append(price_data['Open_1min'])
+            Date_1min.append(price_data['Date_1min'])
     else:
         for i in range(len(symbol)):
             Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp, High_1min_temp, Low_1min_temp, Close_1min_temp,Open_1min_temp, Date_1min_temp = Helper.get_Klines(symbol[i], TIME_INTERVAL,time_period,test_set,test_set_length)
@@ -863,76 +860,26 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             Open_1min.append(Open_1min_temp)
             Date_1min.append(Date_1min_temp)
     print("Symbols:", symbol, "Start Balance:", AccountBalance,"fee:",fee)
-    break_even=0 ##whether or not to move the stoploss into profit based of settings below
-    break_even_flag=0 ##flag don't change
-    break_Even_Stage = [.7,1.75] ##if we reach this point in of profit target move stoploss to corresponding point break_even_Amount
-    break_even_Amount = [.1,.4] ##where to move the stop to
 
     ##variables for CAGR calculation
     start_equity = AccountBalance
-    time_CAGR = -99
-    period_string=""
-    if test_set_length[2] == 'd' or test_set_length[3] == 'd' or test_set_length[4] == 'd':
-        time_CAGR = time_period / 365
-        period_string = 'days'
-    elif test_set_length[2] == 'w' or test_set_length[3] == 'w':
-        time_CAGR = time_period / 52
-        period_string = 'weeks'
-    elif test_set_length[2] == 'm' or test_set_length[3] == 'm':
-        time_CAGR = time_period/ 12
-        period_string = 'months'
-    elif test_set_length[2] == 'y':
-        time_CAGR = time_period
-        period_string = 'months'
+
+    period_string, time_CAGR = Helper.get_period_String(test_set_length,time_period)
 
     ##variables for sharpe ratio
     day_start_equity = AccountBalance
     month_return = 0
     monthly_return = []
     Daily_return = []
+
     print(f"{TIME_INTERVAL} min OHLC Candle Sticks from a period of {time_period} {period_string}")
+    Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume = Helper.align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume,symbol)
 
-    ##find shortest dataset to align other datasets to:
-    shortest_dataSet = [-99,99999999999] ## [which index , length of dataset]
-    for i in range(len(Date_1min)):
-        if len(Date_1min[i])<shortest_dataSet[1]:
-            shortest_dataSet[0] = i ##index of shortest data set
-            shortest_dataSet[1] = len(Date_1min[i]) ##length of that data set
-    ##Align the datasets so they all start at the same point
-    for i in range(len(symbol)):
-        for j in range(len(Date_1min[i])):
-            if Date_1min[i][j] == Date[-1][shortest_dataSet[0]]:
-                High_1min[i] = High_1min[i][j:]
-                Low_1min[i] = Low_1min[i][j:]
-                Date_1min[i] = Date_1min[i][j:]
-                Close_1min[i] = Close_1min[i][j:]
-                Open_1min[i] = Open_1min[i][j:]
-                #start_1min.append(j)
-                break
-        for j in range(len(Date[i])):
-            if Date[i][j] == Date[-1][shortest_dataSet[0]]:
-                Date[i] = Date[i][j:]
-                Open[i] = Open[i][j:]
-                Close[i] = Close[i][j:]
-                High[i] = High[i][j:]
-                Low[i] = Low[i][j:]
-                Volume[i] = Volume[i][j:]
-                #start.append(j)
-                break
-    for i in range(1,len(symbol)):
-        High_1min[i] = High_1min[i][:len(High_1min[shortest_dataSet[0]])]
-        Low_1min[i] = Low_1min[i][:len(Low_1min[shortest_dataSet[0]])]
-        Date_1min[i] = Date_1min[i][:len(Date_1min[shortest_dataSet[0]])]
-        Close_1min[i] = Close_1min[i][:len(Close_1min[shortest_dataSet[0]])]
-        Open_1min[i] = Open_1min[i][:len(Open_1min[shortest_dataSet[0]])]
-        Date[i] = Date[i][:len(Date[shortest_dataSet[0]])]
-        Open[i] = Open[i][:len(Open[shortest_dataSet[0]])]
-        Close[i] = Close[i][:len(Close[shortest_dataSet[0]])]
-        High[i] = High[i][:len(High[shortest_dataSet[0]])]
-        Low[i] = Low[i][:len(Low[shortest_dataSet[0]])]
-        Volume[i] = Volume[i][:len(Volume[shortest_dataSet[0]])]
-
+    Strategy = 0
     for i in range(len(High_1min[0])-1):
+        if len(Open)<300:
+            print("Not enough candlestick data provided please increase the time_period/ time units of test_set_length")
+            break
         #global trailing_stoploss,Highestprice
         if i%TIME_INTERVAL==0 and i!=0:
             for j in range(len(High_1min)):
@@ -946,43 +893,46 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
         if len(OpenStream[0])>=299:
             prev_Account_Bal=copy(AccountBalance)
             EffectiveAccountBalance = AccountBalance*leverage
+            if len(OpenStream[0])==299 and not pair_Trading:
+                pass
+                #Strategy = PS.sup_res(CloseStream[0]) ##not a strategy ive made public
+                #Strategy = PS.fractal() ##not a strategy ive made public
             for j in range(len(prediction)):
                 if (CurrentPos[j]== -99 or Hold_pos) and not pair_Trading:
                     if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
                         break_even_flag=0
+                        
+                        ##Public Strats :) :
+                        ## These strats require a call to SetSLTP as they return a Type param:
+
                         #prediction[j],signal1,signal2,Type[j] =TS.StochRSI_RSIMACD(prediction[j],CloseStream[j],signal1,signal2) ###########################################
                         #prediction[j],Type[j] = TS.StochRSIMACD(prediction[j], CloseStream[j],HighStream[j],LowStream[j])  ###########################################
                         #prediction[j], signal1, signal2, Type[j] = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction[j])
-                        #prediction[j], signal1, Type[j],loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
-                        # prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
+                        prediction[j], signal1, Type[j] = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
+                        #prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
                         #prediction[j], Type[j] = TS.breakout(prediction[j],CloseStream[j],VolumeStream[j],symbol[j])
-                        #if prediction[j]==1:
-                        #    prediction[j]=-99
-                        #prediction[j], Type[j] = TS.fakeout(prediction[j], CloseStream[j], VolumeStream[j], symbol[j])
-                        '''if loc1!=-99:
-                            print("Bearish Divergence found:",DateStream[loc1],"to",DateStream[loc1_1])
-                        if loc2!=-99:
-                            print("Bullish Divergence found:",DateStream[loc2],"to",DateStream[loc2_2])'''
-                        # for x in peaks:
-                        #   print("Peak at ",DateStream[x],"RSI:",RSI[x])
-                        #prediction[j],Type[j] = TS.Fractal2(CloseStream[j],LowStream[j],HighStream[j],signal1,prediction[j]) ###############################################
-                        # prediction[j],Type[j] = TS.stochBB(prediction[j],CloseStream[j])
-                        # prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
-                        prediction[j] , Type[j] = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
+                        #prediction[j],Type[j] = TS.stochBB(prediction[j],CloseStream[j])
+                        #prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
+                        #prediction[j] , Type[j] = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
+                        #prediction[j],Close_pos,count,stoplossval[j] = TS.single_candle_swing_pump(prediction[j],CloseStream[j],HighStream[j],LowStream[j],CurrentPos[j],Close_pos,count,stoplossval[j])
                         stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
-                        #prediction[j],stoplossval[j],takeprofitval[j],max_pos,min_pos = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
-                        # if prediction[j]==0 or prediction[j]==1 and CurrentPos[j]==-99:
-                        #    print("\nMax:",DateStream[j][max_pos])
-                        #    print("Min:",DateStream[j][min_pos])
 
+
+                        ##These strats don't require a call to SetSLTP:
+                        
+                        #prediction[j],stoplossval[j],takeprofitval[j] = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
                         #prediction[j],stoplossval[j],takeprofitval[j] = TS.Fractal(CloseStream[j], LowStream[j], HighStream[j],OpenStream[j],prediction[j])
-
                         # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.SARMACD200EMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
-
                         # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.TripleEMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
-
                         #prediction[j],Highest_lowest,Close_pos = TS.trend_Ride(prediction[j], CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos[j], Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
-
+                        #prediction[j],Close_pos = TS.RSI_trade(prediction[j],CloseStream[j],CurrentPos[j],Close_pos)
+                        
+                        ##########################################################################################################################################################################
+                        ##########################################################################################################################################################################
+                        ##Non public Strats sorry :( :
+                        # prediction[j],Type[j] = Strategy.Check_for_sup_res(CloseStream[j],OpenStream[j],HighStream[j],LowStream[j]) ##not a strategy ive made public
+                        # prediction[j], stoplossval[j], takeprofitval[j] = Strategy.check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction[j]) ##not a strategy ive made public
+                        ##########################################################################################################################################################################
 
                 elif not pair_Trading:
                     prediction[j]=-99
@@ -990,11 +940,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 elif pair_Trading and CurrentPos[0]==CurrentPos[1]==prediction[0]==prediction[1]==-99:
                     ##Pair Trading
 
-                    '''if prediction==[0,1] or prediction==[1,0]:
-                        plt.plot(draw)
-                        plt.plot(BB1)
-                        plt.plot(BB2)
-                        plt.show()'''
+
                     if not TPSL:
                         prediction, Type = TS.pairTrading(prediction, CloseStream[0], CloseStream[1], log, TPSL, percent_TP,percent_SL)
                         stoplossval[0], takeprofitval[0] = SetSLTP(stoplossval[0], takeprofitval[0], CloseStream[0],HighStream[0], LowStream[0], prediction[0],CurrentPos[0], 9, SL=STOP, TP=TAKE)
@@ -1002,16 +948,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                     else:
                         prediction, Type, takeprofitval[0], takeprofitval[1],stoplossval[0],stoplossval[1] = TS.pairTrading(prediction,CloseStream[0],CloseStream[1],log, TPSL,percent_TP, percent_SL)
 
-                '''if pair_Trading and CurrentPos[0]==1 and CurrentPos[1]==-99:
-                    prediction[0]=-999
-                elif pair_Trading and CurrentPos[0]==-99 and CurrentPos[1]==1:
-                    prediction[1]=-999
-                elif pair_Trading and CurrentPos[0]==0 and CurrentPos[1]==-99:
-                    prediction[0]=-999
-                elif pair_Trading and CurrentPos[0]==-99 and CurrentPos[1]==0:
-                    prediction[1]=-999
-                elif pair_Trading and CurrentPos[0]==-99 and CurrentPos[1]==-99 and prediction == [-999,-999]:
-                    prediction =[-99,-99]'''
+
                 ##If the trade won't cover the fee & profit something then don't place it
                 if (prediction[j] == 1 or prediction[j] == 0) and (.00125 * Close_1min[j][-1] > takeprofitval[j]) and (not pair_Trading) and (not Hold_pos):
                     prediction[j] = -99
@@ -1291,25 +1228,18 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
         elif trade['type'] == 'signal2-0':
             ax1.scatter(trade['x'], trade['y'] + .08, c='red', label='red', s=80, edgecolors='none', marker="1")'''
 
-    '''High1=np.array(High)
-    Low1 = np.array(Low)
-    SAR=ta.SAR(High1,Low1,acceleration=.02,maximum=.2)
-    x=[]
-    for i in range(len(SAR)):
-        x.append(i)
-    x=np.array(x)
-    ax1.scatter(x,SAR, c='black', s=80, edgecolors='none',marker=".")'''
-
     #ax1.plot(Close,label="Price",color="blue")
     print("Trades Made: ",len(trades))
     print("Successful Trades:",correct)
     print("Accuracy: ",(correct/len(trades))*100)
     try:
+        print("# Shorts:", shortwins + shortlosses)
         print("Short W/L:",shortwins/shortlosses)
         print("Profit from Shorts:",shortCash)
     except Exception as E:
         pass
     try:
+        print("# Longs:",longwins+longlosses)
         print("Long W/L:", longwins / longlosses)
         print("Profit from Longs:", longCash)
     except Exception as E:
@@ -1334,4 +1264,4 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     plt.xlabel('# Trades')
     #plt.legend(loc=2)
     plt.show()
-time.sleep(60) ##don't close for 1 min
+#time.sleep(60) ##don't close for 1 min
