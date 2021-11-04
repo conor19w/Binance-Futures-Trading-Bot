@@ -422,6 +422,31 @@ def get_coin_attrib(symbol):
     elif symbol == "LITUSDT":
         Coin_precision = 3
         Order_precision = 1
+
+    elif symbol == "RENUSDT":
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == "COTIUSDT":
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == "STORJUSDT":
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == "LRCUSDT":
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == "UNFIUSDT":
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol =='BALUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
     return Coin_precision,Order_precision
 
 def get_historical(symbol,start_string,Interval):
@@ -433,7 +458,7 @@ def get_historical(symbol,start_string,Interval):
     Date = []
     if Interval == '1m':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -441,7 +466,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '3m':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3MINUTE,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -449,7 +474,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '5m':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -457,7 +482,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '15m':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -465,7 +490,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '30m':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -473,7 +498,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '1h':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -481,7 +506,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '2h':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_2HOUR,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -489,7 +514,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '4h':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_4HOUR,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -497,7 +522,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '6h':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_6HOUR,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -505,7 +530,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '8h':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_8HOUR,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -513,7 +538,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '12h':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_12HOUR,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -521,7 +546,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '1d':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -529,7 +554,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '3d':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3DAY,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -537,7 +562,7 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     elif Interval == '1w':
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1WEEK,start_str=start_string):
-            Date.append(int(kline[0]))
+            Date.append(int(kline[0])/1000)
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -545,3 +570,63 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
 
     return Date,Open,Close,High,Low,Volume
+
+def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume,symbol):
+    shortest_dataSet = [-99, 99999999999]  ## [which index , length of dataset]
+    for i in range(len(Date_1min)):
+        if len(Date_1min[i]) < shortest_dataSet[1]:
+            shortest_dataSet[0] = i  ##index of shortest data set
+            shortest_dataSet[1] = len(Date_1min[i])  ##length of that data set
+    ##Align the datasets so they all start at the same point
+    for i in range(len(symbol)):
+        for j in range(len(Date_1min[i])):
+            if Date_1min[i][j] == Date[-1][shortest_dataSet[0]]:
+                High_1min[i] = High_1min[i][j:]
+                Low_1min[i] = Low_1min[i][j:]
+                Date_1min[i] = Date_1min[i][j:]
+                Close_1min[i] = Close_1min[i][j:]
+                Open_1min[i] = Open_1min[i][j:]
+                # start_1min.append(j)
+                break
+        for j in range(len(Date[i])):
+            if Date[i][j] == Date[-1][shortest_dataSet[0]]:
+                Date[i] = Date[i][j:]
+                Open[i] = Open[i][j:]
+                Close[i] = Close[i][j:]
+                High[i] = High[i][j:]
+                Low[i] = Low[i][j:]
+                Volume[i] = Volume[i][j:]
+                # start.append(j)
+                break
+    for i in range(1, len(symbol)):
+        High_1min[i] = High_1min[i][:len(High_1min[shortest_dataSet[0]])]
+        Low_1min[i] = Low_1min[i][:len(Low_1min[shortest_dataSet[0]])]
+        Date_1min[i] = Date_1min[i][:len(Date_1min[shortest_dataSet[0]])]
+        Close_1min[i] = Close_1min[i][:len(Close_1min[shortest_dataSet[0]])]
+        Open_1min[i] = Open_1min[i][:len(Open_1min[shortest_dataSet[0]])]
+        Date[i] = Date[i][:len(Date[shortest_dataSet[0]])]
+        Open[i] = Open[i][:len(Open[shortest_dataSet[0]])]
+        Close[i] = Close[i][:len(Close[shortest_dataSet[0]])]
+        High[i] = High[i][:len(High[shortest_dataSet[0]])]
+        Low[i] = Low[i][:len(Low[shortest_dataSet[0]])]
+        Volume[i] = Volume[i][:len(Volume[shortest_dataSet[0]])]
+
+    return Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume
+
+def get_period_String(test_set_length,time_period):
+    period_string = ''
+    time_CAGR = -99
+    if test_set_length[2] == 'd' or test_set_length[3] == 'd' or test_set_length[4] == 'd':
+        time_CAGR = time_period / 365
+        period_string = 'days'
+    elif test_set_length[2] == 'w' or test_set_length[3] == 'w':
+        time_CAGR = time_period / 52
+        period_string = 'weeks'
+    elif test_set_length[2] == 'm' or test_set_length[3] == 'm':
+        time_CAGR = time_period/ 12
+        period_string = 'months'
+    elif test_set_length[2] == 'y':
+        time_CAGR = time_period
+        period_string = 'months'
+
+    return period_string,time_CAGR
