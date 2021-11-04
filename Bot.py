@@ -31,7 +31,7 @@ signals= deque(maxlen=100000) ##when a siganl occured , NOT IN USE
 Open=[]
 High=[]
 Low=[]
-Close=[]
+Close=[] 
 Volume=[]
 Date=[]
 OpenStream=[]
