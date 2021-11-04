@@ -32,7 +32,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
     Low_1min = []
     Close_1min = []
     Open_1min = []
-    Date_1min = []
+    Date_1min = [] 
     ##klines for candlestick patterns and TA
     if TIME_INTERVAL==1 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string,end_str=test_set_length):
