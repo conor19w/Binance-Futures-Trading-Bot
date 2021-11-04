@@ -835,7 +835,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     if load_data:
         print("Loading Price Data")
         for x in symbol:
-            path = f"C:\\Users\\conor\\Desktop\\price_data"
+            path = DD.path
             try:
                 price_data = load(path)
                 Date.append(price_data['Date'])
