@@ -76,7 +76,7 @@ def fibMACD(prediction,Close,Open,High,Low):
         fib_level_4 = max_Close - .618 * (max_Close - min_Close)
         fib_level_5 = max_Close - .786 * (max_Close - min_Close)
         fib_level_6 = min_Close
-
+ 
 
         fib_retracement_level_1 = fib_level_0+1.236*(max_Close - min_Close) - Close[-1]##target max_Close+1.236*(max_Close - min_Close)
         fib_retracement_level_2 = fib_level_0+1.382*(max_Close - min_Close) - Close[-1]
