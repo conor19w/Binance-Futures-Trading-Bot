@@ -20,7 +20,7 @@ import numpy as np
 from datetime import timezone,datetime,date,timedelta
 import Helper
 import API_keys
-import personal_strats as PS
+#import personal_strats as PS
 import download_Data as DD
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
@@ -835,7 +835,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     if load_data:
         print("Loading Price Data")
         for x in symbol:
-            path = DD.path
+            path = f"{DD.path}\\{x}_{TIME_INTERVAL}_{time_period} {period_string} ago UTC.joblib"
             try:
                 price_data = load(path)
                 Date.append(price_data['Date'])
@@ -854,7 +854,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 try:
                     DD.get_data(TIME_INTERVAL,x,f"{time_period} {period_string} ago UTC")
                     print("Download Successful, Loading Data now")
-                    price_data = load(f"{path}\\{x}_{TIME_INTERVAL}_{test_set_length}.joblib")
+                    price_data = load(f"{path}\\{x}_{time_period} {period_string} ago UTC.joblib")
                     Date.append(price_data['Date'])
                     Open.append(price_data['Open'])
                     Close.append(price_data['Close'])
@@ -904,7 +904,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
 
     Strategy = 0
     for i in range(len(High_1min[0])-1):
-        if len(Open)<300:
+        if len(Open[0])<300:
             print("Not enough candlestick data provided please increase the time_period/ time units of test_set_length")
             break
         #global trailing_stoploss,Highestprice
