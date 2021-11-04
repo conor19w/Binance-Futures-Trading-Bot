@@ -52,3 +52,4 @@ __Note: Stop loss and Take profit should be the margin of increase/decrease not 
 # Contact me
 * If you have any querys about anything, or need me to explain any blocks of code please reach out to me at wconor539@gmail.com.
 * If you have any suggestions or requests please reach out to me as well.
+ 
