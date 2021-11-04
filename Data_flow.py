@@ -32,7 +32,7 @@ def dataStream(data,newdata,type,length):
             slidingwindow = []
             for i in range(len(data)-299,len(data)):
                 slidingwindow.append(data[i])
-            slidingwindow.append(newdata)
+            slidingwindow.append(newdata) 
             return slidingwindow
     elif type==1:
         if len(data)<length:
