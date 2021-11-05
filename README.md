@@ -8,7 +8,7 @@
 
 ## Binance Setup
 ---
-* Create a [Binance Account](https://accounts.binance.com/en/register?ref=UZBGCD6U) (This link uses my refferal which gives you 5% kickback on trades & would be greatly appreciated)
+* Create a [Binance Account](https://accounts.binance.com/en/register?ref=BKR8BMMP) (This link uses my refferal which gives you 5% kickback on trades & would be greatly appreciated)
 * __Enable Two-factor Authentication in the security section to keep your crypto safe.__
 * Create a new API key under the API Management section.
 *  [✓] Read Info [✓] Enable Trading [X] Enable Withdrawals
