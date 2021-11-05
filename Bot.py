@@ -162,88 +162,88 @@ if Trading: ## Trade on Binance with above api key and secret key
             pass
         ## setup websocket:
         if Interval == '1m' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_1MINUTE)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_1MINUTE)
+            
+                    
             Start = 0
         elif Interval == '3m' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_3MINUTE)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_3MINUTE)
+            
+          
             Start = 0
         elif Interval == '5m' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_5MINUTE)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_5MINUTE)
+            
+          
             Start = 0
         elif Interval == '15m' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_15MINUTE)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_15MINUTE)
+            
+          
             Start = 0
         elif Interval == '30m' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_30MINUTE)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_30MINUTE)
+            
+          
             Start = 0
         elif Interval == '1h' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_1HOUR)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_1HOUR)
+            
+          
             Start = 0
         elif Interval == '2h' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_2HOUR)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_2HOUR)
+            
+          
             Start = 0
         elif Interval == '4h' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_4HOUR)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_4HOUR)
+            
+          
             Start = 0
         elif Interval == '6h' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_6HOUR)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_6HOUR)
+            
+          
             Start = 0
         elif Interval == '8h' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_8HOUR)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_8HOUR)
+            
+          
             Start = 0
         elif Interval == '12h' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_12HOUR)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_12HOUR)
+           
+          
             Start = 0
         elif Interval == '1d' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_1DAY)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_1DAY)
+            
+          
             Start = 0
         elif Interval == '3d' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_3DAY)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_3DAY)
+            
+          
             Start = 0
         elif Interval == '1w' and Start:
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[0],
+            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_1WEEK)
-            twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol[1],
-                                           interval=AsyncClient.KLINE_INTERVAL_1WEEK)
+            
+          
             Start = 0
         while True:
             #########################################################################################
