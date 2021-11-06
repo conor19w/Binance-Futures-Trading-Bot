@@ -851,7 +851,6 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
 
     ##variables for CAGR calculation
     start_equity = AccountBalance
-
     i = 0
     while i < len(Close):
         if len(Close[i]) < 300 + time_CAGR*365*24*60/TIME_INTERVAL: ##if the coin is too new to have the historical data requested
@@ -866,11 +865,12 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             Close_1min.pop(i)
             Open_1min.pop(i)
             Date_1min.pop(i)
-            print(f"Not enough candleStick data for {symbol[i]} removing from dataset...")
+            print(f"Not enough candleStick data for {symbol[i]} removing from dataset, 
+                  need 300 candlesticks minimum as a buffer and then the time period you wish to trade,
+                  increase the time_period variable / units from test_set_length...")
             symbol.pop(i)
             i -= 1
         i += 1
-
     for i in range(len(symbol)):
         Type.append(-99)
         stoplossval.append(0)
