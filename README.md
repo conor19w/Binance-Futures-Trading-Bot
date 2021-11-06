@@ -18,24 +18,24 @@
 ### Back test strategies in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
 ---
 * To back test ensure Trading is switched off on line 95.
-* Back test section starts at line 747.
+* Back test section starts at __line 719__.
 * Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. symbol = ['BTCUSDT' , 'ETHUSDT'] , this would run your strategy on BTC and ETH.
 Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
-* Ignore the [pair-trading](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/b79c31af8096b8756dd3f6cb3983e7d61c645834/Bot.py#L769) section and ensure pair_Trading = 0, if you are executing a TA strategy
-* The data is split into an in-sample set and a test set, on line 774 the flag __test_set__ decides which set we are running the strategy on, both sets are in same units as test_set_length but we adjust __time_period__ variable on line 776 to change the in-sample data set length. The reason for splitting the data like this is to optimize parameters on the in-sample set and then once optimized run the strategy on the test-set to see if you have overfit your model by cherry picking values for parameters that suit the in-sample data.
-* The [time_period](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/3f0fdfafae94275bfba2e13a8945b75d297b8c2f/Bot.py#L776) variable is the length of time in the past from today excluding the test-set, to run the strategy on. This is in the same units as the test_set_length.
-* The [TIME_INTERVAL](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/3f0fdfafae94275bfba2e13a8945b75d297b8c2f/Bot.py#L777) variable is the interval for the candlesticks we want to trade on.
-* Next we want to choose our TA strategy, this is done after __line 930__ , uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions you write for the strategy to be executed correctly
-* Some of the pre-coded strategies return a 'Type' variable, if a strategy returns the 'Type' variable you must call the SetSLTP() function from [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/120baa9bb0b6f17d31daedb5769428b95ee3930e/TradingStrats.py) in order to set the corresponding Stop loss value, and Take profit value, this function is found in TradingStrats.py
+* Ignore the __pair-trading__ section and ensure pair_Trading = 0, if you are executing a TA strategy
+* The data is split into an in-sample set and a test set, the flag __test_set__ decides which set we are running the strategy on, both sets are in same units as test_set_length but we adjust __time_period__ variable to change the in-sample data set length. The reason for splitting the data like this is to optimize parameters on the in-sample set and then once optimized run the strategy on the test-set to see if you have overfit your model by cherry picking values for parameters that suit the in-sample data.
+* The __time_period__ variable is the length of time in the past from today excluding the test-set, to run the strategy on. This is in the same units as the test_set_length.
+* The __TIME_INTERVAL__ variable is the interval for the candlesticks we want to trade on.
+* Next we want to choose our TA strategy, this is done after __line 925__ , uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
+* Some of the pre-coded strategies return a 'Type' variable, if a strategy returns the 'Type' variable you must call the SetSLTP() function from __TradingStrats.py__ in order to set the corresponding Stop loss value, and Take profit value, this function is found in TradingStrats.py
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 
 #### Using Downloaded data for backtesting
 ---
 * Reason to do this is to speed up backtesting 
 * Create a folder on the desktop called __price_data__.
-*  In [download_Data.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/download_Data.py) change the __path__ to f"C:\\Users\\your_name\\Desktop\\price_data  
+*  In __download_Data.py__ change the __path__ to f"C:\\Users\\your_name\\Desktop\\price_data  
 __replacing your_name with the user that you are logged into.__
-* Switch __load_data__ on in __Bot.py__ on __line 778__, now when you run the script it will load from the folder & if the specified candlestick data isn't present in the folder then it will be downloaded and saved for future use.  
+* Switch __load_data__ on in __Bot.py__ on __line 750__, now when you run the script it will load from the folder & if the specified candlestick data isn't present in the folder then it will be downloaded and saved for future use.  
 __NOTE: this data is static so if you want up to date data in future you will have to manually delete the data from the folder on your desktop and then run the script again.
 Otherwise you can just turn load_data off and pull data from the server everytime you want to run a backtest.__
 ### Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
@@ -56,7 +56,7 @@ __Run strategies at your own risk I am not responsible for your trading decision
 ---
 * Custom Strategies Can be implemented in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
 * Custom Strategies should return 'prediction' parameter to indicate the strategy's decision to go short (0), go long (1), go flat (-99).
-* For stop loss and take profit you must calculate and assign values to stoplossval and takeprofitval respectively, some pre-coded stoploss functions are already encapsulated in the [SetSLTP()](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/120baa9bb0b6f17d31daedb5769428b95ee3930e/TradingStrats.py#L750) function you may use these by getting your custom strategy to return a Type parameter corresponding to the Type in SetSLTP() or else set these in a custom function of your own. 
+* For stop loss and take profit you must calculate and assign values to stoplossval and takeprofitval respectively, some pre-coded stoploss functions are already encapsulated in the __SetSLTP()__ function in __TradingStrats.py__. You may use these by getting your custom strategy to return a Type parameter corresponding to the Type in SetSLTP() and then call SetSLTP with Type as one of the parameters, or else set these in a custom function of your own. 
 __Note: Stop loss and Take profit should be the margin of increase/decrease not the target price.__
 
 # Contact me
