@@ -20,7 +20,7 @@ import numpy as np
 from datetime import timezone,datetime,date,timedelta
 import Helper
 import API_keys
-import personal_strats as PS
+#import personal_strats as PS
 import download_Data as DD
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
@@ -914,7 +914,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             if len(OpenStream[0])==299 and not pair_Trading:
                 pass
                 #Strategy = PS.sup_res(CloseStream[0]) ##not a strategy ive made public
-                Strategy = PS.fractal() ##not a strategy ive made public
+                #Strategy = PS.fractal() ##not a strategy ive made public
             for j in range(len(prediction)):
                 if (CurrentPos[j]== -99 or Hold_pos) and not pair_Trading:
                     if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
@@ -926,7 +926,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         #prediction[j],signal1,signal2,Type[j] =TS.StochRSI_RSIMACD(prediction[j],CloseStream[j],signal1,signal2) ###########################################
                         #prediction[j],Type[j] = TS.StochRSIMACD(prediction[j], CloseStream[j],HighStream[j],LowStream[j])  ###########################################
                         #prediction[j], signal1, signal2, Type[j] = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction[j])
-                        #prediction[j], signal1, Type[j] = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
+                        prediction[j], signal1, Type[j] = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
                         #prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
                         #prediction[j], Type[j] = TS.breakout(prediction[j],CloseStream[j],VolumeStream[j],symbol[j])
                         #prediction[j],Type[j] = TS.Fractal2(CloseStream[j],LowStream[j],HighStream[j],signal1,prediction[j]) ###############################################
@@ -934,7 +934,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         #prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
                         #prediction[j] , Type[j] = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
                         #prediction[j],Close_pos,count,stoplossval[j] = TS.single_candle_swing_pump(prediction[j],CloseStream[j],HighStream[j],LowStream[j],CurrentPos[j],Close_pos,count,stoplossval[j])
-                        #stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
+                        stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
 
 
                         ##These strats don't require a call to SetSLTP:
@@ -950,7 +950,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         ##########################################################################################################################################################################
                         ##Non public Strats sorry :( :
                         # prediction[j],Type[j] = Strategy.Check_for_sup_res(CloseStream[j],OpenStream[j],HighStream[j],LowStream[j]) ##not a strategy ive made public
-                        prediction[j], stoplossval[j], takeprofitval[j] = Strategy.check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction[j]) ##not a strategy ive made public
+                        #prediction[j], stoplossval[j], takeprofitval[j] = Strategy.check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction[j]) ##not a strategy ive made public
                         ##########################################################################################################################################################################
 
                 elif not pair_Trading:
