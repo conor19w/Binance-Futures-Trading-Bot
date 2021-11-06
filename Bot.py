@@ -20,7 +20,7 @@ import numpy as np
 from datetime import timezone,datetime,date,timedelta
 import Helper
 import API_keys
-#import personal_strats as PS
+import personal_strats as PS
 import download_Data as DD
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
@@ -108,10 +108,10 @@ start_string = '1 day ago UTC' ##buffer of historical data to download before st
 Interval = '1m' ##Time interval over which we want to trade, valid Intervals: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w
 
 ##Different coins we can trade, can add more in Helper.py
-#symbol="BTCUSDT"
+symbol="BTCUSDT"
 #symbol="ETHUSDT"
 #symbol="LTCUSDT"
-symbol="SOLUSDT"
+#symbol="SOLUSDT"
 #symbol="BNBUSDT"
 #symbol="ADAUSDT"
 #symbol="DOGEUSDT"
@@ -164,86 +164,58 @@ if Trading: ## Trade on Binance with above api key and secret key
         if Interval == '1m' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_1MINUTE)
-            
-                    
             Start = 0
         elif Interval == '3m' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_3MINUTE)
-            
-          
             Start = 0
         elif Interval == '5m' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_5MINUTE)
-            
-          
             Start = 0
         elif Interval == '15m' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_15MINUTE)
-            
-          
             Start = 0
         elif Interval == '30m' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_30MINUTE)
-            
-          
             Start = 0
         elif Interval == '1h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_1HOUR)
-            
-          
             Start = 0
         elif Interval == '2h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_2HOUR)
-            
-          
             Start = 0
         elif Interval == '4h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_4HOUR)
-            
-          
             Start = 0
         elif Interval == '6h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_6HOUR)
-            
-          
             Start = 0
         elif Interval == '8h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_8HOUR)
-            
-          
             Start = 0
         elif Interval == '12h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_12HOUR)
-           
-          
             Start = 0
         elif Interval == '1d' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_1DAY)
-            
-          
             Start = 0
         elif Interval == '3d' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_3DAY)
-            
-          
             Start = 0
         elif Interval == '1w' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=AsyncClient.KLINE_INTERVAL_1WEEK)
-            
-          
             Start = 0
         while True:
             #########################################################################################
@@ -755,7 +727,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     #symbol = ["DOGEUSDT"]
     #symbol = ['ADAUSDT']
     #symbol = ["OMGUSDT"]
-    #symbol = ['SOLUSDT'] ###############################
+    #symbol = ['XRPUSDT','SOLUSDT'] ###############################
     #symbol = ['MATICUSDT'] #############################
     #symbol = ["XRPUSDT"]
     #symbol=['BAKEUSDT']
@@ -772,9 +744,9 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     AccountBalance = 2335
     leverage = 35  ##leverage being used
     test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
-    test_set_length = "1 day ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
-    time_period = 1  ##time_period in same units as test_set_length above
-    TIME_INTERVAL = 5  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
+    test_set_length = "1 month ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
+    time_period = 3  ##time_period in same units as test_set_length above
+    TIME_INTERVAL = 240  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
     load_data = 1 ##load data from a file, download the data using download_Data.py
 
     ############################## pairTrading ##############################################
@@ -816,26 +788,12 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     break_even_Amount = [.1, .4]  ##where to move the stop to
 
     period_string, time_CAGR = Helper.get_period_String(test_set_length, time_period)
-    for i in range(len(symbol)):
-        Type.append(-99)
-        stoplossval.append(0)
-        takeprofitval.append(0)
-        CurrentPos.append(-99)
-        positionSize.append(0)
-        positionPrice.append(0)
-        PrevPos.append(-99)
-        prediction.append(-99)
-        CloseStream.append([])
-        OpenStream.append([])
-        HighStream.append([])
-        LowStream.append([])
-        VolumeStream.append([])
-        DateStream.append([])
 
     if load_data:
         print("Loading Price Data")
-        for x in symbol:
-            path = f"{DD.path}\\{x}_{TIME_INTERVAL}_{time_period} {period_string} ago UTC.joblib"
+        i = 0
+        while i < len(symbol):
+            path = f"{DD.path}\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {period_string} ago UTC.joblib"
             try:
                 price_data = load(path)
                 Date.append(price_data['Date'])
@@ -849,10 +807,11 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                 Close_1min.append(price_data['Close_1min'])
                 Open_1min.append(price_data['Open_1min'])
                 Date_1min.append(price_data['Date_1min'])
+                i += 1
             except:
                 print(f"Data doesnt exist in path: {path}, Downloading Data to specified path now...")
                 try:
-                    DD.get_data(TIME_INTERVAL,x,f"{time_period} {period_string} ago UTC")
+                    DD.get_data(TIME_INTERVAL, symbol[i], f"{time_period} {period_string} ago UTC")
                     print("Download Successful, Loading Data now")
                     price_data = load(path)
                     Date.append(price_data['Date'])
@@ -866,8 +825,10 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                     Close_1min.append(price_data['Close_1min'])
                     Open_1min.append(price_data['Open_1min'])
                     Date_1min.append(price_data['Date_1min'])
+                    i += 1
                 except:
-                    print("ERROR: Wrong path in download_Data.py")
+                    print("Possibly an invalid symbol or wrong path specified in download_Data.py")
+                    symbol.pop(i)
                     print("Fix path issue or else turn off load_data")
                     print("Contact me if still stuck @ wconor539@gmail.com")
 
@@ -891,6 +852,40 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     ##variables for CAGR calculation
     start_equity = AccountBalance
 
+    i = 0
+    while i < len(Close):
+        if len(Close[i]) < 300 + time_CAGR*365*24*60/TIME_INTERVAL: ##if the coin is too new to have the historical data requested
+            Date.pop(i)
+            Open.pop(i)
+            Close.pop(i)
+            High.pop(i)
+            Low.pop(i)
+            Volume.pop(i)
+            High_1min.pop(i)
+            Low_1min.pop(i)
+            Close_1min.pop(i)
+            Open_1min.pop(i)
+            Date_1min.pop(i)
+            print(f"Not enough candleStick data for {symbol[i]} removing from dataset...")
+            symbol.pop(i)
+            i -= 1
+        i += 1
+
+    for i in range(len(symbol)):
+        Type.append(-99)
+        stoplossval.append(0)
+        takeprofitval.append(0)
+        CurrentPos.append(-99)
+        positionSize.append(0)
+        positionPrice.append(0)
+        PrevPos.append(-99)
+        prediction.append(-99)
+        CloseStream.append([])
+        OpenStream.append([])
+        HighStream.append([])
+        LowStream.append([])
+        VolumeStream.append([])
+        DateStream.append([])
 
 
     ##variables for sharpe ratio
@@ -901,12 +896,8 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
 
     print(f"{TIME_INTERVAL} min OHLC Candle Sticks from a period of {time_period} {period_string}")
     Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume = Helper.align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume,symbol)
-
     Strategy = 0
     for i in range(len(High_1min[0])-1):
-        if len(Open[0])<300:
-            print("Not enough candlestick data provided please increase the time_period/ time units of test_set_length")
-            break
         #global trailing_stoploss,Highestprice
         if i%TIME_INTERVAL==0 and i!=0:
             for j in range(len(High_1min)):
@@ -923,7 +914,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
             if len(OpenStream[0])==299 and not pair_Trading:
                 pass
                 #Strategy = PS.sup_res(CloseStream[0]) ##not a strategy ive made public
-                #Strategy = PS.fractal() ##not a strategy ive made public
+                Strategy = PS.fractal() ##not a strategy ive made public
             for j in range(len(prediction)):
                 if (CurrentPos[j]== -99 or Hold_pos) and not pair_Trading:
                     if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
@@ -935,7 +926,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         #prediction[j],signal1,signal2,Type[j] =TS.StochRSI_RSIMACD(prediction[j],CloseStream[j],signal1,signal2) ###########################################
                         #prediction[j],Type[j] = TS.StochRSIMACD(prediction[j], CloseStream[j],HighStream[j],LowStream[j])  ###########################################
                         #prediction[j], signal1, signal2, Type[j] = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction[j])
-                        prediction[j], signal1, Type[j] = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
+                        #prediction[j], signal1, Type[j] = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
                         #prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
                         #prediction[j], Type[j] = TS.breakout(prediction[j],CloseStream[j],VolumeStream[j],symbol[j])
                         #prediction[j],Type[j] = TS.Fractal2(CloseStream[j],LowStream[j],HighStream[j],signal1,prediction[j]) ###############################################
@@ -943,7 +934,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         #prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
                         #prediction[j] , Type[j] = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
                         #prediction[j],Close_pos,count,stoplossval[j] = TS.single_candle_swing_pump(prediction[j],CloseStream[j],HighStream[j],LowStream[j],CurrentPos[j],Close_pos,count,stoplossval[j])
-                        stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
+                        #stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
 
 
                         ##These strats don't require a call to SetSLTP:
@@ -959,7 +950,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                         ##########################################################################################################################################################################
                         ##Non public Strats sorry :( :
                         # prediction[j],Type[j] = Strategy.Check_for_sup_res(CloseStream[j],OpenStream[j],HighStream[j],LowStream[j]) ##not a strategy ive made public
-                        # prediction[j], stoplossval[j], takeprofitval[j] = Strategy.check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction[j]) ##not a strategy ive made public
+                        prediction[j], stoplossval[j], takeprofitval[j] = Strategy.check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction[j]) ##not a strategy ive made public
                         ##########################################################################################################################################################################
 
                 elif not pair_Trading:
@@ -1017,11 +1008,11 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                     Profit +=-stoplossval[j] #positionPrice-CloseStream[len(CloseStream) - 1]  ##This will be positive if the price went down
                     month_return-=positionSize[j] *stoplossval[j]
                     AccountBalance += positionSize[j] * -stoplossval[j] # (positionPrice-CloseStream[len(CloseStream) - 1])
-                    positionPrice[j] = Open_1min[j][i+1]
-                    Profit -= Open_1min[j][i+1] * fee
-                    AccountBalance-= positionSize[j] * Open_1min[j][i+1] * fee
-                    month_return -= positionSize[j] * Open_1min[j][i+1] * fee
-                    cashout.append({'x': i, 'y': Open_1min[j][i+1], 'type': "loss",'position':'short','Profit': -stoplossval[j]*positionSize[j]})
+                    positionPrice[j] = Close_1min[j][i]
+                    Profit -= Close_1min[j][i] * fee
+                    AccountBalance-= positionSize[j] * Close_1min[j][i] * fee
+                    month_return -= positionSize[j] * Close_1min[j][i] * fee
+                    cashout.append({'x': i, 'y': Close_1min[j][i], 'type': "loss",'position':'short','Profit': -stoplossval[j]*positionSize[j]})
                     # CurrentPos = -99
                     CurrentPos[j] = -99
                     stopflag = -99
@@ -1030,11 +1021,11 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                     Profit +=-stoplossval[j] #CloseStream[len(CloseStream) - 1] - positionPrice ##This will be positive if the price went up
                     month_return -= positionSize[j] *stoplossval[j]
                     AccountBalance += positionSize[j]* -stoplossval[j] #(CloseStream[len(CloseStream) - 1] - positionPrice)
-                    positionPrice[j] = Open_1min[j][i+1]
-                    Profit -= Open_1min[j][i+1] * fee
-                    AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
-                    month_return -= positionSize[j] * Open_1min[j][i+1] * fee
-                    cashout.append({'x': i, 'y': Open_1min[j][i+1], 'type': "loss",'position':'long','Profit': -stoplossval[j]*positionSize[j]})
+                    positionPrice[j] = Close_1min[j][i]
+                    Profit -= Close_1min[j][i] * fee
+                    AccountBalance -= positionSize[j] * Close_1min[j][i] * fee
+                    month_return -= positionSize[j] * Close_1min[j][i] * fee
+                    cashout.append({'x': i, 'y': Close_1min[j][i], 'type': "loss",'position':'long','Profit': -stoplossval[j]*positionSize[j]})
                     # CurrentPos = -99
                     CurrentPos[j] = -99
                     stopflag = -99
@@ -1044,11 +1035,11 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                     month_return += positionSize[j] *takeprofitval[j]
                     AccountBalance += positionSize[j] *  takeprofitval[j] #(positionPrice - CloseStream[len(CloseStream) - 1])
                     correct += 1
-                    positionPrice[j] = Open_1min[j][i+1]
-                    Profit -= Open_1min[j][i+1] * fee
-                    AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
-                    month_return -= positionSize[j] * Open_1min[j][i+1] * fee
-                    cashout.append({'x': i, 'y': Open_1min[j][i+1], 'type': "win",'position':'short','Profit': takeprofitval[j]*positionSize[j]})
+                    positionPrice[j] = Close_1min[j][i]
+                    Profit -= Close_1min[j][i] * fee
+                    AccountBalance -= positionSize[j] * Close_1min[j][i] * fee
+                    month_return -= positionSize[j] * Close_1min[j][i] * fee
+                    cashout.append({'x': i, 'y': Close_1min[j][i], 'type': "win",'position':'short','Profit': takeprofitval[j]*positionSize[j]})
                     CurrentPos[j] = -99
                     stopflag = -99
 
@@ -1057,11 +1048,11 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
                     month_return += positionSize[j] *takeprofitval[j]
                     AccountBalance += positionSize[j] *  takeprofitval[j] #(CloseStream[len(CloseStream) - 1] - positionPrice)
                     correct += 1
-                    positionPrice[j] = Open_1min[j][i+1]
-                    Profit -= Open_1min[j][i+1] * fee
-                    AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
-                    month_return -= positionSize[j] * Open_1min[j][i+1] * fee
-                    cashout.append({'x': i, 'y': Open_1min[j][i+1], 'type': "win",'position':'long','Profit': takeprofitval[j]*positionSize[j]})
+                    positionPrice[j] = Close_1min[j][i]
+                    Profit -= Close_1min[j][i] * fee
+                    AccountBalance -= positionSize[j] * Close_1min[j][i] * fee
+                    month_return -= positionSize[j] * Close_1min[j][i] * fee
+                    cashout.append({'x': i, 'y': Close_1min[j][i], 'type': "win",'position':'long','Profit': takeprofitval[j]*positionSize[j]})
                     CurrentPos[j] = -99
                     stopflag = -99
                 elif (pair_Trading or Hold_pos) and (not waitflag) and Close_pos==1 and CurrentPos[j] == 1:
