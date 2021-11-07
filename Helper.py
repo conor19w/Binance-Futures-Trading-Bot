@@ -32,7 +32,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
     Low_1min = []
     Close_1min = []
     Open_1min = []
-    Date_1min = [] 
+    Date_1min = []
     ##klines for candlestick patterns and TA
     if TIME_INTERVAL==1 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string,end_str=test_set_length):
@@ -577,10 +577,9 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
         if len(Date_1min[i]) < shortest_dataSet[1]:
             shortest_dataSet[0] = i  ##index of shortest data set
             shortest_dataSet[1] = len(Date_1min[i])  ##length of that data set
-    ##Align the datasets so they all start at the same point
     for i in range(len(symbol)):
         for j in range(len(Date_1min[i])):
-            if Date_1min[i][j] == Date[-1][shortest_dataSet[0]]:
+            if Date_1min[i][j] == Date[shortest_dataSet[0]][0]:
                 High_1min[i] = High_1min[i][j:]
                 Low_1min[i] = Low_1min[i][j:]
                 Date_1min[i] = Date_1min[i][j:]
@@ -589,7 +588,7 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
                 # start_1min.append(j)
                 break
         for j in range(len(Date[i])):
-            if Date[i][j] == Date[-1][shortest_dataSet[0]]:
+            if Date[i][j] == Date[shortest_dataSet[0]][0]:
                 Date[i] = Date[i][j:]
                 Open[i] = Open[i][j:]
                 Close[i] = Close[i][j:]
@@ -598,18 +597,62 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
                 Volume[i] = Volume[i][j:]
                 # start.append(j)
                 break
+    for i in range(len(symbol)):
+        found_flag=[0,0]
+        for j in range(len(Date_1min[i])):
+            if Date_1min[i][j] == Date[shortest_dataSet[0]][-1]:
+                High_1min[i] = High_1min[i][:j]
+                Low_1min[i] = Low_1min[i][:j]
+                Date_1min[i] = Date_1min[i][:j]
+                Close_1min[i] = Close_1min[i][:j]
+                Open_1min[i] = Open_1min[i][:j]
+                found_flag[0]=1
+                # start_1min.append(j)
+                break
+        for j in range(len(Date[i])):
+            if Date[i][j] == Date[shortest_dataSet[0]][-1]:
+                Date[i] = Date[i][:j]
+                Open[i] = Open[i][:j]
+                Close[i] = Close[i][:j]
+                High[i] = High[i][:j]
+                Low[i] = Low[i][:j]
+                Volume[i] = Volume[i][:j]
+                found_flag[1] = 1
+                # start.append(j)
+                break
+        longest_dataSet = [-99, -99999999999]  ## [which index , length of dataset]
+        for i in range(len(Date_1min)):
+            if len(Date_1min[i]) > shortest_dataSet[1]:
+                shortest_dataSet[0] = i  ##index of shortest data set
+                shortest_dataSet[1] = len(Date_1min[i])  ##length of that data set
+        if found_flag[0] == 0:
+            while len(Date_1min[i])<len(Date_1min[longest_dataSet[0]]):
+                High_1min[i].append(High_1min[i][-1])
+                Low_1min[i].append(Low_1min[i][-1])
+                Date_1min[i].append(Date_1min[i][-1])
+                Close_1min[i].append(Close_1min[i][-1])
+                Open_1min[i].append(Open_1min[i][-1])
+        if found_flag[1] == 0:
+            while len(Date[i])<len(Date[longest_dataSet[0]]):
+                Date[i].append(Date[i][-1])
+                Open[i].append(Open[i][-1])
+                Close[i].append(Close[i][-1])
+                High[i].append(High[i][-1])
+                Low[i].append(Low[i][-1])
+                Volume[i].append(Volume[i][-1])
+    '''
     for i in range(1, len(symbol)):
-        High_1min[i] = High_1min[i][:len(High_1min[shortest_dataSet[0]])]
-        Low_1min[i] = Low_1min[i][:len(Low_1min[shortest_dataSet[0]])]
-        Date_1min[i] = Date_1min[i][:len(Date_1min[shortest_dataSet[0]])]
-        Close_1min[i] = Close_1min[i][:len(Close_1min[shortest_dataSet[0]])]
-        Open_1min[i] = Open_1min[i][:len(Open_1min[shortest_dataSet[0]])]
-        Date[i] = Date[i][:len(Date[shortest_dataSet[0]])]
-        Open[i] = Open[i][:len(Open[shortest_dataSet[0]])]
-        Close[i] = Close[i][:len(Close[shortest_dataSet[0]])]
-        High[i] = High[i][:len(High[shortest_dataSet[0]])]
-        Low[i] = Low[i][:len(Low[shortest_dataSet[0]])]
-        Volume[i] = Volume[i][:len(Volume[shortest_dataSet[0]])]
+        High_1min[i] = High_1min[i][:len(High_1min[0])]
+        Low_1min[i] = Low_1min[i][:len(Low_1min[0])]
+        Date_1min[i] = Date_1min[i][:len(Date_1min[0])]
+        Close_1min[i] = Close_1min[i][:len(Close_1min[0])]
+        Open_1min[i] = Open_1min[i][:len(Open_1min[0])]
+        Date[i] = Date[i][:len(Date[0])]
+        Open[i] = Open[i][:len(Open[0])]
+        Close[i] = Close[i][:len(Close[0])]
+        High[i] = High[i][:len(High[0])]
+        Low[i] = Low[i][:len(Low[0])]
+        Volume[i] = Volume[i][:len(Volume[0])]'''
 
     return Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume
 
