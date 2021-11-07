@@ -853,7 +853,7 @@ elif Trading==0:       ## Paper Trading, exact same as above but simulated tradi
     start_equity = AccountBalance
     i = 0
     while i < len(Close):
-        if len(Close[i]) < 300 + time_CAGR*365*24*60/TIME_INTERVAL: ##if the coin is too new to have the historical data requested
+        if len(Close[i]) < time_CAGR*365*24*60/TIME_INTERVAL: ##if the coin is too new to have the historical data requested
             Date.pop(i)
             Open.pop(i)
             Close.pop(i)
