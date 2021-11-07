@@ -620,26 +620,26 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
                 found_flag[1] = 1
                 # start.append(j)
                 break
-        longest_dataSet = [-99, -99999999999]  ## [which index , length of dataset]
-        for i in range(len(Date_1min)):
-            if len(Date_1min[i]) > shortest_dataSet[1]:
-                shortest_dataSet[0] = i  ##index of shortest data set
-                shortest_dataSet[1] = len(Date_1min[i])  ##length of that data set
-        if found_flag[0] == 0:
-            while len(Date_1min[i])<len(Date_1min[longest_dataSet[0]]):
-                High_1min[i].append(High_1min[i][-1])
-                Low_1min[i].append(Low_1min[i][-1])
-                Date_1min[i].append(Date_1min[i][-1])
-                Close_1min[i].append(Close_1min[i][-1])
-                Open_1min[i].append(Open_1min[i][-1])
-        if found_flag[1] == 0:
-            while len(Date[i])<len(Date[longest_dataSet[0]]):
-                Date[i].append(Date[i][-1])
-                Open[i].append(Open[i][-1])
-                Close[i].append(Close[i][-1])
-                High[i].append(High[i][-1])
-                Low[i].append(Low[i][-1])
-                Volume[i].append(Volume[i][-1])
+    longest_dataSet = [-99, -99999999999]  ## [which index , length of dataset]
+    for i in range(len(Date_1min)):
+        if len(Date_1min[i]) > longest_dataSet[1]:
+            longest_dataSet[0] = i  ##index of shortest data set
+            longest_dataSet[1] = len(Date_1min[i])  ##length of that data set
+    for i in range(len(Date_1min)):
+        while len(Date_1min[i])<len(Date_1min[longest_dataSet[0]]):
+            High_1min[i].append(High_1min[i][-1])
+            Low_1min[i].append(Low_1min[i][-1])
+            Date_1min[i].append(Date_1min[i][-1])
+            Close_1min[i].append(Close_1min[i][-1])
+            Open_1min[i].append(Open_1min[i][-1])
+    for i in range(len(Date)):
+        while len(Date[i])<len(Date[longest_dataSet[0]]):
+            Date[i].append(Date[i][-1])
+            Open[i].append(Open[i][-1])
+            Close[i].append(Close[i][-1])
+            High[i].append(High[i][-1])
+            Low[i].append(Low[i][-1])
+            Volume[i].append(Volume[i][-1])
     '''
     for i in range(1, len(symbol)):
         High_1min[i] = High_1min[i][:len(High_1min[0])]
