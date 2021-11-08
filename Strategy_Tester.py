@@ -26,8 +26,8 @@ import API_keys
 #data.reset_index(level=0, inplace=True)
 matplotlib.use("Agg")
 
-run_on_all_coins_separately = 0 ##flag to run strategy on all coins with seperate account balances or on all coins with one single account
-seperate_graphs_for_each_coin = 1 ##If ON we get a graph for each individual coin that is profitable, if off we get a single graph with all the coins that are profitable
+run_on_all_coins_separately = 0 ##flag to run strategy on all coins with seperate account balances (1) or on all coins with one single account (0)
+seperate_graphs_for_each_coin = 1 ##If ON we get a graph for each individual coin that is profitable, if OFF we get a single graph with all the coins that are profitable
 only_print_profitable_coins = 0 ##flag to decide whether we want to print coins that ended up losing money with our strategy
 index = 0 ## used with flag above
 test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
