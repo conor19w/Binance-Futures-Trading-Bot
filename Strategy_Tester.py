@@ -35,7 +35,7 @@ test_set_length = "1 month ago UTC"  ## valid strings 'x days/weeks/months/years
 time_period = 3  ##time_period in same units as test_set_length above
 TIME_INTERVAL = 240  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
 load_data = 1
-Strategy_name = 'Test'
+Strategy_name = 'Test' ##label for folder inside Strategy_tester that will contain the results of running this script
 STOP=1 ##multiplier for ATR to set stoploss if function calls SetSLTP with Type == 9
 TAKE=1.5 ##multiplier for ATR to set takeprofit if function calls SetSLTP with Type == 9
 Starting_Account_Size = 1000
