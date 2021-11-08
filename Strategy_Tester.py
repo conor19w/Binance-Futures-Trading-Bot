@@ -41,7 +41,7 @@ TAKE=1.5 ##multiplier for ATR to set takeprofit if function calls SetSLTP with T
 Starting_Account_Size = 1000
 OrderSIZE = .02 ##percent in deciaml of Effective_Account_Balance to use per trade where Effective_Account_Balance = Account_Balance*leverage
 leverage = 10  ##leverage being used
-path1 = f'C:\\Users\\conor\\Desktop\\Strategy_tester' ##location we want to store graphs and statistics to
+path1 = f'C:\\Users\\conor\\Desktop\\Strategy_tester\\{Strategy_name}' ##location we want to store graphs and statistics to
 client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
 if seperate_graphs_for_each_coin:
     run_on_all_coins_separately=1
@@ -481,7 +481,7 @@ if run_on_all_coins_separately and seperate_graphs_for_each_coin:
                                 Trades Made: {Trade_count[j]}\n \
                                 Successful Trades: {correct[j]} \n \
                                 Accuracy: {(correct[j] / Trade_count[j]) * 100} \n\n")
-                    with open(f'{path1}\\{Strategy_name}\\{symbol[j]}.txt', 'w') as f:
+                    with open(f'{path1}\\{symbol[j]}.txt', 'w') as f:
                         for line in lines:
                             f.write(line)
                             f.write('\n')
@@ -489,7 +489,7 @@ if run_on_all_coins_separately and seperate_graphs_for_each_coin:
                     plt.title(f"{symbol[j]}")
                     plt.ylabel('Dollars')
                     plt.xlabel('# Trades')
-                    plt.savefig(f'{path1}\\{Strategy_name}\\{symbol[j]}.png', dpi=300,
+                    plt.savefig(f'{path1}\\{symbol[j]}.png', dpi=300,
                                 bbox_inches='tight')
                     plt.close()
                 elif not only_print_profitable_coins:
@@ -514,7 +514,7 @@ if run_on_all_coins_separately and seperate_graphs_for_each_coin:
                     plt.title(f"{symbol[j]}")
                     plt.ylabel('Dollars')
                     plt.xlabel('# Trades')
-                    plt.savefig(f'{path1}\\{Strategy_name}\\{symbol[j]}.png',
+                    plt.savefig(f'{path1}\\{symbol[j]}.png',
                                 dpi=300, bbox_inches='tight')
                     plt.close()
             except:
@@ -558,14 +558,14 @@ elif run_on_all_coins_separately and only_print_profitable_coins:
                     plt.plot(profitgraph[j])
             except:
                 pass
-        with open(f'{path1}\\{Strategy_name}\\All_coins_profitable.txt', 'w') as f:
+        with open(f'{path1}\\All_coins_profitable.txt', 'w') as f:
             for line in lines:
                 f.write(line)
                 f.write('\n')
         plt.title("All_coins_profitable")
         plt.ylabel('Dollars')
         plt.xlabel('# Trades')
-        plt.savefig(f'{path1}\\{Strategy_name}\\All_coins_profitable.png',
+        plt.savefig(f'{path1}\\All_coins_profitable.png',
                         dpi=300,
                         bbox_inches='tight')
         plt.close()
@@ -605,14 +605,14 @@ elif run_on_all_coins_separately and not only_print_profitable_coins:
             plt.plot(profitgraph[j])
         except:
             pass
-    with open(f'{path1}\\{Strategy_name}\\All_coins.txt','w') as f:
+    with open(f'{path1}\\All_coins.txt','w') as f:
         for line in lines:
             f.write(line)
             f.write('\n')
     plt.title("All Coins")
     plt.ylabel('Dollars')
     plt.xlabel('# Trades')
-    plt.savefig(f'{path1}\\{Strategy_name}\\All_coins.png', dpi=300,
+    plt.savefig(f'{path1}\\All_coins.png', dpi=300,
                 bbox_inches='tight')
     plt.close()
 
@@ -648,12 +648,12 @@ else:
 
     plt.plot(profitgraph)
 
-    with open(f'{path1}\\{Strategy_name}\\All_coins.txt','w') as f:
+    with open(f'{path1}\\All_coins.txt','w') as f:
         for line in lines:
             f.write(line)
             f.write('\n')
     plt.title("All Coins")
     plt.ylabel('Dollars')
     plt.xlabel('# Trades')
-    plt.savefig(f'{path1}\\{Strategy_name}\\All_coins.png',dpi=300, bbox_inches='tight')
+    plt.savefig(f'{path1}\\All_coins.png',dpi=300, bbox_inches='tight')
     plt.close()
