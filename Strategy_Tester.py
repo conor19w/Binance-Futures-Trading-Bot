@@ -646,7 +646,7 @@ else:
             f"Trades Made: {len(trades)}", f"Successful Trades: {correct[0]}",
             f"Accuracy: {(correct[0] / len(trades)) * 100}"]
 
-    plt.plot(profitgraph)
+    plt.plot(profitgraph[0])
 
     with open(f'{path1}\\All_coins.txt','w') as f:
         for line in lines:
