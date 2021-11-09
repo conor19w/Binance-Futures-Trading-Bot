@@ -301,11 +301,11 @@ def get_coin_attrib(symbol):
 
     if symbol == 'BTCUSDT':
         Coin_precision = 2
-        Order_precision = 2
+        Order_precision = 3
 
     elif symbol == 'ETHUSDT':
         Coin_precision = 2
-        Order_precision = 2
+        Order_precision = 3
 
     elif symbol == 'LTCUSDT':
         Coin_precision = 2
@@ -446,6 +446,67 @@ def get_coin_attrib(symbol):
     elif symbol =='BALUSDT':
         Coin_precision = 3
         Order_precision = 1
+
+    elif symbol =='YFIIUSDT':
+        Coin_precision = 1
+        Order_precision = 3
+
+    elif symbol =='UNIUSDT':
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol =='TLMUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol =='GTCUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol =='TRBUSDT':
+        Coin_precision = 2
+        Order_precision = 1
+
+    elif symbol == 'ALICEUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol =='ONEUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='RVNUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='AXSUSDT':
+        Coin_precision = 2
+        Order_precision = 0
+
+    elif symbol =='XEMUSDT':
+        Coin_precision = 4
+        Order_precision = 1
+
+    elif symbol =='VETUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='LINAUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='XLMUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='QTUMUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol =='SOLUSDT':
+        Coin_precision = 3
+        Order_precision = 0
+
 
     return Coin_precision,Order_precision
 
