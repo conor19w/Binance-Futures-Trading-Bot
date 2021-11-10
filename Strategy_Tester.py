@@ -27,25 +27,25 @@ import API_keys
 matplotlib.use("Agg")
 
 run_on_all_coins_separately = 0 ##flag to run strategy on all coins with seperate account balances (1) or on all coins with one single account (0)
-seperate_graphs_for_each_coin = 1 ##If ON we get a graph for each individual coin that is profitable, if OFF we get a single graph with all the coins that are profitable
+seperate_graphs_for_each_coin = 0 ##If ON we get a graph for each individual coin that is profitable, if OFF we get a single graph with all the coins that are profitable
 only_print_profitable_coins = 0 ##flag to decide whether we want to print coins that ended up losing money with our strategy
 index = 0 ## used with flag above
 test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
 test_set_length = "1 month ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
-time_period = 3  ##time_period in same units as test_set_length above
+time_period = 8  ##time_period in same units as test_set_length above
 TIME_INTERVAL = 240  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
 load_data = 1
-Strategy_name = 'Test' ##label for folder inside Strategy_tester that will contain the results of running this script
+Strategy_name = 'breakout' ##label for folder inside Strategy_tester that will contain the results of running this script
 STOP=1 ##multiplier for ATR to set stoploss if function calls SetSLTP with Type == 9
 TAKE=1.5 ##multiplier for ATR to set takeprofit if function calls SetSLTP with Type == 9
 Starting_Account_Size = 1000
 OrderSIZE = .02 ##percent in deciaml of Effective_Account_Balance to use per trade where Effective_Account_Balance = Account_Balance*leverage
 leverage = 10  ##leverage being used
-path1 = f'C:\\Users\\conor\\Desktop\\Strategy_tester\\{Strategy_name}' ##location we want to store graphs and statistics to
+path1 = f'C:\\Users\\conor\\Desktop\\Strategy_tester' ##location we want to store graphs and statistics to
 client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
 if seperate_graphs_for_each_coin:
     run_on_all_coins_separately=1
-symbol = []
+
 y=client.get_all_coins_info()
 for x in y:
     symbol.append(x['coin'] + 'USDT')
@@ -129,7 +129,7 @@ else:
 
 i=0
 while i<len(Close):
-    if len(Close[i])<(time_CAGR*365*24*60/TIME_INTERVAL)*.9: ##if the coin is too new to have the historical data requested
+    if len(Close[i])==0:
         Date.pop(i)
         Open.pop(i)
         Close.pop(i)
@@ -145,10 +145,9 @@ while i<len(Close):
         symbol.pop(i)
         i-=1
     i+=1
+print("Aligning Data Sets... This may take a few minutes")
+Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume = Helper.align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume,symbol)
 
-
-Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = Helper.align_Datasets(
-            Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol)
 
 trades = deque(maxlen=100000)  ##keep track of shorts/Longs for graphing
 cashout = deque(maxlen=100000)  ##keep track of Winning trades/ Losing trades
@@ -262,10 +261,10 @@ for i in range(len(High_1min[0]) - 1):
                     #prediction[j], signal1, signal2, Type[j] = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction[j])
                     # prediction[j], signal1, Type[j],loc1,loc1_1,loc2,loc2_2,peaks,RSI = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
                     #prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
-                    # prediction[j], Type[j] = TS.breakout(prediction[j],CloseStream[j],VolumeStream[j],symbol[j])
+                    prediction[j], Type[j] = TS.breakout(prediction[j],CloseStream[j],VolumeStream[j],symbol[j])
                     # if prediction[j]==1:
                     #    prediction[j]=-99
-                    prediction[j], Type[j] = TS.fakeout(prediction[j], CloseStream[j], VolumeStream[j], symbol[j])
+                    #prediction[j], Type[j] = TS.fakeout(prediction[j], CloseStream[j], VolumeStream[j], symbol[j])
                     '''if loc1!=-99:
                         print("Bearish Divergence found:",DateStream[loc1],"to",DateStream[loc1_1])
                     if loc2!=-99:
@@ -274,7 +273,7 @@ for i in range(len(High_1min[0]) - 1):
                     #   print("Peak at ",DateStream[x],"RSI:",RSI[x])
                     # prediction[j],Type[j] = TS.Fractal2(CloseStream[j],LowStream[j],HighStream[j],signal1,prediction[j]) ###############################################
                     # prediction[j],Type[j] = TS.stochBB(prediction[j],CloseStream[j])
-                    # prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
+                    #prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
                     # prediction[j] , Type[j] = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
                     # prediction[j],Close_pos,count,stoplossval[j] = TS.single_candle_swing_pump(prediction[j],CloseStream[j],HighStream[j],LowStream[j],CurrentPos[j],Close_pos,count,stoplossval[j])
                     # Strategy.Check_for_sup_res(CloseStream[j])
@@ -295,9 +294,9 @@ for i in range(len(High_1min[0]) - 1):
 
                     # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.SARMACD200EMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
 
-                    # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.TripleEMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
+                    #takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.TripleEMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
 
-                    # prediction[j],Highest_lowest,Close_pos = TS.trend_Ride(prediction[j], CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos[j], Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
+                    #prediction[j],Highest_lowest,Close_pos = TS.trend_Ride(prediction[j], CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos[j], Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
 
                     # prediction[j],Close_pos = TS.RSI_trade(prediction[j],CloseStream[j],CurrentPos[j],Close_pos)
                     # if CurrentPos[j] == -99:
@@ -481,7 +480,7 @@ if run_on_all_coins_separately and seperate_graphs_for_each_coin:
                                 Trades Made: {Trade_count[j]}\n \
                                 Successful Trades: {correct[j]} \n \
                                 Accuracy: {(correct[j] / Trade_count[j]) * 100} \n\n")
-                    with open(f'{path1}\\{symbol[j]}.txt', 'w') as f:
+                    with open(f'{path1}\\{Strategy_name}\\{symbol[j]}.txt', 'w') as f:
                         for line in lines:
                             f.write(line)
                             f.write('\n')
@@ -489,7 +488,7 @@ if run_on_all_coins_separately and seperate_graphs_for_each_coin:
                     plt.title(f"{symbol[j]}")
                     plt.ylabel('Dollars')
                     plt.xlabel('# Trades')
-                    plt.savefig(f'{path1}\\{symbol[j]}.png', dpi=300,
+                    plt.savefig(f'{path1}\\{Strategy_name}\\{symbol[j]}.png', dpi=300,
                                 bbox_inches='tight')
                     plt.close()
                 elif not only_print_profitable_coins:
@@ -514,7 +513,7 @@ if run_on_all_coins_separately and seperate_graphs_for_each_coin:
                     plt.title(f"{symbol[j]}")
                     plt.ylabel('Dollars')
                     plt.xlabel('# Trades')
-                    plt.savefig(f'{path1}\\{symbol[j]}.png',
+                    plt.savefig(f'{path1}\\{Strategy_name}\\{symbol[j]}.png',
                                 dpi=300, bbox_inches='tight')
                     plt.close()
             except:
@@ -558,14 +557,14 @@ elif run_on_all_coins_separately and only_print_profitable_coins:
                     plt.plot(profitgraph[j])
             except:
                 pass
-        with open(f'{path1}\\All_coins_profitable.txt', 'w') as f:
+        with open(f'{path1}\\{Strategy_name}\\All_coins_profitable.txt', 'w') as f:
             for line in lines:
                 f.write(line)
                 f.write('\n')
         plt.title("All_coins_profitable")
         plt.ylabel('Dollars')
         plt.xlabel('# Trades')
-        plt.savefig(f'{path1}\\All_coins_profitable.png',
+        plt.savefig(f'{path1}\\{Strategy_name}\\All_coins_profitable.png',
                         dpi=300,
                         bbox_inches='tight')
         plt.close()
@@ -605,14 +604,14 @@ elif run_on_all_coins_separately and not only_print_profitable_coins:
             plt.plot(profitgraph[j])
         except:
             pass
-    with open(f'{path1}\\All_coins.txt','w') as f:
+    with open(f'{path1}\\{Strategy_name}\\All_coins.txt','w') as f:
         for line in lines:
             f.write(line)
             f.write('\n')
     plt.title("All Coins")
     plt.ylabel('Dollars')
     plt.xlabel('# Trades')
-    plt.savefig(f'{path1}\\All_coins.png', dpi=300,
+    plt.savefig(f'{path1}\\{Strategy_name}\\All_coins.png', dpi=300,
                 bbox_inches='tight')
     plt.close()
 
@@ -648,12 +647,12 @@ else:
 
     plt.plot(profitgraph[0])
 
-    with open(f'{path1}\\All_coins.txt','w') as f:
+    with open(f'{path1}\\{Strategy_name}\\All_coins.txt','w') as f:
         for line in lines:
             f.write(line)
             f.write('\n')
     plt.title("All Coins")
     plt.ylabel('Dollars')
     plt.xlabel('# Trades')
-    plt.savefig(f'{path1}\\All_coins.png',dpi=300, bbox_inches='tight')
+    plt.savefig(f'{path1}\\{Strategy_name}\\All_coins.png',dpi=300, bbox_inches='tight')
     plt.close()
