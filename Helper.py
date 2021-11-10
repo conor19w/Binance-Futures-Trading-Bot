@@ -633,12 +633,75 @@ def get_historical(symbol,start_string,Interval):
     return Date,Open,Close,High,Low,Volume
 
 def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume,symbol):
+
+    start_date = [Date[0][0],0]
+    end_date = [Date[0][-1],0]
+    for i in range(len(Date)):
+        if Date[i][0] < start_date[0]:
+            start_date = [Date[i][0],i]
+        if Date[i][-1] > end_date[0]:
+            end_date = [Date[i][-1],i]
+    for i in range(len(Date_1min)):
+        len_infront = 0
+        len_behind = 0
+        for j in range(len(Date_1min[start_date[1]])):
+            if Date_1min[start_date[1]][j]!=Date_1min[i][0]:
+                len_infront+=1
+            else:
+                break
+        for j in range(len(Date_1min[end_date[1]])-1,-1,-1):
+            if Date_1min[end_date[1]][j]!=Date_1min[i][-1]:
+                len_behind+=1
+            else:
+                break
+        for j in range(len_infront):
+            Date_1min[i].insert(0,"Data Set hasn't started yet")
+            High_1min[i].insert(0,High_1min[i][0])
+            Low_1min[i].insert(0,Low_1min[i][0])
+            Close_1min[i].insert(0,Close_1min[i][0])
+            Open_1min[i].insert(0,Open_1min[i][0])
+        for j in range(len_behind):
+            Date_1min[i].append("Data Set Ended")
+            High_1min[i].append(High_1min[i][-1])
+            Low_1min[i].append(Low_1min[i][-1])
+            Close_1min[i].append(Close_1min[i][-1])
+            Open_1min[i].append(Open_1min[i][-1])
+    for i in range(len(Date)):
+        len_infront = 0
+        len_behind = 0
+        for j in range(len(Date[start_date[1]])):
+            if Date[start_date[1]][j] != Date[i][0]:
+                len_infront += 1
+            else:
+                break
+        for j in range(len(Date[end_date[1]]) - 1, -1, -1):
+            if Date[end_date[1]][j] != Date[i][-1]:
+                len_behind += 1
+            else:
+                break
+        for j in range(len_infront):
+            Date[i].insert(0, "Data Set hasn't started yet")
+            High[i].insert(0, High[i][0])
+            Low[i].insert(0, Low[i][0])
+            Close[i].insert(0, Close[i][0])
+            Open[i].insert(0, Open[i][0])
+            Volume[i].insert(0,Volume[i][0])
+        for j in range(len_behind):
+            Date[i].append("Data Set Ended")
+            High[i].append(High[i][-1])
+            Low[i].append(Low[i][-1])
+            Close[i].append(Close[i][-1])
+            Open[i].append(Open[i][-1])
+            Volume[i].insert(0,Volume[i][-1])
+
+    '''locations_to_pop = [] ##list of datasets that won't line up we will remove later
     shortest_dataSet = [-99, 99999999999]  ## [which index , length of dataset]
     for i in range(len(Date_1min)):
         if len(Date_1min[i]) < shortest_dataSet[1]:
             shortest_dataSet[0] = i  ##index of shortest data set
             shortest_dataSet[1] = len(Date_1min[i])  ##length of that data set
     for i in range(len(symbol)):
+        found_flag=0
         for j in range(len(Date_1min[i])):
             if Date_1min[i][j] == Date[shortest_dataSet[0]][0]:
                 High_1min[i] = High_1min[i][j:]
@@ -646,8 +709,12 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
                 Date_1min[i] = Date_1min[i][j:]
                 Close_1min[i] = Close_1min[i][j:]
                 Open_1min[i] = Open_1min[i][j:]
+                found_flag=1
                 # start_1min.append(j)
                 break
+        if found_flag == 0 :
+            locations_to_pop.append(i)
+        found_flag=0
         for j in range(len(Date[i])):
             if Date[i][j] == Date[shortest_dataSet[0]][0]:
                 Date[i] = Date[i][j:]
@@ -656,8 +723,23 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
                 High[i] = High[i][j:]
                 Low[i] = Low[i][j:]
                 Volume[i] = Volume[i][j:]
+                found_flag=1
                 # start.append(j)
                 break
+
+        if found_flag == 0:
+            already_in_list = 0
+            for x in locations_to_pop:
+                if x==i:
+                    already_in_list = 1
+            if not already_in_list:
+                locations_to_pop.append(i)
+    ##account for the fact that if we pop an element then the indices in locations_to_pop need to be adjusted by 1 unit for each element we pop
+    adjust = 0
+    for i in range(len(locations_to_pop)):
+        locations_to_pop[i]-=adjust
+        adjust+=1
+
     for i in range(len(symbol)):
         found_flag=[0,0]
         for j in range(len(Date_1min[i])):
@@ -702,20 +784,8 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
             Low[i].append(Low[i][-1])
             Volume[i].append(Volume[i][-1])
     '''
-    for i in range(1, len(symbol)):
-        High_1min[i] = High_1min[i][:len(High_1min[0])]
-        Low_1min[i] = Low_1min[i][:len(Low_1min[0])]
-        Date_1min[i] = Date_1min[i][:len(Date_1min[0])]
-        Close_1min[i] = Close_1min[i][:len(Close_1min[0])]
-        Open_1min[i] = Open_1min[i][:len(Open_1min[0])]
-        Date[i] = Date[i][:len(Date[0])]
-        Open[i] = Open[i][:len(Open[0])]
-        Close[i] = Close[i][:len(Close[0])]
-        High[i] = High[i][:len(High[0])]
-        Low[i] = Low[i][:len(Low[0])]
-        Volume[i] = Volume[i][:len(Volume[0])]'''
 
-    return Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume
+    return Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume#,locations_to_pop
 
 def get_period_String(test_set_length,time_period):
     period_string = ''
