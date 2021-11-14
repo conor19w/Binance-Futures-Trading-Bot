@@ -157,7 +157,14 @@ def get_data(TIME_INTERVAL,symbol,LENGTH):
             Close_1min = Close_1min[j:]
             Open_1min = Open_1min[j:]
             break
-
+    for j in range(len(Date_1min)):
+        if Date_1min[j] == Date[-1]:
+            High_1min = High_1min[:j]
+            Low_1min = Low_1min[:j]
+            Date_1min = Date_1min[:j]
+            Close_1min = Close_1min[:j]
+            Open_1min = Open_1min[:j]
+            break
     price_data = {'Date': Date, 'Open': Open, 'Close': Close, 'High': High, 'Low': Low,
                  'Volume': Volume,'High_1min': High_1min, 'Low_1min': Low_1min, 'Close_1min': Close_1min,
                  'Open_1min': Open_1min, 'Date_1min': Date_1min}
