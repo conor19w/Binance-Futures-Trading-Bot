@@ -36,7 +36,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
     ##klines for candlestick patterns and TA
     if TIME_INTERVAL==1 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -44,7 +44,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==3 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3MINUTE,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -52,7 +52,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==5 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -60,7 +60,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==15 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -68,7 +68,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==30 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -76,7 +76,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==60 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -84,7 +84,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==120 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_2HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -92,7 +92,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==240 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_4HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -100,7 +100,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==360 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_6HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -108,7 +108,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==480 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_8HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -116,7 +116,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==720 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_12HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -124,7 +124,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==1440 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -132,7 +132,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==4320 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3DAY,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -140,7 +140,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==10080 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1WEEK,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -148,7 +148,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==40320 and not test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MONTH,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -156,7 +156,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==1 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -164,7 +164,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==3 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3MINUTE,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -172,7 +172,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==5 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -180,7 +180,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==15 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -188,7 +188,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==30 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -196,7 +196,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==60 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -204,7 +204,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==120 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_2HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -212,7 +212,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==240 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_4HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -220,7 +220,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==360 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_6HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -228,7 +228,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==480 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_8HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -236,7 +236,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==720 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_12HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -244,7 +244,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==1440 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -252,7 +252,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==4320 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3DAY,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -260,7 +260,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==10080 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1WEEK,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -268,7 +268,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
             Volume.append(float(kline[7]))
     elif TIME_INTERVAL==40320 and test_set:
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MONTH,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -278,7 +278,7 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
         ##klines used for stoploss and takeprofit
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string,end_str=test_set_length):
             # print(kline)
-            Date_1min.append(datetime.utcfromtimestamp((round(kline[0]/1000)))+timedelta(hours=1))
+            Date_1min.append(datetime.utcfromtimestamp((round(kline[0]/1000))))
             Open_1min.append(float(kline[1]))
             High_1min.append(float(kline[2]))
             Low_1min.append(float(kline[3]))
@@ -287,12 +287,28 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
         ##klines used for stoploss and takeprofit
         for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE, start_str=test_set_length):
             # print(kline)
-            Date_1min.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) + timedelta(hours=1))
+            Date_1min.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
             Open_1min.append(float(kline[1]))
             High_1min.append(float(kline[2]))
             Low_1min.append(float(kline[3]))
             Close_1min.append(float(kline[4]))
 
+    for j in range(len(Date_1min)):
+        if Date_1min[j] == Date[0]:
+            High_1min = High_1min[j:]
+            Low_1min = Low_1min[j:]
+            Date_1min = Date_1min[j:]
+            Close_1min = Close_1min[j:]
+            Open_1min = Open_1min[j:]
+            break
+    for j in range(len(Date_1min)):
+        if Date_1min[j] == Date[-1]:
+            High_1min = High_1min[:j]
+            Low_1min = Low_1min[:j]
+            Date_1min = Date_1min[:j]
+            Close_1min = Close_1min[:j]
+            Open_1min = Open_1min[:j]
+            break
     return Date,Open,Close,High,Low,Volume,High_1min,Low_1min,Close_1min,Open_1min,Date_1min
 
 def get_coin_attrib(symbol):
@@ -638,9 +654,9 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
     end_date = [Date[0][-1],0]
     for i in range(len(Date)):
         if Date[i][0] < start_date[0]:
-            start_date = [Date[i][0],i]
+            start_date = [Date[i][0],i] ##Date,index of start date
         if Date[i][-1] > end_date[0]:
-            end_date = [Date[i][-1],i]
+            end_date = [Date[i][-1],i] ##Date, index of end date
     for i in range(len(Date_1min)):
         len_infront = 0
         len_behind = 0
