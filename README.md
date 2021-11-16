@@ -5,7 +5,7 @@
 * Write your own functions/classes to implement your TA strategies
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃
-* [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
+ [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 ## Binance Setup
 ---
 * Create a [Binance Account](https://accounts.binance.com/en/register?ref=BKR8BMMP) (This link uses my referral which gives you 5% kickback on trades & would be greatly appreciated)
