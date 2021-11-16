@@ -523,6 +523,321 @@ def get_coin_attrib(symbol):
         Coin_precision = 3
         Order_precision = 0
 
+    elif symbol =='RAYUSDT':
+        Coin_precision = 1
+        Order_precision = 3
+
+    elif symbol =='NEARUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol =='AUDIOUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol =='HOTUSDT':
+        Coin_precision = 6
+        Order_precision = 0
+
+    elif symbol =='ARUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol =='BELUSDT':
+        Coin_precision = 0
+        Order_precision = 4
+
+    elif symbol =='CHRUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol =='WAVESUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol =='CHZUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='SANDUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='GRTUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='FTMUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='XTZUSDT':
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol =='LUNAUSDT':
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol =='SKLUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='1INCHUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol =='ATOMUSDT':
+        Coin_precision = 3
+        Order_precision = 3
+
+    elif symbol =='BLZUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='SNXUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol =='ETCUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol =='CELRUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='OGNUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol =='NEOUSDT':
+        Coin_precision = 3
+        Order_precision = 2
+
+    elif symbol =='TOMOUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol =='CELOUSDT':
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol =='KLAYUSDT':
+        Coin_precision = 4
+        Order_precision = 1
+
+    elif symbol =='EGLDUSDT':
+        Coin_precision = 2
+        Order_precision = 1
+
+    elif symbol =='CRVUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol =='NUUSDT':
+        Coin_precision = 4
+        Order_precision = 1
+
+    elif symbol =='SRMUSDT':
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol =='CTKUSDT':
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol =='ARPAUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='IOTXUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='DENTUSDT':
+        Coin_precision = 6
+        Order_precision = 0
+
+    elif symbol =='IOSTUSDT':
+        Coin_precision = 6
+        Order_precision = 0
+
+    elif symbol =='OMGUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol =='BANDUSDT':
+        Coin_precision = 4
+        Order_precision = 1
+
+    elif symbol =='NKNUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='IOTAUSDT':
+        Coin_precision = 4
+        Order_precision = 1
+
+    elif symbol =='CVCUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='REEFUSDT':
+        Coin_precision = 6
+        Order_precision = 0
+
+    elif symbol =='BTTUSDT':
+        Coin_precision = 6
+        Order_precision = 0
+
+    elif symbol =='ANKRUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol =='ALGOUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol =='SCUSDT':
+        Coin_precision = 6
+        Order_precision = 0
+
+    elif symbol =='MANAUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol =='ATAUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol =='MKRUSDT':
+        Coin_precision = 1
+        Order_precision = 3
+
+    elif symbol =='DODOUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol =='ICPUSDT':
+        Coin_precision = 2
+        Order_precision = 2
+
+    elif symbol =='ZECUSDT':
+        Coin_precision = 2
+        Order_precision = 2
+
+    elif symbol =='ICXUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == 'ZENUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol == 'SXPUSDT':
+        Coin_precision = 4
+        Order_precision = 1
+
+    elif symbol == 'HBARUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == 'CTSIUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == 'KAVAUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == 'C98USDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == 'THETAUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol == 'MASKUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == 'AAVEUSDT':
+        Coin_precision = 2
+        Order_precision = 1
+
+    elif symbol == 'YFIUSDT':
+        Coin_precision = 0
+        Order_precision = 3
+
+    elif symbol == 'COMPUSDT':
+        Coin_precision = 2
+        Order_precision = 3
+
+    elif symbol == 'RUNEUSDT':
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol == 'AVAXUSDT':
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol == 'KNCUSDT':
+        Coin_precision = 3
+        Order_precision = 0
+
+    elif symbol == 'LPTUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol == 'MTLUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == 'DASHUSDT':
+        Coin_precision = 2
+        Order_precision = 3
+
+    elif symbol == 'KEEPUSDT':
+        Coin_precision = 4
+        Order_precision = 0
+
+    elif symbol == 'DYDXUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol == 'LINKUSDT':
+        Coin_precision = 3
+        Order_precision = 2
+
+    elif symbol == 'KSMUSDT':
+        Coin_precision = 2
+        Order_precision = 1
+
+    elif symbol == 'FILUSDT':
+        Coin_precision = 3
+        Order_precision = 1
+
+    elif symbol == 'STMXUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == 'GALAUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == 'BATUSDT':
+        Coin_precision = 4
+        Order_precision = 1
+
+    elif symbol == 'AKROUSDT':
+        Coin_precision = 5
+        Order_precision = 0
+
+    elif symbol == 'XMRUSDT':
+        Coin_precision = 2
+        Order_precision = 3
 
     return Coin_precision,Order_precision
 
