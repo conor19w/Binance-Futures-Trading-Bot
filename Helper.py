@@ -1,4 +1,5 @@
 from binance.client import Client
+from binance.exceptions import BinanceAPIException
 from binance.enums import *
 from datetime import timezone,datetime,date,timedelta
 import API_keys
@@ -848,123 +849,124 @@ def get_historical(symbol,start_string,Interval):
     Close = []
     Volume = []
     Date = []
-    if Interval == '1m':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '3m':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3MINUTE,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '5m':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '15m':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '30m':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '1h':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '2h':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_2HOUR,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '4h':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_4HOUR,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '6h':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_6HOUR,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '8h':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_8HOUR,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '12h':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_12HOUR,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '1d':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '3d':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3DAY,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif Interval == '1w':
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1WEEK,start_str=start_string):
-            Date.append(int(kline[0])/1000)
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-
+    try:
+        if Interval == '1m':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '3m':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3MINUTE,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '5m':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '15m':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '30m':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '1h':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '2h':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_2HOUR,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '4h':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_4HOUR,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '6h':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_6HOUR,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '8h':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_8HOUR,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '12h':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_12HOUR,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '1d':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '3d':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3DAY,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+        elif Interval == '1w':
+            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1WEEK,start_str=start_string):
+                Date.append(int(kline[0])/1000)
+                Open.append(float(kline[1]))
+                Close.append(float(kline[4]))
+                High.append(float(kline[2]))
+                Low.append(float(kline[3]))
+                Volume.append(float(kline[7]))
+    except BinanceAPIException as e:
+        print(e)
     return Date,Open,Close,High,Low,Volume
 
 def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume,symbol):
-
     start_date = [Date[0][0],0]
     end_date = [Date[0][-1],0]
     for i in range(len(Date)):
@@ -1024,97 +1026,6 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
             Close[i].append(Close[i][-1])
             Open[i].append(Open[i][-1])
             Volume[i].insert(0,Volume[i][-1])
-
-    '''locations_to_pop = [] ##list of datasets that won't line up we will remove later
-    shortest_dataSet = [-99, 99999999999]  ## [which index , length of dataset]
-    for i in range(len(Date_1min)):
-        if len(Date_1min[i]) < shortest_dataSet[1]:
-            shortest_dataSet[0] = i  ##index of shortest data set
-            shortest_dataSet[1] = len(Date_1min[i])  ##length of that data set
-    for i in range(len(symbol)):
-        found_flag=0
-        for j in range(len(Date_1min[i])):
-            if Date_1min[i][j] == Date[shortest_dataSet[0]][0]:
-                High_1min[i] = High_1min[i][j:]
-                Low_1min[i] = Low_1min[i][j:]
-                Date_1min[i] = Date_1min[i][j:]
-                Close_1min[i] = Close_1min[i][j:]
-                Open_1min[i] = Open_1min[i][j:]
-                found_flag=1
-                # start_1min.append(j)
-                break
-        if found_flag == 0 :
-            locations_to_pop.append(i)
-        found_flag=0
-        for j in range(len(Date[i])):
-            if Date[i][j] == Date[shortest_dataSet[0]][0]:
-                Date[i] = Date[i][j:]
-                Open[i] = Open[i][j:]
-                Close[i] = Close[i][j:]
-                High[i] = High[i][j:]
-                Low[i] = Low[i][j:]
-                Volume[i] = Volume[i][j:]
-                found_flag=1
-                # start.append(j)
-                break
-
-        if found_flag == 0:
-            already_in_list = 0
-            for x in locations_to_pop:
-                if x==i:
-                    already_in_list = 1
-            if not already_in_list:
-                locations_to_pop.append(i)
-    ##account for the fact that if we pop an element then the indices in locations_to_pop need to be adjusted by 1 unit for each element we pop
-    adjust = 0
-    for i in range(len(locations_to_pop)):
-        locations_to_pop[i]-=adjust
-        adjust+=1
-
-    for i in range(len(symbol)):
-        found_flag=[0,0]
-        for j in range(len(Date_1min[i])):
-            if Date_1min[i][j] == Date[shortest_dataSet[0]][-1]:
-                High_1min[i] = High_1min[i][:j]
-                Low_1min[i] = Low_1min[i][:j]
-                Date_1min[i] = Date_1min[i][:j]
-                Close_1min[i] = Close_1min[i][:j]
-                Open_1min[i] = Open_1min[i][:j]
-                found_flag[0]=1
-                # start_1min.append(j)
-                break
-        for j in range(len(Date[i])):
-            if Date[i][j] == Date[shortest_dataSet[0]][-1]:
-                Date[i] = Date[i][:j]
-                Open[i] = Open[i][:j]
-                Close[i] = Close[i][:j]
-                High[i] = High[i][:j]
-                Low[i] = Low[i][:j]
-                Volume[i] = Volume[i][:j]
-                found_flag[1] = 1
-                # start.append(j)
-                break
-    longest_dataSet = [-99, -99999999999]  ## [which index , length of dataset]
-    for i in range(len(Date_1min)):
-        if len(Date_1min[i]) > longest_dataSet[1]:
-            longest_dataSet[0] = i  ##index of shortest data set
-            longest_dataSet[1] = len(Date_1min[i])  ##length of that data set
-    for i in range(len(Date_1min)):
-        while len(Date_1min[i])<len(Date_1min[longest_dataSet[0]]):
-            High_1min[i].append(High_1min[i][-1])
-            Low_1min[i].append(Low_1min[i][-1])
-            Date_1min[i].append(Date_1min[i][-1])
-            Close_1min[i].append(Close_1min[i][-1])
-            Open_1min[i].append(Open_1min[i][-1])
-    for i in range(len(Date)):
-        while len(Date[i])<len(Date[longest_dataSet[0]]):
-            Date[i].append(Date[i][-1])
-            Open[i].append(Open[i][-1])
-            Close[i].append(Close[i][-1])
-            High[i].append(High[i][-1])
-            Low[i].append(Low[i][-1])
-            Volume[i].append(Volume[i][-1])
-    '''
 
     return Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume#,locations_to_pop
 
