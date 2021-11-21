@@ -49,6 +49,17 @@ if seperate_graphs_for_each_coin:
 y=client.get_all_coins_info()
 for x in y:
     symbol.append(x['coin'] + 'USDT')
+i=0
+while i<len(symbol):
+    try:
+        client.futures_position_information(symbol=symbol[i])
+        i += 1
+    except BinanceAPIException as e:
+        if str(e) == 'APIError(code=-1121): Invalid symbol.':
+            print(f"Invalid Symbol: {symbol[i]}, removing from symbol")
+            symbol.pop(i)
+        else:
+            symbol.pop(i)
 High_1min = []
 Low_1min = []
 Close_1min = []
