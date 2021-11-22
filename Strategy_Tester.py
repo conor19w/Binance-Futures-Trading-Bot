@@ -45,7 +45,7 @@ path1 = f'C:\\Users\\conor\\Desktop\\Strategy_tester' ##location we want to stor
 client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
 if seperate_graphs_for_each_coin:
     run_on_all_coins_separately=1
-
+symbol = []
 y=client.get_all_coins_info()
 for x in y:
     symbol.append(x['coin'] + 'USDT')
