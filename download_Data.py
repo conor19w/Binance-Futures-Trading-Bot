@@ -169,7 +169,7 @@ def get_data(TIME_INTERVAL,symbol,LENGTH):
                 Date = Date[i:]
                 Close = Close[i:]
                 Open = Open[i:]
-                Volume = Open[i:]
+                Volume = Volume[i:]
                 found_flag=1
                 break
         if found_flag:
@@ -188,7 +188,7 @@ def get_data(TIME_INTERVAL,symbol,LENGTH):
                 Date = Date[:i]
                 Close = Close[:i]
                 Open = Open[:i]
-                Volume = Open[:i]
+                Volume = Volume[:i]
                 found_flag=1
                 break
         if found_flag:
