@@ -5,6 +5,7 @@ from datetime import timezone,datetime,date,timedelta
 import API_keys
 client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
 def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
+    print(f"Downloading CandleStick Data for {symbol}...")
     start_string = ""
     ##Parse test_set_length to work out the time period we are taking data from, being sure to leave the test_set alone
     if test_set_length[2]=='d':
