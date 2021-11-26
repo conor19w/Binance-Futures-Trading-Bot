@@ -526,8 +526,8 @@ if Trading: ## Trade on Binance with above api key and secret key
         global minuteFlag,Open,Close,High,Low,Volume
         # print(msg)
         payload = msg['k']
-        if payload['x'] and msg['ps'] == symbol:
-            # Date[0] = flow.dataStream(Date[0], int(coin1[0]), 1, 300)
+        if datetime.utcfromtimestamp(round(float(payload['t'])/1000)) > self.Date[-1] and msg['ps'] == symbol:
+            Date = flow.dataStream(Date, datetime.utcfromtimestamp(round(float(payload['t'])/1000)), 1, 300)
             Open = flow.dataStream(Open, float(payload['o']), 1, 300)
             Close = flow.dataStream(Close, float(payload['c']), 1, 300)
             High = flow.dataStream(High, float(payload['h']), 1, 300)
