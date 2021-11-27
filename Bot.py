@@ -163,31 +163,31 @@ if Trading: ## Trade on Binance with above api key and secret key
         ## setup websocket:
         if Interval == '1m' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_1MINUTE)
+                                           interval=KLINE_INTERVAL_1MINUTE)
             Start = 0
         elif Interval == '3m' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_3MINUTE)
+                                           interval=KLINE_INTERVAL_3MINUTE)
             Start = 0
         elif Interval == '5m' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_5MINUTE)
+                                           interval=KLINE_INTERVAL_5MINUTE)
             Start = 0
         elif Interval == '15m' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_15MINUTE)
+                                           interval=KLINE_INTERVAL_15MINUTE)
             Start = 0
         elif Interval == '30m' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_30MINUTE)
+                                           interval=KLINE_INTERVAL_30MINUTE)
             Start = 0
         elif Interval == '1h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_1HOUR)
+                                           interval=KLINE_INTERVAL_1HOUR)
             Start = 0
         elif Interval == '2h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_2HOUR)
+                                           interval=KLINE_INTERVAL_2HOUR)
             Start = 0
         elif Interval == '4h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
@@ -195,27 +195,27 @@ if Trading: ## Trade on Binance with above api key and secret key
             Start = 0
         elif Interval == '6h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_6HOUR)
+                                           interval=KLINE_INTERVAL_6HOUR)
             Start = 0
         elif Interval == '8h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_8HOUR)
+                                           interval=KLINE_INTERVAL_8HOUR)
             Start = 0
         elif Interval == '12h' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_12HOUR)
+                                           interval=KLINE_INTERVAL_12HOUR)
             Start = 0
         elif Interval == '1d' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_1DAY)
+                                           interval=KLINE_INTERVAL_1DAY)
             Start = 0
         elif Interval == '3d' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_3DAY)
+                                           interval=KLINE_INTERVAL_3DAY)
             Start = 0
         elif Interval == '1w' and Start:
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
-                                           interval=AsyncClient.KLINE_INTERVAL_1WEEK)
+                                           interval=KLINE_INTERVAL_1WEEK)
             Start = 0
         #twm.join() ##join twm to main thread to ensure it keeps running
         while True:
@@ -526,7 +526,7 @@ if Trading: ## Trade on Binance with above api key and secret key
         global minuteFlag,Open,Close,High,Low,Volume
         # print(msg)
         payload = msg['k']
-        if datetime.utcfromtimestamp(round(float(payload['t'])/1000)) > self.Date[-1] and msg['ps'] == symbol:
+        if payload['x'] and msg['ps'] == symbol:
             Date = flow.dataStream(Date, datetime.utcfromtimestamp(round(float(payload['t'])/1000)), 1, 300)
             Open = flow.dataStream(Open, float(payload['o']), 1, 300)
             Close = flow.dataStream(Close, float(payload['c']), 1, 300)
