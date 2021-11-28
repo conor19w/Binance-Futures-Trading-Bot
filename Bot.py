@@ -217,7 +217,6 @@ if Trading: ## Trade on Binance with above api key and secret key
             twm.start_kline_futures_socket(callback=handle_socket_message, symbol=symbol,
                                            interval=KLINE_INTERVAL_1WEEK)
             Start = 0
-        #twm.join() ##join twm to main thread to ensure it keeps running
         while True:
             #########################################################################################
             ######################## Runs every 30 seconds ##########################################
