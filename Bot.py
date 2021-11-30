@@ -522,7 +522,7 @@ if Trading: ## Trade on Binance with above api key and secret key
 
 
     def handle_socket_message(msg):
-        global minuteFlag,Open,Close,High,Low,Volume
+        global minuteFlag,Open,Close,High,Low,Volume,Date
         # print(msg)
         payload = msg['k']
         if payload['x'] and msg['ps'] == symbol:
