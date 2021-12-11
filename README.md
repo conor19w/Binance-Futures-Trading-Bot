@@ -47,7 +47,25 @@ __This script will run a strategy on every coin on Binance & then generate graph
 * Uncomment a strategy after __line 258__ or else call your custom strategy here, following the same guidelines layed out in the backtesting section above.
 * Now run the script with the settings you've chosen and check up on the graphs and statistics that are created soon after.
 ---
-### Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
+### Run strategies live in [Bot.py]()
+---
+__Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
+---
+__Now Supports Trading Multiple Coins__
+* In __Bot.py__ on __line 275__ are the settings.
+* Choose the Interval you want to trade and the buffer of candlesticks your strategy will need.
+* leverage and order_size should be changed acording to your preference
+* symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
+
+__Strategies are implemented in Data_Set.py as a function named Make_decision() in the Data_set class__
+* Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to be work properly
+* You might draw inspiration for a strategy from one In __TradingStrats.py__
+
+
+---
+---
+---
+###### (Depreciated) Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
 ---
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 * Switch Trading On at line 95.
@@ -61,7 +79,7 @@ __Run strategies at your own risk I am not responsible for your trading decision
 * Custom Strategies must return a 'prediction' parameter either 1, 0, or -99 to go long, short or flat respectively. 
 * Again like in Backtesting we call our trading strategy in the form of a function/class, If the function/class returns a Type then we must call the SetSLTP() function to set our Stop loss and Take profit before sending our orders.
 * Now just run the script and your strategy is up and running.
-### Create Custom Strategies
+###### (Depreciated) Create Custom Strategies
 ---
 * Custom Strategies Can be implemented in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
 * Custom Strategies should return 'prediction' parameter to indicate the strategy's decision to go short (0), go long (1), go flat (-99).
