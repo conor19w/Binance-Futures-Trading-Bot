@@ -16,7 +16,7 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Whitelist your IP address to further secure your account, and so that your API keys don't expire after 1 month.
 * Fill in your api keys into api_secret and api_key in [API_keys.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/API_keys.py).
 
-### Back test strategies in [Backtester.py]()
+### Back test strategies in [Backtester.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtester.py)
 ---
 * Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. symbol = ['BTCUSDT' , 'ETHUSDT'] , this would run your strategy on BTC and ETH.
 Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
