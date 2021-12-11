@@ -59,30 +59,7 @@ __Strategies are implemented in Data_Set.py as a function named Make_decision() 
 * Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to be work properly
 * You might draw inspiration for a strategy from one In __TradingStrats.py__
 
-
----
----
----
 ###### (Depreciated) Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
----
-__Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
-* Switch Trading On at line 95.
-* Choose the [Interval](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/3f0fdfafae94275bfba2e13a8945b75d297b8c2f/Bot.py#L108) of candle sticks you wish to trade over.
-* Now un-comment a symbol or add a new symbol you want to trade after line 110.
-* To trade a coin not listed at the top of the script we must add an elif symbol clause in __get_coin_attrib()__ in __Helper.py__ specifying Coin_precision (how many decimal point places the price of the coin is measured in)
-& Order_precision (how many decimal point places orders are measured in). __Note: some coins have no decimal places in order quantity, in this case we set Order_precision = 0.__
-* Adjust 'OrderSIZE' __line 98__ and 'leverage' __line 97__ as you see fit, adjusting the leverage only changes the EffectiveAccountBalance variable in the script which will affect the order quantity, you must manually adjust the leverage on the exchange currently. __Note: OrderSIZE just helps scale trades in reality you may be risking more than your desired percentage, this will be decided by your stoploss values implemented__
-* The Market_Orders switch on line 94 decides whether to use market orders (1) or to use limit orders (0).
-* Now we select our trading strategy, one which we have thoroughly Backtested in the section starting on __line 367__.
-* Custom Strategies must return a 'prediction' parameter either 1, 0, or -99 to go long, short or flat respectively. 
-* Again like in Backtesting we call our trading strategy in the form of a function/class, If the function/class returns a Type then we must call the SetSLTP() function to set our Stop loss and Take profit before sending our orders.
-* Now just run the script and your strategy is up and running.
-###### (Depreciated) Create Custom Strategies
----
-* Custom Strategies Can be implemented in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
-* Custom Strategies should return 'prediction' parameter to indicate the strategy's decision to go short (0), go long (1), go flat (-99).
-* For stop loss and take profit you must calculate and assign values to stoplossval and takeprofitval respectively, some pre-coded stoploss functions are already encapsulated in the __SetSLTP()__ function in __TradingStrats.py__. You may use these by getting your custom strategy to return a Type parameter corresponding to the Type in SetSLTP() and then call SetSLTP with Type as one of the parameters, or else set these in a custom function of your own. 
-__Note: Stop loss and Take profit should be the margin of increase/decrease not the target price.__
 
 # Contact me
 * If you have any querys about anything, or need me to explain any blocks of code please reach out to me at wconor539@gmail.com.
