@@ -16,32 +16,33 @@ import time
 
 
 def single_candle_swing_pump(prediction,Close,High,Low,CurrentPos,ClosePos,count,stoploss):
+    ##This function requires Hold_Pos to be switched on in Bot.py
     prediction = -99
     number_bars = 1 ##how many bars to wait until we sell
-    if High[-5]<High[-4]<High[-3] and High[-3]>High[-2]>High[-1] and CurrentPos == -99:
+    if High[-5]<High[-4]<High[-3] and High[-3]>High[-2]>High[-1] and CurrentPos == -99: ##if we have a peak
         prediction = 0
         #stoploss = 1.5*np.array(average_true_range(pd.Series(High), pd.Series(Low), pd.Series(Close)))[-1]
-    elif Low[-5]<Low[-4]<Low[-3] and Low[-3]<Low[-2]<Low[-1] and CurrentPos == -99:
+    elif Low[-5]<Low[-4]<Low[-3] and Low[-3]<Low[-2]<Low[-1] and CurrentPos == -99: ##if we have a trough
         prediction = 1
         #stoploss = 1.5*np.array(average_true_range(pd.Series(High), pd.Series(Low), pd.Series(Close)))[-1]
-    if CurrentPos!=-99 and count==number_bars:
+    if CurrentPos!=-99 and count==number_bars: ##check if we should close position
         ClosePos = 1
         count=0
-    elif CurrentPos!=-99 and count!=number_bars:
+    elif CurrentPos!=-99 and count!=number_bars: ##iterate count
         count+=1
     else:
-        ClosePos = -99
+        ClosePos = -99 ##not in a position so closePos is intitialized
 
     return prediction,ClosePos,count,stoploss
 def RSI_trade(prediction,Close,CurrentPos,ClosePos):
     RSI = np.array(rsi(pd.Series(Close)))
-    if RSI[-1]<30 and CurrentPos == -99: ## RSI[-2]>50 and RSI[-1]<50 and RSI[-1]>30 and CurrentPos == -99:
+    if RSI[-1]<30 and CurrentPos == -99: ## Oversold
         prediction = 1
-    elif RSI[-1]>70 and CurrentPos == -99: ##RSI[-2]<50 and RSI[-1]>50 and RSI[-1]<70  and CurrentPos == -99:
+    elif RSI[-1]>70 and CurrentPos == -99: ##Overbought
         prediction = 0
-    elif CurrentPos == 0 and (RSI[-1]<30 or RSI[-1]>50):
+    elif CurrentPos == 0 and (RSI[-1]<30 or (RSI[-4]<40 and RSI[-1]>50)): ##RSI is oversold or trending up
         ClosePos = 1
-    elif CurrentPos == 1 and (RSI[-1]>70 or RSI[-1]<50):
+    elif CurrentPos == 1 and (RSI[-1]>70 or (RSI[-4]>60 and RSI[-1]<50)): ##RSI is overbought or trending down
         ClosePos = 1
     else:
         ClosePos = 0
@@ -61,13 +62,13 @@ def candle_wick(prediction,Close,Open,High,Low):
 def fibMACD(prediction,Close,Open,High,Low):
     stoplossval = 0
     takeprofitval = 0
-    period = 299 ##trend over this period: 15 min ETH:150 , BTC:200 , 5min ETH:180 , 1min ETH:
+    period = 299 ##Record peaks and troughs in last period timesteps
     MACD_signal = np.array(macd_signal(pd.Series(Close)))
     MACD = np.array(macd(pd.Series(Close)))
-    Close_peaks = []
-    location_peaks = []
-    Close_troughs = []
-    location_troughs = []
+    Close_peaks = [] ##Store peak values
+    location_peaks = [] ##store index of peak value , used for debugging
+    Close_troughs = [] ##store trough values
+    location_troughs = [] ##store index of peak trough , used for debugging
     #####################Find peaks & troughs in Close ##############################
     for i in range(len(High) - period, len(High) - 2):
         if High[i] > High[i - 1] and High[i] > High[i + 1] and High[i] > High[i - 2] and High[i] > High[i + 2]:
@@ -88,7 +89,7 @@ def fibMACD(prediction,Close,Open,High,Low):
     max_pos=-99
     min_pos=-99
     if trend ==1:
-        ##in an uptrend look for the recent max and min to calculate fib levels
+        ##Find the start and end of the pullback
         max_Close = -9999999
         min_Close = 9999999
         max_flag=0
@@ -102,6 +103,7 @@ def fibMACD(prediction,Close,Open,High,Low):
                 break
             else:
                 max_flag+=1
+        ##Find the start and end of the pullback
         startpoint=-99
         for i in range(len(location_troughs)):
             if location_troughs[i]<max_pos:
@@ -126,7 +128,7 @@ def fibMACD(prediction,Close,Open,High,Low):
         fib_level_5 = max_Close - .786 * (max_Close - min_Close)
         fib_level_6 = min_Close
 
-
+        ##Take profit targets, Don't think this is configured properly so maybe have a look at fibonacci extensions and fix here, Right hand side is ment to be the corresponding extension level
         fib_retracement_level_1 = fib_level_0+1.236*(max_Close - min_Close) - Close[-1]##target max_Close+1.236*(max_Close - min_Close)
         fib_retracement_level_2 = fib_level_0+1.382*(max_Close - min_Close) - Close[-1]
         fib_retracement_level_3 = fib_level_0+1.5*(max_Close - min_Close) - Close[-1]
@@ -134,12 +136,14 @@ def fibMACD(prediction,Close,Open,High,Low):
         fib_retracement_level_5 = fib_level_0+1.786*(max_Close - min_Close) - Close[-1]
         fib_retracement_level_6 = fib_level_0+2*(max_Close - min_Close) - Close[-1]
 
+        ## fib_level_0>Low[-3]>fib_level_1: recent low was between two of our levels
+        ## Close[-4]>fib_level_1 and Close[-5]>fib_level_1 and Close[-6]>fib_level_1: Ensure the bottom level was respected  ie. no recent close below it
         if fib_level_0>Low[-3]>fib_level_1 and Close[-4]>fib_level_1 and Close[-5]>fib_level_1 and Close[-6]>fib_level_1:
             if Close[-3] < Open[-3] < Close[-2] < Close[-1] and ((MACD_signal[-2]<MACD[-2] or MACD_signal[-3]<MACD[-3]) and MACD_signal[-1]>MACD[-1]): ##Bullish Engulfing Candle and cross up on MACD
                 #print("level 1")
                 prediction=1 ##signal a buy
-                takeprofitval = fib_retracement_level_1
-                stoplossval = Close[-1] - fib_level_1*1.0001
+                takeprofitval = fib_retracement_level_1 ##target the corresponding extensiuon level
+                stoplossval = Close[-1] - fib_level_1*1.0001 ##stoploss below bottom level with a bit extra
         elif fib_level_1>Low[-3]>fib_level_2 and Close[-4]>fib_level_2 and Close[-5]>fib_level_2 and Close[-6]>fib_level_2:
             if Close[-3] < Open[-3] < Close[-2] < Close[-1] and ((MACD_signal[-2]<MACD[-2] or MACD_signal[-3]<MACD[-3]) and MACD_signal[-1]>MACD[-1]): ##Bullish Engulfing Candle and cross up on MACD
                 #print("level 1")
@@ -174,7 +178,7 @@ def fibMACD(prediction,Close,Open,High,Low):
                 stoplossval = Close[-1] - fib_level_6*1.0001
 
     elif trend ==0:
-        ##in an downtrend look for the recent min and max to calculate fib levels
+        ##Find the start and end of the pullback
         max_Close = -9999999
         min_Close = 9999999
         max_flag = 0
@@ -188,6 +192,8 @@ def fibMACD(prediction,Close,Open,High,Low):
                 break
             else:
                 min_flag += 1
+
+        ##Find the start and end of the pullback
         startpoint = -99
         for i in range(len(location_peaks)):
             if location_peaks[i] < min_pos:
@@ -212,6 +218,7 @@ def fibMACD(prediction,Close,Open,High,Low):
         fib_level_5 = min_Close + .786 * (max_Close - min_Close)
         fib_level_6 = max_Close
 
+        ##Take profit targets, Don't think this is configured properly so maybe have a look at fibonacci extensions and fix here, Right hand side is ment to be the corresponding extension level
         fib_retracement_level_1 = Close[-1] - (fib_level_0 + 1.236 * (max_Close - min_Close))
         fib_retracement_level_2 = Close[-1] - (fib_level_0 + 1.382 * (max_Close - min_Close))
         fib_retracement_level_3 = Close[-1] - (fib_level_0 + 1.5 * (max_Close - min_Close))
@@ -219,12 +226,14 @@ def fibMACD(prediction,Close,Open,High,Low):
         fib_retracement_level_5 = Close[-1] - (fib_level_0 + 1.786 * (max_Close - min_Close))
         fib_retracement_level_6 = Close[-1] - (fib_level_0 + 2 * (max_Close - min_Close))
 
+        ## fib_level_0 < High[-3] < fib_level_1: recent low was between two of our levels
+        ## Close[-4] < fib_level_1 and Close[-5] < fib_level_1 and Close[-6] < fib_level_1: Ensure the Top level was respected, ie no recent close above it
         if fib_level_0 < High[-3] < fib_level_1 and Close[-4] < fib_level_1 and Close[-5] < fib_level_1 and Close[-6] < fib_level_1:
             if Close[-3] > Open[-3] > Close[-2] > Close[-1] and ((MACD_signal[-2] > MACD[-2] or MACD_signal[-3] > MACD[-3]) and MACD_signal[-1] < MACD[-1]):  ##Bearish Engulfing Candle and cross down on MACD
                 #print("level 1")
                 prediction = 0  ##signal a sell
-                takeprofitval = fib_retracement_level_1
-                stoplossval = fib_level_1*1.0001 - Close[-1]
+                takeprofitval = fib_retracement_level_1 ##target corresponding extension level
+                stoplossval = fib_level_1*1.0001 - Close[-1] ##stoploss above Top level with a bit extra
         elif fib_level_1 < High[-3] < fib_level_2 and Close[-4] < fib_level_2 and Close[-5] < fib_level_2 and Close[-6] < fib_level_2:
             if Close[-3] > Open[-3] > Close[-2] > Close[-1] and ((MACD_signal[-2] > MACD[-2] or MACD_signal[-3] > MACD[-3]) and MACD_signal[-1] < MACD[-1]):  ##Bearish Engulfing Candle and cross down on MACD
                 #print("level 1")
@@ -260,16 +269,6 @@ def fibMACD(prediction,Close,Open,High,Low):
 
 
 
-
-
-
-def MTFMACD(prediction,Close_1hr,Close_15min,Close):
-
-    EMA50_1hr = np.array(ema_indicator(pd.Series(Close_1hr), window=50))
-    EMA50_15min = np.array(ema_indicator(pd.Series(Close_15min), window=50))
-    MACD_signal = macd_signal(pd.Series(Close))
-
-    ##Look for divergence in macd
 
 
 
