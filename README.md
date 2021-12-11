@@ -38,6 +38,7 @@ __replacing your_name with the user that you are logged into.__
 __NOTE: this data is static so if you want up to date data in future you will have to manually delete the data from the folder on your desktop and then run the script again.
 Otherwise you can just turn load_data off and pull data from the server everytime you want to run a backtest.__
 #### Strategy_Tester.py
+---
 __This script will run a strategy on every coin on Binance & then generate graphs and statistics which are saved to a folder on the desktop.__
 * __Line 29 to Line 43__ are the settings which should be clear with the comments I've provided
 * Create a folder on the desktop called Strategy_tester with another folder matching the __Strategy_name__ variable, this is where the data will be stored when you run.
