@@ -16,17 +16,15 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Whitelist your IP address to further secure your account, and so that your API keys don't expire after 1 month.
 * Fill in your api keys into api_secret and api_key in [API_keys.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/API_keys.py).
 
-### Back test strategies in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
+### Back test strategies in [Backtester.py]()
 ---
-* To back test ensure Trading is switched off on line 95.
-* Back test section starts at __line 719__.
 * Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. symbol = ['BTCUSDT' , 'ETHUSDT'] , this would run your strategy on BTC and ETH.
 Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * Ignore the __pair-trading__ section and ensure pair_Trading = 0, if you are executing a TA strategy
 * The data is split into an in-sample set and a test set, the flag __test_set__ decides which set we are running the strategy on, both sets are in same units as test_set_length but we adjust __time_period__ variable to change the in-sample data set length. The reason for splitting the data like this is to optimize parameters on the in-sample set and then once optimized run the strategy on the test-set to see if you have overfit your model by cherry picking values for parameters that suit the in-sample data.
 * The __time_period__ variable is the length of time in the past from today excluding the test-set, to run the strategy on. This is in the same units as the test_set_length.
 * The __TIME_INTERVAL__ variable is the interval for the candlesticks we want to trade on.
-* Next we want to choose our TA strategy, this is done after __line 925__ , uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
+* Next we want to choose our TA strategy, this is done after __line 295__ , uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
 * Some of the pre-coded strategies return a 'Type' variable, if a strategy returns the 'Type' variable you must call the SetSLTP() function from __TradingStrats.py__ in order to set the corresponding Stop loss value, and Take profit value, this function is found in TradingStrats.py
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 
@@ -36,7 +34,7 @@ Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * Create a folder on the desktop called __price_data__.
 *  In __download_Data.py__ change the __path__ to f"C:\\Users\\your_name\\Desktop\\price_data  
 __replacing your_name with the user that you are logged into.__
-* Switch __load_data__ on in __Bot.py__ on __line 750__, now when you run the script it will load from the folder & if the specified candlestick data isn't present in the folder then it will be downloaded and saved for future use.  
+* Switch __load_data__ on in __Backtester.py__ on __line 120__, now when you run the script it will load from the folder & if the specified candlestick data isn't present in the folder then it will be downloaded and saved for future use.  
 __NOTE: this data is static so if you want up to date data in future you will have to manually delete the data from the folder on your desktop and then run the script again.
 Otherwise you can just turn load_data off and pull data from the server everytime you want to run a backtest.__
 #### Strategy_Tester.py
