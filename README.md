@@ -59,7 +59,7 @@ __Strategies are implemented in Data_Set.py as a function named Make_decision() 
 * Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to be work properly
 * You might draw inspiration for a strategy from one In __TradingStrats.py__
 
-###### (Depreciated) Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
+###### (Depreciated) Run strategies live in [Bot__(depreciated).py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot__(depreciated).py)
 
 # Contact me
 * If you have any querys about anything, or need me to explain any blocks of code please reach out to me at wconor539@gmail.com.
