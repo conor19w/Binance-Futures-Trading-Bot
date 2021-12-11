@@ -526,8 +526,8 @@ def get_coin_attrib(symbol):
         Order_precision = 0
 
     elif symbol =='RAYUSDT':
-        Coin_precision = 1
-        Order_precision = 3
+        Coin_precision = 3
+        Order_precision = 1
 
     elif symbol =='NEARUSDT':
         Coin_precision = 4
@@ -853,7 +853,7 @@ def get_historical(symbol,start_string,Interval):
     try:
         if Interval == '1m':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(datetime.utcfromtimestamp(round(kline[0]/1000)))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -861,7 +861,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '3m':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3MINUTE,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -869,7 +869,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '5m':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -877,7 +877,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '15m':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -885,7 +885,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '30m':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -893,7 +893,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '1h':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -901,7 +901,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '2h':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_2HOUR,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -909,7 +909,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '4h':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_4HOUR,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -917,7 +917,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '6h':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_6HOUR,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -925,7 +925,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '8h':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_8HOUR,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -933,7 +933,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '12h':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_12HOUR,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -941,7 +941,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '1d':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -949,7 +949,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '3d':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3DAY,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
@@ -957,7 +957,7 @@ def get_historical(symbol,start_string,Interval):
                 Volume.append(float(kline[7]))
         elif Interval == '1w':
             for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1WEEK,start_str=start_string):
-                Date.append(int(kline[0])/1000)
+                Date.append(int(kline[0]))
                 Open.append(float(kline[1]))
                 Close.append(float(kline[4]))
                 High.append(float(kline[2]))
