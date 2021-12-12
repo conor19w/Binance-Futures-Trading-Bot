@@ -57,7 +57,7 @@ def Check_for_signals(pipe,leverage,order_Size):
                         result.append(x.Make_decision())
               
                     for i in range(len(result)):
-                        if result[i][0] != None:
+                        if result[i][0] != -99:
                             Trading_index = i  ##set trading index so we can open a trade
                             attempting_a_trade = 1
                             Trade_Direction = result[i][0] ##direction of our trade (Short (0) or Long (1))
