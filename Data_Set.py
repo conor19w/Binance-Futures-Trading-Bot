@@ -43,6 +43,7 @@ class Data_set:
         self.High = High_temp
         self.Low = Low_temp
         self.Volume = Volume_temp
+        self.add_hist_complete = 1
 
     def handle_socket_message(self,msg):
         payload = msg['k']
