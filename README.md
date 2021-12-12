@@ -57,7 +57,7 @@ __Now Supports Trading Multiple Coins__
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
 
 __Strategies are implemented in Data_Set.py as a function named Make_decision() in the Data_set class__
-* Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to be work properly
+* Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to work properly
 * You might draw inspiration for a strategy from one In __TradingStrats.py__
 
 ###### (Depreciated) Run strategies live in [Bot__(depreciated).py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot__(depreciated).py)
