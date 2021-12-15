@@ -53,7 +53,7 @@ def Check_for_signals(pipe,leverage,order_Size):
                     flag = 0
                     result = []
                     for x in Data:
-                        ##each x should be of the form [Trade_Direction,Stoplossval,Takeprofitval]
+                        ##each x should return something of the form [Trade_Direction,Stoplossval,Takeprofitval]
                         result.append(x.Make_decision())
               
                     for i in range(len(result)):
