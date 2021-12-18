@@ -43,8 +43,9 @@ def Check_for_signals(pipe,leverage,order_Size,client:Client):
         try:
             try:
 
-                Data = pipe.recv() ##where we will receive from our pipe
-                if Data!=None:
+                Data_temp = pipe.recv()  ##where we will receive from our pipe
+                if Data_temp != None:
+                    Data = copy(Data_temp)
                     flag = 1
 
 
