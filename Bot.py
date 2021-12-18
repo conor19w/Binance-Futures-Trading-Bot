@@ -15,13 +15,15 @@ from multiprocessing import Pool,Process,Value,Pipe
 from Data_Set import Data_set
 
 
-def Check_for_signals(pipe,leverage,order_Size,client:Client):
-    
+def Check_for_signals(pipe,leverage,order_Size):
+    client_trade = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret)
+
     ############## Vars used to keep track of orders ###################
     entry_price = -99  ##where we entered our original trade
     orderId = ''
     stop_ID = ''
-    Take_ID = ''
+    Take_ID = []
+    comp_ID = []
     Start_Account_Balance = -99
     position_Size = 0
     Trading_index = -99
@@ -43,9 +45,8 @@ def Check_for_signals(pipe,leverage,order_Size,client:Client):
         try:
             try:
 
-                Data_temp = pipe.recv()  ##where we will receive from our pipe
-                if Data_temp != None:
-                    Data = copy(Data_temp)
+                Data = pipe.recv() ##where we will receive from our pipe
+                if Data!=None:
                     flag = 1
 
 
@@ -53,7 +54,7 @@ def Check_for_signals(pipe,leverage,order_Size,client:Client):
                     flag = 0
                     result = []
                     for x in Data:
-                        ##each x should return something of the form [Trade_Direction,Stoplossval,Takeprofitval]
+                        ##each x should be of the form [Trade_Direction,Stoplossval,Takeprofitval]
                         result.append(x.Make_decision())
               
                     for i in range(len(result)):
@@ -68,12 +69,12 @@ def Check_for_signals(pipe,leverage,order_Size,client:Client):
                 if attempting_a_trade and not order_placed:
                     try:
                         print(f"{Data[Trading_index].Date[-1]}: Attempting to place order on {Data[Trading_index].symbol}")
-                        y = client.futures_account_balance()
+                        y = client_trade.futures_account_balance()
                         for x in y:
                             if x['asset'] == 'USDT':
                                 Start_Account_Balance = float(x['balance'])
                                 break
-                        order_book = client.futures_order_book(symbol=Data[Trading_index].symbol)
+                        order_book = client_trade.futures_order_book(symbol=Data[Trading_index].symbol)
                         bids = order_book['bids']
                         asks = order_book['asks']
                         ##Using Order Book to pick entry price for orders:
@@ -92,25 +93,44 @@ def Check_for_signals(pipe,leverage,order_Size,client:Client):
                             position_Size = round(((Start_Account_Balance * leverage) * order_Size) / entry_price)  ##Size of Position we are opening
 
                         if Trade_Direction == 1:
-                            order1 = client.futures_create_order(
-                                symbol=Data[Trading_index].symbol,
-                                side=SIDE_BUY,
-                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round(entry_price, Data[Trading_index].CP),
-                                timeInForce=TIME_IN_FORCE_GTC,
-                                quantity=position_Size)
-                            orderId = order1['orderId']
+                            if Data[Trading_index].CP!=0:
+                                order1 = client_trade.futures_create_order(
+                                    symbol=Data[Trading_index].symbol,
+                                    side=SIDE_BUY,
+                                    type=FUTURE_ORDER_TYPE_LIMIT,
+                                    price=round(entry_price, Data[Trading_index].CP),
+                                    timeInForce=TIME_IN_FORCE_GTC,
+                                    quantity=position_Size)
+                                orderId = order1['orderId']
+                            else:
+                                order1 = client_trade.futures_create_order(
+                                    symbol=Data[Trading_index].symbol,
+                                    side=SIDE_BUY,
+                                    type=FUTURE_ORDER_TYPE_LIMIT,
+                                    price=round(entry_price),
+                                    timeInForce=TIME_IN_FORCE_GTC,
+                                    quantity=position_Size)
+                                orderId = order1['orderId']
 
                         elif Trade_Direction == 0:
-                            order1 = client.futures_create_order(
-                                symbol=Data[Trading_index].symbol,
-                                side=SIDE_SELL,
-                                type=FUTURE_ORDER_TYPE_LIMIT,
-                                price=round(entry_price, Data[Trading_index].CP),
-                                timeInForce=TIME_IN_FORCE_GTC,
-                                quantity=position_Size)
-                            orderId = order1['orderId']
-
+                            if Data[Trading_index].CP!=0: 
+                                order1 = client_trade.futures_create_order(
+                                    symbol=Data[Trading_index].symbol,
+                                    side=SIDE_SELL,
+                                    type=FUTURE_ORDER_TYPE_LIMIT,
+                                    price=round(entry_price, Data[Trading_index].CP),
+                                    timeInForce=TIME_IN_FORCE_GTC,
+                                    quantity=position_Size)
+                                orderId = order1['orderId']
+                            else:
+                                order1 = client_trade.futures_create_order(
+                                    symbol=Data[Trading_index].symbol,
+                                    side=SIDE_SELL,
+                                    type=FUTURE_ORDER_TYPE_LIMIT,
+                                    price=round(entry_price),
+                                    timeInForce=TIME_IN_FORCE_GTC,
+                                    quantity=position_Size)
+                                orderId = order1['orderId']
                         order_placed = 1  ##weve sent our order successfully
                         start = datetime.now().time()
                         yesterdate = date.today()
@@ -125,10 +145,10 @@ def Check_for_signals(pipe,leverage,order_Size,client:Client):
                         yesterdate = date.today()
 
                         if in_a_trade:
-                            y = client.futures_position_information(symbol=Data[Trading_index].symbol)[0]
+                            y = client_trade.futures_position_information(symbol=Data[Trading_index].symbol)[0]
                             position_Amount = float(y['positionAmt'])
                             if position_Amount == 0:
-                                client.futures_cancel_all_open_orders(symbol=Data[Trading_index].symbol)
+                                client_trade.futures_cancel_all_open_orders(symbol=Data[Trading_index].symbol)
                                 ############## Vars used to keep track of orders ###################
                                 entry_price = -99  ##where we entered our original trade
                                 orderId = ''
@@ -151,7 +171,7 @@ def Check_for_signals(pipe,leverage,order_Size,client:Client):
                                 start = datetime.now().time()  ##for timer
                                 yesterdate = date.today()  ##for timer
 
-                                y = client.futures_account_balance()
+                                y = client_trade.futures_account_balance()
                                 for x in y:
                                     if x['asset'] == 'USDT':
                                         print(f"{Data[Trading_index].Date[-1]}: Trade Finished\n"
@@ -160,48 +180,85 @@ def Check_for_signals(pipe,leverage,order_Size,client:Client):
 
                         ##Check if order placed
                         if not in_a_trade:
-                            if client.futures_get_all_orders(symbol=Data[Trading_index].symbol,orderId=orderId)[0]['status'] != 'FILLED':
+                            if client_trade.futures_get_all_orders(symbol=Data[Trading_index].symbol,orderId=orderId)[0]['status'] != 'FILLED':
                                 print(f"Initial Order Successful on {Data[Trading_index].symbol}")
                                 try:
                                     ##place stoploss and takeprofits
                                     if Trade_Direction == 1:
-                                        order2 = client.futures_create_order(
-                                            symbol=Data[Trading_index].symbol,
-                                            side=SIDE_SELL,
-                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                            stopPrice=round(entry_price - stoplossval,Data[Trading_index].CP),
-                                            reduceOnly='true',
-                                            quantity=position_Size)
-                                        stop_ID = order2['orderId']
+                                        if Data[Trading_index].CP != 0:
+                                            order2 = client_trade.futures_create_order(
+                                                symbol=Data[Trading_index].symbol,
+                                                side=SIDE_SELL,
+                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                                stopPrice=round(entry_price - stoplossval,Data[Trading_index].CP),
+                                                reduceOnly='true',
+                                                quantity=position_Size)
+                                            stop_ID = order2['orderId']
+    
+                                            order3 = client_trade.futures_create_order(
+                                                symbol=Data[Trading_index].symbol,
+                                                side=SIDE_SELL,
+                                                type=FUTURE_ORDER_TYPE_LIMIT,
+                                                price=round(entry_price + takeprofitval, Data[Trading_index].CP),
+                                                timeInForce=TIME_IN_FORCE_GTC,
+                                                quantity=position_Size)
+                                            Take_ID = order3['orderId']
+                                        else:
+                                            order2 = client_trade.futures_create_order(
+                                                symbol=Data[Trading_index].symbol,
+                                                side=SIDE_SELL,
+                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                                stopPrice=round(entry_price - stoplossval),
+                                                reduceOnly='true',
+                                                quantity=position_Size)
+                                            stop_ID = order2['orderId']
 
-                                        order3 = client.futures_create_order(
-                                            symbol=Data[Trading_index].symbol,
-                                            side=SIDE_SELL,
-                                            type=FUTURE_ORDER_TYPE_LIMIT,
-                                            price=round(entry_price + takeprofitval, Data[Trading_index].CP),
-                                            timeInForce=TIME_IN_FORCE_GTC,
-                                            quantity=position_Size)
-                                        Take_ID = order3['orderId']
+                                            order3 = client_trade.futures_create_order(
+                                                symbol=Data[Trading_index].symbol,
+                                                side=SIDE_SELL,
+                                                type=FUTURE_ORDER_TYPE_LIMIT,
+                                                price=round(entry_price + takeprofitval),
+                                                timeInForce=TIME_IN_FORCE_GTC,
+                                                quantity=position_Size)
+                                            Take_ID = order3['orderId']
 
                                     elif Trade_Direction == 0:
-                                        order2 = client.futures_create_order(
-                                            symbol=Data[Trading_index].symbol,
-                                            side=SIDE_BUY,
-                                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                            stopPrice=round(entry_price + stoplossval, Data[Trading_index].CP),
-                                            reduceOnly='true',
-                                            quantity=position_Size)
-                                        stop_ID = order2['orderId']
+                                        if Data[Trading_index].CP != 0:
+                                            order2 = client_trade.futures_create_order(
+                                                symbol=Data[Trading_index].symbol,
+                                                side=SIDE_BUY,
+                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                                stopPrice=round(entry_price + stoplossval, Data[Trading_index].CP),
+                                                reduceOnly='true',
+                                                quantity=position_Size)
+                                            stop_ID = order2['orderId']
+    
+                                            order3 = client_trade.futures_create_order(
+                                                symbol=Data[Trading_index].symbol,
+                                                side=SIDE_BUY,
+                                                type=FUTURE_ORDER_TYPE_LIMIT,
+                                                price=round(entry_price - takeprofitval, Data[Trading_index].CP),
+                                                timeInForce=TIME_IN_FORCE_GTC,
+                                                quantity=position_Size)
+                                            Take_ID = order3['orderId']
+                                        else:
+                                            order2 = client_trade.futures_create_order(
+                                                symbol=Data[Trading_index].symbol,
+                                                side=SIDE_BUY,
+                                                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                                                stopPrice=round(entry_price + stoplossval),
+                                                reduceOnly='true',
+                                                quantity=position_Size)
+                                            stop_ID = order2['orderId']
 
-                                        order3 = client.futures_create_order(
-                                            symbol=Data[Trading_index].symbol,
-                                            side=SIDE_BUY,
-                                            type=FUTURE_ORDER_TYPE_LIMIT,
-                                            price=round(entry_price - takeprofitval, Data[Trading_index].CP),
-                                            timeInForce=TIME_IN_FORCE_GTC,
-                                            quantity=position_Size)
-                                        Take_ID = order3['orderId']
-
+                                            order3 = client_trade.futures_create_order(
+                                                symbol=Data[Trading_index].symbol,
+                                                side=SIDE_BUY,
+                                                type=FUTURE_ORDER_TYPE_LIMIT,
+                                                price=round(entry_price - takeprofitval),
+                                                timeInForce=TIME_IN_FORCE_GTC,
+                                                quantity=position_Size)
+                                            Take_ID = order3['orderId']
                                     in_a_trade = 1  ##safely in a trade with our stoploss
 
                                 except BinanceAPIException as e:
@@ -212,7 +269,7 @@ def Check_for_signals(pipe,leverage,order_Size,client:Client):
                             wait_count += 1
                             if wait_count >= 3:
                                 print("Order wasn't placed in 45 seconds so cancelling")
-                                client.futures_cancel_all_open_orders(symbol=Data[Trading_index].symbol)
+                                client_trade.futures_cancel_all_open_orders(symbol=Data[Trading_index].symbol)
                                 ############## Vars used to keep track of orders ###################
                                 entry_price = -99  ##where we entered our original trade
                                 orderId = ''
@@ -235,7 +292,7 @@ def Check_for_signals(pipe,leverage,order_Size,client:Client):
                                 start = datetime.now().time()  ##for timer
                                 yesterdate = date.today()  ##for timer
 
-                                y = client.futures_account_balance()
+                                y = client_trade.futures_account_balance()
                                 for x in y:
                                     if x['asset'] == 'USDT':
                                         print(f"{Data[Trading_index].Date[-1]}: Trade Timer Up\n"
@@ -274,8 +331,8 @@ def web_soc_process(pipe):
 
 if __name__ == '__main__':
     ## settings, these are very strategy dependant ensure you have enough data for your chosen strategy
-    start_string = '2 day'  ##buffer of historical data to download before starting the script, valid format: x hour/day/week
-    Interval = '15m'  ##Time interval over which we want to trade, valid Intervals: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M
+    start_string = '1 hour'  ##buffer of historical data to download before starting the script, valid format: x hour/day/week
+    Interval = '1m'  ##Time interval over which we want to trade, valid Intervals: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M
     leverage = 10  ##leverage we want to use on the account, *Check valid leverages for coins*
     order_Size = .03  ##percent of Effective account to risk ie. (leverage X Account Balance) X order_size
 
@@ -341,7 +398,7 @@ if __name__ == '__main__':
     _thread = Thread(target=web_soc_process,args=(pipe1,))
     _thread.start()
 
-    P1 = Process(target=Check_for_signals,args=(pipe2,leverage,order_Size,client))
+    P1 = Process(target=Check_for_signals,args=(pipe2,leverage,order_Size))
     P1.start()
 
     twm.join() ##keep websockets running
