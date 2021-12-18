@@ -88,7 +88,7 @@ def Check_for_signals(pipe,leverage,order_Size):
                         
                         
                         if Data[Trading_index].OP != 0:
-                            position_Size = round( ((Start_Account_Balance * leverage) * order_Size) / entry_price,Data[Trading_index].CP)  ##Size of Position we are opening
+                            position_Size = round( ((Start_Account_Balance * leverage) * order_Size) / entry_price,Data[Trading_index].OP)  ##Size of Position we are opening
                         else:
                             position_Size = round(((Start_Account_Balance * leverage) * order_Size) / entry_price)  ##Size of Position we are opening
 
