@@ -377,8 +377,17 @@ if __name__ == '__main__':
             print(f"Removing {symbol[i]} as you need to add the coin in Helper.py -> get_coin_attrib() or check the coin information is valid")
             symbol.pop(i)  ##not enough data available so remove symbol
     print("Setting Leverage...")
-    for x in symbol:
-        client.futures_change_leverage(symbol=x,leverage=leverage)
+    i = 0
+    while i < len(symbol):
+        try:
+            client.futures_change_leverage(symbol=symbol[i], leverage=leverage)
+            i+=1
+        except BinanceAPIException as e:
+            if e=='APIError(code=-4141): Symbol is closed.':
+                Data.pop(i)
+                symbol.pop(i)
+                streams.pop(i)
+            print(f"Symbol: {symbol[i]}, error: {e}")
     print("Combining Historical and web socket data...")
     for i in range(len(Data)):
         Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp = Helper.get_historical(symbol[i],start_string,Interval)
