@@ -52,7 +52,7 @@ __This script will run a strategy on every coin on Binance & then generate graph
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
 __Now Supports Trading Multiple Coins__
-* In __Bot.py__ on __line 333__ are the settings.
+* In __Bot.py__ on __line 335__ are the settings.
 * Choose the Interval you want to trade and the buffer of candlesticks your strategy will need.
 * leverage and order_size should be changed acording to your preference
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
