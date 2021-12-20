@@ -3,7 +3,8 @@
 [__Join My Discord Server__](https://discord.gg/jBu6thyP66) | [__Follow The Twitter__](https://twitter.com/futures_bot)
 * Utilizes [python-Binance](https://python-binance.readthedocs.io/en/latest/) Client to execute orders and pull data from Binance
 * Utilizes [ta](https://technical-analysis-library-in-python.readthedocs.io/en/latest/) library for Technical indicators
-* Write your own functions/classes to implement your TA strategies
+* Write your own functions/classes to implement your TA strategies.
+* There is no default Strategy implemented you must do this in Data_Set.py as specified below.
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
