@@ -10,7 +10,6 @@ import Helper
 import API_keys
 from threading import Thread
 from copy import copy
-
 from multiprocessing import Pool,Process,Value,Pipe
 
 from Data_Set import Data_set
@@ -56,7 +55,7 @@ def Check_for_signals(pipe,leverage,order_Size):
                     flag = 0
                     result = []
                     for x in Data:
-                        ##each x should be of the form [Trade_Direction,Stoplossval,Takeprofitval]
+                        ##each x should return something of the form [Trade_Direction,Stoplossval,Takeprofitval]
                         result.append(x.Make_decision())
               
                     for i in range(len(result)):
@@ -70,7 +69,7 @@ def Check_for_signals(pipe,leverage,order_Size):
 
                 if attempting_a_trade and not order_placed:
                     try:
-                        print(f"{Data[Trading_index].Date[-1]}: Attempting to place order on {Data[Trading_index].symbol}")
+                        print(f"{Data[0].Date[-1]}: Attempting to place order on {Data[Trading_index].symbol}")
                         y = client_trade.futures_account_balance()
                         for x in y:
                             if x['asset'] == 'USDT':
@@ -115,7 +114,7 @@ def Check_for_signals(pipe,leverage,order_Size):
                                 orderId = order1['orderId']
 
                         elif Trade_Direction == 0:
-                            if Data[Trading_index].CP!=0: 
+                            if Data[Trading_index].CP!=0:
                                 order1 = client_trade.futures_create_order(
                                     symbol=Data[Trading_index].symbol,
                                     side=SIDE_SELL,
@@ -137,7 +136,7 @@ def Check_for_signals(pipe,leverage,order_Size):
                         start = datetime.now().time()
                         yesterdate = date.today()
                     except BinanceAPIException as e:
-                        print(f"{Data[Trading_index].Date[-1]}: Initial order not placed on {Data[Trading_index].symbol}, error: {e}")
+                        print(f"{Data[0].Date[-1]}: Initial order not placed on {Data[Trading_index].symbol}, error: {e}")
 
                 if attempting_a_trade and order_placed:
                     rightnow = datetime.now().time()  ##time right now
@@ -196,7 +195,7 @@ def Check_for_signals(pipe,leverage,order_Size):
                                                 reduceOnly='true',
                                                 quantity=position_Size)
                                             stop_ID = order2['orderId']
-    
+
                                             order3 = client_trade.futures_create_order(
                                                 symbol=Data[Trading_index].symbol,
                                                 side=SIDE_SELL,
@@ -234,7 +233,7 @@ def Check_for_signals(pipe,leverage,order_Size):
                                                 reduceOnly='true',
                                                 quantity=position_Size)
                                             stop_ID = order2['orderId']
-    
+
                                             order3 = client_trade.futures_create_order(
                                                 symbol=Data[Trading_index].symbol,
                                                 side=SIDE_BUY,
@@ -379,17 +378,8 @@ if __name__ == '__main__':
             print(f"Removing {symbol[i]} as you need to add the coin in Helper.py -> get_coin_attrib() or check the coin information is valid")
             symbol.pop(i)  ##not enough data available so remove symbol
     print("Setting Leverage...")
-    i = 0
-    while i < len(symbol):
-        try:
-            client.futures_change_leverage(symbol=symbol[i], leverage=leverage)
-            i+=1
-        except BinanceAPIException as e:
-            if e=='APIError(code=-4141): Symbol is closed.':
-                Data.pop(i)
-                symbol.pop(i)
-                streams.pop(i)
-            print(f"Symbol: {symbol[i]}, error: {e}")
+    for x in symbol:
+        client.futures_change_leverage(symbol=x,leverage=leverage)
     print("Combining Historical and web socket data...")
     for i in range(len(Data)):
         Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp = Helper.get_historical(symbol[i],start_string,Interval)
