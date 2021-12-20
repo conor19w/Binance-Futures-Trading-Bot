@@ -181,7 +181,7 @@ def Check_for_signals(pipe,leverage,order_Size):
                                         break
 
                         ##Check if order placed
-                        if not in_a_trade:
+                        if not in_a_trade and order_placed:
                             if client_trade.futures_get_all_orders(symbol=Data[Trading_index].symbol,orderId=orderId)[0]['status'] != 'FILLED':
                                 print(f"Initial Order Successful on {Data[Trading_index].symbol}")
                                 try:
