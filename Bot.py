@@ -9,6 +9,7 @@ from datetime import timezone,datetime,date,timedelta
 import Helper
 import API_keys
 from threading import Thread
+from copy import copy
 
 from multiprocessing import Pool,Process,Value,Pipe
 
@@ -37,7 +38,7 @@ def Check_for_signals(pipe,leverage,order_Size):
     attempting_a_trade = 0  ##trying to place order flag
     order_placed = 0  ##flag to stop double order executions
     flag = 0
-
+    Data = []
     start = datetime.now().time()  ##for timer
     yesterdate = date.today()  ##for timer
 
