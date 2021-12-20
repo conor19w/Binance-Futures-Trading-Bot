@@ -176,7 +176,7 @@ def Check_for_signals(pipe,leverage,order_Size):
                                 y = client_trade.futures_account_balance()
                                 for x in y:
                                     if x['asset'] == 'USDT':
-                                        print(f"{Data[Trading_index].Date[-1]}: Trade Finished\n"
+                                        print(f"{Data[0].Date[-1]}: Trade Finished\n"
                                               f"Account Balance: {x['balance']}")
                                         break
 
@@ -297,7 +297,7 @@ def Check_for_signals(pipe,leverage,order_Size):
                                 y = client_trade.futures_account_balance()
                                 for x in y:
                                     if x['asset'] == 'USDT':
-                                        print(f"{Data[Trading_index].Date[-1]}: Trade Timer Up\n"
+                                        print(f"{Data[0].Date[-1]}: Trade Timer Up\n"
                                               f"Account Balance: {x['balance']}")
                                         break
 
