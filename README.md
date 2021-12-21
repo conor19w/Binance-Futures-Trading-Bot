@@ -29,6 +29,7 @@ Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * Next we want to choose our TA strategy, this is done after __line 295__ , uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
 * Some of the pre-coded strategies return a 'Type' variable, if a strategy returns the 'Type' variable you must call the SetSLTP() function from __TradingStrats.py__ in order to set the corresponding Stop loss value, and Take profit value, this function is found in TradingStrats.py
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
+* use_heikin_ashi is a flag __line 145__ that will create the heikin ashi candles for use, Called Close_H, Open_H, Low_H, High_H which can be referenced or passed to Strategies.
 
 #### Using Downloaded data for backtesting
 ---
