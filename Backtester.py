@@ -92,7 +92,7 @@ Low_1min = []
 Close_1min= []
 Open_1min = []
 Date_1min = []
-symbol = ["BTCUSDT"]
+#symbol = ["BTCUSDT"]
 #symbol=["ETHUSDT"]
 #symbol = ["DOGEUSDT"]
 #symbol = ['ADAUSDT']
@@ -110,14 +110,39 @@ symbol = ["BTCUSDT"]
 #symbol = ['DOGEUSDT', 'SOLUSDT','OMGUSDT','ADAUSDT','XRPUSDT','ETHUSDT','BTCUSDT','MATICUSDT','BNBUSDT','BAKEUSDT']#,'OMGUSDT']#,'ADAUSDT']#,'BTCUSDT']#,"BNBUSDT","XRPUSDT"]
 #symbol = ['SANDUSDT']
 
+symbol = ['RAYUSDT', 'NEARUSDT', 'AUDIOUSDT', 'HNTUSDT', 'DGBUSDT', 'ZRXUSDT', 'BCHUSDT', 'HOTUSDT', 'ARUSDT', 'FLMUSDT',
+          'SFPUSDT', 'BELUSDT', 'RENUSDT', 'ADAUSDT', 'STORJUSDT', 'BZRXUSDT', 'CHRUSDT', 'WAVESUSDT', 'CHZUSDT', 'XRPUSDT',
+          'SANDUSDT', 'OCEANUSDT', 'ENJUSDT', 'YFIIUSDT', 'GRTUSDT', 'UNIUSDT', 'TLMUSDT', 'XTZUSDT', 'LUNAUSDT', 'EOSUSDT',
+          'SKLUSDT', 'GTCUSDT', 'DOTUSDT', '1INCHUSDT', 'UNFIUSDT', 'FTMUSDT', 'RLCUSDT', 'ATOMUSDT', 'BLZUSDT', 'SNXUSDT',
+          'SOLUSDT', 'ETCUSDT', 'BNBUSDT', 'CELRUSDT', 'OGNUSDT', 'ETHUSDT', 'NEOUSDT', 'TOMOUSDT', 'CELOUSDT', 'KLAYUSDT',
+          'TRBUSDT', 'TRXUSDT', 'EGLDUSDT', 'CRVUSDT', 'BAKEUSDT', 'NUUSDT', 'SRMUSDT', 'ALICEUSDT', 'CTKUSDT', 'ARPAUSDT',
+          'MATICUSDT', 'IOTXUSDT', 'DENTUSDT', 'IOSTUSDT', 'OMGUSDT', 'BANDUSDT', 'BTCUSDT', 'NKNUSDT', 'RSRUSDT', 'IOTAUSDT',
+          'CVCUSDT', 'REEFUSDT', 'BTSUSDT', 'BTTUSDT', 'ONEUSDT', 'ANKRUSDT', 'SUSHIUSDT', 'ALGOUSDT', 'SCUSDT', 'ONTUSDT',
+          'MANAUSDT', 'ATAUSDT', 'MKRUSDT', 'DODOUSDT', 'LITUSDT', 'ICPUSDT', 'ZECUSDT', 'ICXUSDT', 'ZENUSDT', 'DOGEUSDT',
+          'ALPHAUSDT', 'SXPUSDT', 'HBARUSDT', 'RVNUSDT', 'CTSIUSDT', 'KAVAUSDT', 'C98USDT', 'THETAUSDT', 'MASKUSDT', 'AAVEUSDT',
+          'YFIUSDT', 'AXSUSDT', 'ZILUSDT', 'XEMUSDT', 'COMPUSDT', 'RUNEUSDT', 'AVAXUSDT', 'KNCUSDT', 'LPTUSDT', 'LRCUSDT',
+          'MTLUSDT', 'VETUSDT', 'DASHUSDT', 'KEEPUSDT', 'LTCUSDT', 'DYDXUSDT', 'LINAUSDT', 'XLMUSDT', 'LINKUSDT', 'QTUMUSDT',
+          'KSMUSDT', 'FILUSDT', 'STMXUSDT', 'BALUSDT', 'GALAUSDT', 'BATUSDT', 'AKROUSDT', 'XMRUSDT', 'COTIUSDT']
+#symbol = ['OMGUSDT']
+symbol = ['AUDIOUSDT', 'CHZUSDT', 'SANDUSDT', 'GRTUSDT',
+          'UNIUSDT', 'TLMUSDT', 'GTCUSDT', '1INCHUSDT',
+          'ATOMUSDT', 'SNXUSDT', 'ETHUSDT', 'CELOUSDT',
+          'TRXUSDT', 'CRVUSDT', 'SRMUSDT', 'IOTXUSDT',
+          'IOSTUSDT', 'OMGUSDT', 'BTCUSDT', 'REEFUSDT',
+          'ONTUSDT', 'MANAUSDT', 'DODOUSDT', 'LITUSDT',
+          'ICXUSDT', 'AAVEUSDT', 'ZILUSDT', 'XEMUSDT',
+          'COMPUSDT', 'LRCUSDT', 'VETUSDT', 'KEEPUSDT',
+          'DYDXUSDT', 'QTUMUSDT', 'GALAUSDT', 'BATUSDT', 'AKROUSDT']
+
 OrderSIZE = .02
-AccountBalance = 2335
+AccountBalance = 87
 leverage = 10  ##leverage being used
 test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
 test_set_length = "1 month ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
-time_period = 3  ##time_period in same units as test_set_length above
-TIME_INTERVAL = 30  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
+time_period = 4  ##time_period in same units as test_set_length above
+TIME_INTERVAL = 240  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
 load_data = 1 ##load data from a file, download the data using download_Data.py
+use_heikin_ashi = 1
 
 ############################## pairTrading ##############################################
 pair_Trading = 0  ##Switch to backtest the pairtrading Long-Short strategy, switch off for any other strategy
@@ -247,7 +272,12 @@ while i < len(Close):
 print("Aligning Data Sets... This may take a few minutes")
 Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = Helper.align_Datasets(
     Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol)
-
+Open_H = []
+Close_H = []
+High_H = []
+Low_H = []
+if use_heikin_ashi:
+    Open_H, Close_H, High_H, Low_H = Helper.get_heikin_ashi(Open, Close, High, Low)
 for i in range(len(symbol)):
     Type.append(-99)
     stoplossval.append(0)
@@ -270,29 +300,31 @@ day_start_equity = AccountBalance
 month_return = 0
 monthly_return = []
 Daily_return = []
-
+Strategy = []
 print(f"{TIME_INTERVAL} min OHLC Candle Sticks from a period of {time_period} {period_string}")
-Strategy = 0
 for i in range(len(High_1min[0])-1):
     #global trailing_stoploss,Highestprice
     if i%TIME_INTERVAL==0 and i!=0:
         for j in range(len(High_1min)):
-            DateStream[j] = flow.dataStream(DateStream[j], Date[j][int(i/TIME_INTERVAL)-1], 1, 300)
-            OpenStream[j] = flow.dataStream(OpenStream[j], float(Open[j][int(i/TIME_INTERVAL)-1]), 1, 300)
-            CloseStream[j] = flow.dataStream(CloseStream[j], float(Close[j][int(i/TIME_INTERVAL)-1]), 1, 300)
-            HighStream[j] = flow.dataStream(HighStream[j], float(High[j][int(i/TIME_INTERVAL)-1]), 1, 300)
-            LowStream[j] = flow.dataStream(LowStream[j], float(Low[j][int(i/TIME_INTERVAL)-1]), 1, 300)
-            VolumeStream[j] = flow.dataStream(VolumeStream[j], float(Volume[j][int(i/TIME_INTERVAL)-1]), 1, 300)
+            DateStream[j] = flow.dataStream(DateStream[j], Date[j][int(i/TIME_INTERVAL)-1], 1, 100)
+            OpenStream[j] = flow.dataStream(OpenStream[j], float(Open[j][int(i/TIME_INTERVAL)-1]), 1, 100)
+            CloseStream[j] = flow.dataStream(CloseStream[j], float(Close[j][int(i/TIME_INTERVAL)-1]), 1, 100)
+            HighStream[j] = flow.dataStream(HighStream[j], float(High[j][int(i/TIME_INTERVAL)-1]), 1, 100)
+            LowStream[j] = flow.dataStream(LowStream[j], float(Low[j][int(i/TIME_INTERVAL)-1]), 1, 100)
+            VolumeStream[j] = flow.dataStream(VolumeStream[j], float(Volume[j][int(i/TIME_INTERVAL)-1]), 1, 100)
     #print(len(OpenStream))
-    if len(OpenStream[0])>=299:
+    if len(OpenStream[0])>=100:
         prev_Account_Bal=copy(AccountBalance)
         EffectiveAccountBalance = AccountBalance*leverage
-        if len(OpenStream[0])==299 and not pair_Trading:
-            pass
-            #Strategy = PS.sup_res(CloseStream[0]) ##not a strategy ive made public
-            #Strategy = PS.fractal2([0,0,0,1,0,0,0,0,0])
+
         for j in range(len(prediction)):
-            if (CurrentPos[j]== -99 or Hold_pos) and not pair_Trading:
+            if len(OpenStream[0]) == 100 and not pair_Trading:
+                pass
+                # Strategy = PS.sup_res(CloseStream[0]) ##not a strategy ive made public
+                #Strategy.append(PS.fractal2([1,0,0,1,0,0,0,0,0]))
+                Strategy.append(PS.hidden_fractal([1,1,0,0,1,0,0,0,0]))
+                #Strategy.append(TS.pump(DateStream[j], CloseStream[j], VolumeStream[j]))
+            if (CurrentPos[j]== -99 ) and not pair_Trading:
                 if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
                     break_even_flag=0
 
@@ -313,6 +345,11 @@ for i in range(len(High_1min[0])-1):
                     #stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
 
 
+                    #prediction[j],stoplossval[j], takeprofitval[j] = Strategy[j].make_decision(((OrderSIZE*EffectiveAccountBalance)/Open_1min[j][i+1])*AccountBalance,CloseStream[j][-1],VolumeStream[j][-1])
+
+                    #for q in CurrentPos:
+                    #    if q!=-99:
+                    #        prediction[j]=-99
                     ##These strats don't require a call to SetSLTP:
 
                     #prediction[j],stoplossval[j],takeprofitval[j] = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
@@ -326,7 +363,9 @@ for i in range(len(High_1min[0])-1):
                     ##########################################################################################################################################################################
                     ##Non public Strats sorry :( :
                     # prediction[j],Type[j] = Strategy.Check_for_sup_res(CloseStream[j],OpenStream[j],HighStream[j],LowStream[j]) ##not a strategy ive made public
-                    #prediction[j], stoplossval[j], takeprofitval[j] = Strategy.check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction[j]) ##not a strategy ive made public
+                    prediction[j], stoplossval[j], takeprofitval[j] = Strategy[j].check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction[j]) ##not a strategy ive made public
+                    #if prediction[j]==1:
+                    #    prediction[j]=-99
                     ##########################################################################################################################################################################
 
             elif not pair_Trading:
@@ -343,6 +382,7 @@ for i in range(len(High_1min[0])-1):
                 else:
                     prediction, Type, takeprofitval[0], takeprofitval[1],stoplossval[0],stoplossval[1] = TS.pairTrading(prediction,CloseStream[0],CloseStream[1],log, TPSL,percent_TP, percent_SL)
 
+            #Close_pos = Strategy[j].Trade_timer(CurrentPos[j], Close_pos)
 
             ##If the trade won't cover the fee & profit something then don't place it
             if (prediction[j] == 1 or prediction[j] == 0) and (.00125 * Close_1min[j][-1] > takeprofitval[j]) and (not pair_Trading) and (not Hold_pos):
@@ -380,7 +420,7 @@ for i in range(len(High_1min[0])-1):
             #if CurrentPos==0 and break_even and positionPrice-CloseStream[-1] > .0025*positionPrice:
 
 
-            if positionPrice[j] - High_1min[j][i] < -stoplossval[j] and CurrentPos[j] == 0 and (not waitflag) and not Hold_pos:
+            if positionPrice[j] - High_1min[j][i] < -stoplossval[j] and CurrentPos[j] == 0 and (not waitflag):# and not Hold_pos:
                 Profit +=-stoplossval[j] #positionPrice-CloseStream[len(CloseStream) - 1]  ##This will be positive if the price went down
                 month_return-=positionSize[j] *stoplossval[j]
                 AccountBalance += positionSize[j] * -stoplossval[j] # (positionPrice-CloseStream[len(CloseStream) - 1])
@@ -393,7 +433,7 @@ for i in range(len(High_1min[0])-1):
                 CurrentPos[j] = -99
                 stopflag = -99
 
-            elif Low_1min[j][i] - positionPrice[j] < -stoplossval[j] and CurrentPos[j] == 1 and (not waitflag) and not Hold_pos:
+            elif Low_1min[j][i] - positionPrice[j] < -stoplossval[j] and CurrentPos[j] == 1 and (not waitflag):# and not Hold_pos:
                 Profit +=-stoplossval[j] #CloseStream[len(CloseStream) - 1] - positionPrice ##This will be positive if the price went up
                 month_return -= positionSize[j] *stoplossval[j]
                 AccountBalance += positionSize[j]* -stoplossval[j] #(CloseStream[len(CloseStream) - 1] - positionPrice)
@@ -406,7 +446,7 @@ for i in range(len(High_1min[0])-1):
                 CurrentPos[j] = -99
                 stopflag = -99
 
-            elif positionPrice[j] - Low_1min[j][i] > takeprofitval[j] and CurrentPos[j] == 0 and (not waitflag) and not Hold_pos:
+            elif positionPrice[j] - Low_1min[j][i] > takeprofitval[j] and CurrentPos[j] == 0 and (not waitflag):# and not Hold_pos:
                 Profit += takeprofitval[j] #positionPrice - CloseStream[-1]
                 month_return += positionSize[j] *takeprofitval[j]
                 AccountBalance += positionSize[j] *  takeprofitval[j] #(positionPrice - CloseStream[len(CloseStream) - 1])
@@ -419,7 +459,7 @@ for i in range(len(High_1min[0])-1):
                 CurrentPos[j] = -99
                 stopflag = -99
 
-            elif High_1min[j][i] - positionPrice[j] > takeprofitval[j] and CurrentPos[j] == 1 and (not waitflag) and not Hold_pos:
+            elif High_1min[j][i] - positionPrice[j] > takeprofitval[j] and CurrentPos[j] == 1 and (not waitflag):# and not Hold_pos:
                 Profit +=  takeprofitval[j] #CloseStream[-1] - positionPrice
                 month_return += positionSize[j] *takeprofitval[j]
                 AccountBalance += positionSize[j] *  takeprofitval[j] #(CloseStream[len(CloseStream) - 1] - positionPrice)
@@ -436,6 +476,7 @@ for i in range(len(High_1min[0])-1):
                 Profit += Open_1min[j][i+1] - positionPrice[j] ##sell at next open candle
                 month_return += positionSize[j] * (Open_1min[j][i+1]-positionPrice[j])
                 AccountBalance += positionSize[j] * (Open_1min[j][i+1]-positionPrice[j])
+                print((Open_1min[j][i + 1] - positionPrice[j]) * positionSize[j])
                 if prev_Profit<Profit:
                     correct += 1
                     cashout.append({'x': i, 'y': Open_1min[j][i + 1], 'type': "win", 'position': 'long',
@@ -455,6 +496,7 @@ for i in range(len(High_1min[0])-1):
                 Profit += positionPrice[j] - Open_1min[j][i+1]
                 month_return += positionSize[j] * (positionPrice[j] - Open_1min[j][i+1])
                 AccountBalance += positionSize[j] *  (positionPrice[j] - Open_1min[j][i+1])
+                print(positionSize[j] *  (positionPrice[j] - Open_1min[j][i+1]))
                 if prev_Profit<Profit:
                     correct += 1
                     cashout.append({'x': i, 'y': Open_1min[j][i + 1], 'type': "win", 'position': 'short',
