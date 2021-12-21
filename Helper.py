@@ -1047,3 +1047,25 @@ def get_period_String(test_set_length,time_period):
         period_string = 'year'
 
     return period_string,time_CAGR
+
+def get_heikin_ashi(Open, Close, High, Low):
+    Open_heikin = []
+    Close_heikin = []
+    High_heikin = []
+    Low_heikin = []
+    for i in range(len(Close)):
+        Open_heikin.append([])
+        Close_heikin.append([])
+        High_heikin.append([])
+        Low_heikin.append([])
+        for j in range(len(Close[i])):
+            Close_heikin[i].append((Open[i][j] + Close[i][j] + Low[i][j] + High[i][j]) / 4)
+            if j==0:
+                Open_heikin[i].append((Close_heikin[i][j]+Open[i][j])/2)
+                High_heikin[i].append(High[i][j])
+                Low_heikin[i].append(Low[i][j])
+            else:
+                Open_heikin[i].append((Open_heikin[i][j-1]+Close_heikin[i][j-1])/2)
+                High_heikin[i].append(max(High[i][j],Open_heikin[i][j],Close_heikin[i][j]))
+                Low_heikin[i].append(min(Low[i][j],Open_heikin[i][j],Close_heikin[i][j]))
+    return Open_heikin, Close_heikin, High_heikin, Low_heikin
