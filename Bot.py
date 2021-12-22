@@ -340,7 +340,10 @@ if __name__ == '__main__':
 
     pp = pprint.PrettyPrinter() ##for printing json text cleanly (inspect binance API call returns)
     client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret)  ##Binance keys needed to get historical data/ Trade on an account
-
+    y = client.futures_exchange_info()['symbols']
+    coin_info = []
+    for x in y:
+        coin_info.append([x['pair'],x['pricePrecision'],x['quantityPrecision']])
     ##list of all coins at current time
     symbol = ['RAYUSDT', 'NEARUSDT', 'AUDIOUSDT', 'HNTUSDT', 'DGBUSDT', 'ZRXUSDT', 'BCHUSDT', 'HOTUSDT', 'ARUSDT',
               'FLMUSDT', 'SFPUSDT', 'BELUSDT', 'RENUSDT', 'ADAUSDT', 'STORJUSDT', 'BZRXUSDT', 'CHRUSDT', 'WAVESUSDT',
@@ -367,8 +370,14 @@ if __name__ == '__main__':
     Data = []
     while i < len(symbol):
         print(f"Starting {symbol[i]} web socket")
-        Coin_precision_temp, Order_precision_temp = Helper.get_coin_attrib(symbol[i])
-
+        #Coin_precision_temp, Order_precision_temp = Helper.get_coin_attrib(symbol[i])
+        Coin_precision_temp = -99
+        Order_precision_temp = -99
+        for x in coin_info:
+            if x[0]==symbol[i]:
+                Coin_precision_temp = int(x[1])
+                Order_precision_temp = int(x[2])
+                break
         if Coin_precision_temp != -99:
             ##Class for keeping Data_sets
             Data.append(Data_set(symbol[i], [], [], [], [], [], [], Order_precision_temp, Coin_precision_temp, i))
