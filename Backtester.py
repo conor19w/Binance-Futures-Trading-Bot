@@ -135,12 +135,12 @@ symbol = ['AUDIOUSDT', 'CHZUSDT', 'SANDUSDT', 'GRTUSDT',
           'DYDXUSDT', 'QTUMUSDT', 'GALAUSDT', 'BATUSDT', 'AKROUSDT']
 
 OrderSIZE = .02
-AccountBalance = 87
+AccountBalance = 100
 leverage = 10  ##leverage being used
 test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
 test_set_length = "1 month ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
-time_period = 4  ##time_period in same units as test_set_length above
-TIME_INTERVAL = 240  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
+time_period = 2  ##time_period in same units as test_set_length above
+TIME_INTERVAL = 1  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
 load_data = 1 ##load data from a file, download the data using download_Data.py
 use_heikin_ashi = 0
 
@@ -206,7 +206,7 @@ if load_data:
         except:
             try:
                 print(f"Data doesnt exist in path: {path}, Downloading Data to specified path now...")
-                DD.get_data(TIME_INTERVAL, symbol[i], f"{time_period} {period_string} ago UTC")
+                DD.get_data(TIME_INTERVAL, symbol[i], f"{time_period} {period_string} ago UTC",test_set)
                 price_data = load(path)
                 Date.append(price_data['Date'])
                 Open.append(price_data['Open'])
@@ -276,8 +276,13 @@ Open_H = []
 Close_H = []
 High_H = []
 Low_H = []
+OpenStream_H = []
+CloseStream_H = []
+HighStream_H = []
+LowStream_H = []
 if use_heikin_ashi:
     Open_H, Close_H, High_H, Low_H = Helper.get_heikin_ashi(Open, Close, High, Low)
+
 for i in range(len(symbol)):
     Type.append(-99)
     stoplossval.append(0)
@@ -293,6 +298,10 @@ for i in range(len(symbol)):
     LowStream.append([])
     VolumeStream.append([])
     DateStream.append([])
+    OpenStream_H.append([])
+    CloseStream_H.append([])
+    HighStream_H.append([])
+    LowStream_H.append([])
 
 
 ##variables for sharpe ratio
@@ -312,6 +321,11 @@ for i in range(len(High_1min[0])-1):
             HighStream[j] = flow.dataStream(HighStream[j], float(High[j][int(i/TIME_INTERVAL)-1]), 1, 100)
             LowStream[j] = flow.dataStream(LowStream[j], float(Low[j][int(i/TIME_INTERVAL)-1]), 1, 100)
             VolumeStream[j] = flow.dataStream(VolumeStream[j], float(Volume[j][int(i/TIME_INTERVAL)-1]), 1, 100)
+            if use_heikin_ashi:
+                OpenStream_H[j] = flow.dataStream(OpenStream_H[j], float(Open_H[j][int(i / TIME_INTERVAL) - 1]), 1, 100)
+                CloseStream_H[j] = flow.dataStream(CloseStream_H[j], float(Close_H[j][int(i / TIME_INTERVAL) - 1]), 1, 100)
+                HighStream_H[j] = flow.dataStream(HighStream_H[j], float(High_H[j][int(i / TIME_INTERVAL) - 1]), 1, 100)
+                LowStream_H[j] = flow.dataStream(LowStream_H[j], float(Low_H[j][int(i / TIME_INTERVAL) - 1]), 1, 100)
     #print(len(OpenStream))
     if len(OpenStream[0])>=100:
         prev_Account_Bal=copy(AccountBalance)
@@ -322,7 +336,7 @@ for i in range(len(High_1min[0])-1):
                 pass
                 # Strategy = PS.sup_res(CloseStream[0]) ##not a strategy ive made public
                 #Strategy.append(PS.fractal2([1,0,0,1,0,0,0,0,0]))
-                Strategy.append(PS.hidden_fractal([1,1,0,0,1,0,0,0,0]))
+                #Strategy.append(PS.hidden_fractal([1,1,0,0,1,0,0,0,0]))
                 #Strategy.append(TS.pump(DateStream[j], CloseStream[j], VolumeStream[j]))
             if (CurrentPos[j]== -99 ) and not pair_Trading:
                 if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
@@ -330,8 +344,7 @@ for i in range(len(High_1min[0])-1):
 
                     ##Public Strats :) :
                     ## These strats require a call to SetSLTP as they return a Type param:
-
-                    #prediction[j],signal1,signal2,Type[j] =TS.StochRSI_RSIMACD(prediction[j],CloseStream[j],signal1,signal2) ###########################################
+                    prediction[j],signal1,signal2,Type[j] =TS.StochRSI_RSIMACD(prediction[j],CloseStream[j],signal1,signal2) ###########################################
                     #prediction[j],Type[j] = TS.StochRSIMACD(prediction[j], CloseStream[j],HighStream[j],LowStream[j])  ###########################################
                     #prediction[j], signal1, signal2, Type[j] = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction[j])
                     #prediction[j], signal1, Type[j] = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
@@ -363,7 +376,7 @@ for i in range(len(High_1min[0])-1):
                     ##########################################################################################################################################################################
                     ##Non public Strats sorry :( :
                     # prediction[j],Type[j] = Strategy.Check_for_sup_res(CloseStream[j],OpenStream[j],HighStream[j],LowStream[j]) ##not a strategy ive made public
-                    prediction[j], stoplossval[j], takeprofitval[j] = Strategy[j].check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction[j]) ##not a strategy ive made public
+                    #prediction[j], stoplossval[j], takeprofitval[j] = Strategy[j].check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction[j]) ##not a strategy ive made public
                     #if prediction[j]==1:
                     #    prediction[j]=-99
                     ##########################################################################################################################################################################
@@ -420,55 +433,55 @@ for i in range(len(High_1min[0])-1):
             #if CurrentPos==0 and break_even and positionPrice-CloseStream[-1] > .0025*positionPrice:
 
 
-            if positionPrice[j] - High_1min[j][i] < -stoplossval[j] and CurrentPos[j] == 0 and (not waitflag):# and not Hold_pos:
+            if positionPrice[j] - Open_1min[j][i] < -stoplossval[j] and CurrentPos[j] == 0 and (not waitflag):# and not Hold_pos:
                 Profit +=-stoplossval[j] #positionPrice-CloseStream[len(CloseStream) - 1]  ##This will be positive if the price went down
                 month_return-=positionSize[j] *stoplossval[j]
                 AccountBalance += positionSize[j] * -stoplossval[j] # (positionPrice-CloseStream[len(CloseStream) - 1])
-                positionPrice[j] = Close_1min[j][i]
-                Profit -= Close_1min[j][i] * fee
-                AccountBalance-= positionSize[j] * Close_1min[j][i] * fee
-                month_return -= positionSize[j] * Close_1min[j][i] * fee
-                cashout.append({'x': i, 'y': Close_1min[j][i], 'type': "loss",'position':'short','Profit': -stoplossval[j]*positionSize[j]})
+                positionPrice[j] = Open_1min[j][i]
+                Profit -= Open_1min[j][i] * fee
+                AccountBalance-= positionSize[j] * Open_1min[j][i] * fee
+                month_return -= positionSize[j] * Open_1min[j][i] * fee
+                cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "loss",'position':'short','Profit': -stoplossval[j]*positionSize[j]})
                 # CurrentPos = -99
                 CurrentPos[j] = -99
                 stopflag = -99
 
-            elif Low_1min[j][i] - positionPrice[j] < -stoplossval[j] and CurrentPos[j] == 1 and (not waitflag):# and not Hold_pos:
+            elif Open_1min[j][i] - positionPrice[j] < -stoplossval[j] and CurrentPos[j] == 1 and (not waitflag):# and not Hold_pos:
                 Profit +=-stoplossval[j] #CloseStream[len(CloseStream) - 1] - positionPrice ##This will be positive if the price went up
                 month_return -= positionSize[j] *stoplossval[j]
                 AccountBalance += positionSize[j]* -stoplossval[j] #(CloseStream[len(CloseStream) - 1] - positionPrice)
-                positionPrice[j] = Close_1min[j][i]
-                Profit -= Close_1min[j][i] * fee
-                AccountBalance -= positionSize[j] * Close_1min[j][i] * fee
-                month_return -= positionSize[j] * Close_1min[j][i] * fee
-                cashout.append({'x': i, 'y': Close_1min[j][i], 'type': "loss",'position':'long','Profit': -stoplossval[j]*positionSize[j]})
+                positionPrice[j] = Open_1min[j][i]
+                Profit -= Open_1min[j][i] * fee
+                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
+                month_return -= positionSize[j] * Open_1min[j][i] * fee
+                cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "loss",'position':'long','Profit': -stoplossval[j]*positionSize[j]})
                 # CurrentPos = -99
                 CurrentPos[j] = -99
                 stopflag = -99
 
-            elif positionPrice[j] - Low_1min[j][i] > takeprofitval[j] and CurrentPos[j] == 0 and (not waitflag):# and not Hold_pos:
+            elif positionPrice[j] - Open_1min[j][i] > takeprofitval[j] and CurrentPos[j] == 0 and (not waitflag):# and not Hold_pos:
                 Profit += takeprofitval[j] #positionPrice - CloseStream[-1]
                 month_return += positionSize[j] *takeprofitval[j]
                 AccountBalance += positionSize[j] *  takeprofitval[j] #(positionPrice - CloseStream[len(CloseStream) - 1])
                 correct += 1
-                positionPrice[j] = Close_1min[j][i]
-                Profit -= Close_1min[j][i] * fee
-                AccountBalance -= positionSize[j] * Close_1min[j][i] * fee
-                month_return -= positionSize[j] * Close_1min[j][i] * fee
-                cashout.append({'x': i, 'y': Close_1min[j][i], 'type': "win",'position':'short','Profit': takeprofitval[j]*positionSize[j]})
+                positionPrice[j] = Open_1min[j][i]
+                Profit -= Open_1min[j][i] * fee
+                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
+                month_return -= positionSize[j] * Open_1min[j][i] * fee
+                cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "win",'position':'short','Profit': takeprofitval[j]*positionSize[j]})
                 CurrentPos[j] = -99
                 stopflag = -99
 
-            elif High_1min[j][i] - positionPrice[j] > takeprofitval[j] and CurrentPos[j] == 1 and (not waitflag):# and not Hold_pos:
+            elif Open_1min[j][i] - positionPrice[j] > takeprofitval[j] and CurrentPos[j] == 1 and (not waitflag):# and not Hold_pos:
                 Profit +=  takeprofitval[j] #CloseStream[-1] - positionPrice
                 month_return += positionSize[j] *takeprofitval[j]
                 AccountBalance += positionSize[j] *  takeprofitval[j] #(CloseStream[len(CloseStream) - 1] - positionPrice)
                 correct += 1
-                positionPrice[j] = Close_1min[j][i]
-                Profit -= Close_1min[j][i] * fee
-                AccountBalance -= positionSize[j] * Close_1min[j][i] * fee
-                month_return -= positionSize[j] * Close_1min[j][i] * fee
-                cashout.append({'x': i, 'y': Close_1min[j][i], 'type': "win",'position':'long','Profit': takeprofitval[j]*positionSize[j]})
+                positionPrice[j] = Open_1min[j][i]
+                Profit -= Open_1min[j][i] * fee
+                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
+                month_return -= positionSize[j] * Open_1min[j][i] * fee
+                cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "win",'position':'long','Profit': takeprofitval[j]*positionSize[j]})
                 CurrentPos[j] = -99
                 stopflag = -99
             elif (pair_Trading or Hold_pos) and (not waitflag) and Close_pos==1 and CurrentPos[j] == 1:
