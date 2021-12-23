@@ -142,7 +142,7 @@ test_set_length = "1 month ago UTC"  ## valid strings 'x days/weeks/months/years
 time_period = 4  ##time_period in same units as test_set_length above
 TIME_INTERVAL = 240  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
 load_data = 1 ##load data from a file, download the data using download_Data.py
-use_heikin_ashi = 1
+use_heikin_ashi = 0
 
 ############################## pairTrading ##############################################
 pair_Trading = 0  ##Switch to backtest the pairtrading Long-Short strategy, switch off for any other strategy
