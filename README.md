@@ -3,6 +3,7 @@
 ## To-Do list: (suggest something and I'll add it) 😃
 * Trailing Stop
 * Upload Backtesting results for some strategies over last two months
+* Add option to overwrite saved price data so as to not have to manually delete
 * Maybe Provide a standard bot strategy for Bot...
 * GUI if people were interested (could take a while I've no experience here)
 * Speed up Data Set aligner in Backtester with multiprocessing
