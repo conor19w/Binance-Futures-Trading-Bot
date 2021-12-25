@@ -19,11 +19,7 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Fill in your api keys into api_secret and api_key in [API_keys.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/API_keys.py).
 * ---
 ### YouTube Channels with Strategy Ideas:
-[__Trade Pro__](https://www.youtube.com/channel/UCrXjzUN6EtlyhaaAerbPfkQ)  
-[__Trading Strategy Testing__](https://www.youtube.com/c/TradingStrategyTesting)  
-[__Trading Journal__](https://www.youtube.com/c/TradingJournal1)  
-[__Critical Trading__](https://www.youtube.com/c/CriticalTrading)  
-[__The Moving Average__](https://www.youtube.com/channel/UCYFQzaZyTUzY-Tiytyv3HhA)  
+[__Trade Pro__](https://www.youtube.com/channel/UCrXjzUN6EtlyhaaAerbPfkQ) | [__Strategy Testing__](https://www.youtube.com/c/TradingStrategyTesting) | [__Trading Journal__](https://www.youtube.com/c/TradingJournal1) | [__Critical Trading__](https://www.youtube.com/c/CriticalTrading) | [__The Moving Average__](https://www.youtube.com/channel/UCYFQzaZyTUzY-Tiytyv3HhA)  
 ---
 ### Back test strategies in [Backtester.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtester.py)
 ---
