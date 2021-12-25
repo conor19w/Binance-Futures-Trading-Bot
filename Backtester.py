@@ -380,7 +380,10 @@ for i in range(len(High_1min[0])-1):
                     #if prediction[j]==1:
                     #    prediction[j]=-99
                     ##########################################################################################################################################################################
-
+                    if prediction[j]!=-99:
+                        for q in CurrentPos:
+                            if q!=-99:
+                                prediction[j]=-99
             elif not pair_Trading:
                 prediction[j]=-99
 
