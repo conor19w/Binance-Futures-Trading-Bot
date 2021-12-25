@@ -1,4 +1,15 @@
 # Binance-Futures-Trading-Bot [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
+---
+## To-Do list: (suggest something and I'll add it) 😃
+* Trailing Stop
+* Upload Backtesting results for some strategies over last two months
+* Maybe Provide a standard bot strategy for Bot...
+* GUI if people were interested (could take a while I've no experience here)
+* Speed up Data Set aligner in Backtester with multiprocessing
+---
+## Latest Changes (if any):
+* Mainly Bug fixes lately no new features...
+---
 ## Technical Analysis driven Crypto Trading bot on Binance Futures 📈 ₿ 🚀 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 [__Join My Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
 * Utilizes [python-Binance](https://python-binance.readthedocs.io/en/latest/) Client to execute orders and pull data from Binance
@@ -56,7 +67,6 @@ __This script will run a strategy on every coin on Binance & then generate graph
 ---
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
-__Now Supports Trading Multiple Coins__
 * In __Bot.py__ on __line 334__ are the settings.
 * Choose the Interval you want to trade and the buffer of candlesticks your strategy will need.
 * leverage and order_size should be changed acording to your preference
