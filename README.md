@@ -18,7 +18,7 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Whitelist your IP address to further secure your account, and so that your API keys don't expire after 1 month.
 * Fill in your api keys into api_secret and api_key in [API_keys.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/API_keys.py).
 * ---
-###You Tube Channels with Strategy Ideas:
+### YouTube Channels with Strategy Ideas:
 [__Trade Pro__](https://www.youtube.com/channel/UCrXjzUN6EtlyhaaAerbPfkQ)
 [__Trading Strategy Testing__](https://www.youtube.com/c/TradingStrategyTesting)
 [__Trading Journal__](https://www.youtube.com/c/TradingJournal1)
