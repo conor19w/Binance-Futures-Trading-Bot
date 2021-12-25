@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from ta.momentum import stochrsi_d,stochrsi_k,stoch,stoch_signal,rsi,awesome_oscillator
 from ta.trend import ema_indicator,macd_signal,macd,sma_indicator,adx,sma_indicator,cci
-from ta.volatility import average_true_range,bollinger_pband,bollinger_hband,bollinger_lband,bollinger_mavg
+from ta.volatility import average_true_range,bollinger_pband,bollinger_hband,bollinger_lband,bollinger_mavg,bollinger_wband
 from ta.volume import ease_of_movement,on_balance_volume,force_index,money_flow_index
 from ta.momentum import tsi
 import math
@@ -14,6 +14,11 @@ from copy import copy
 import time
 
 
+'''def heikin_ashi(Close_H,Open_H,Low_H,High_H,Close):
+    Close_S = pd.Series(Close)
+    BB = bollinger_wband(Close_S)
+    EMA18 = ema_indicator(Close_S)
+    if Open_H[-1]==Low_H[-1] and BB[-1]<0 and Close_H[-1]'''
 
 def single_candle_swing_pump(prediction,Close,High,Low,CurrentPos,ClosePos,count,stoploss):
     ##This function requires Hold_Pos to be switched on in Bot.py
@@ -510,7 +515,7 @@ def stochBB(prediction,CloseStream):
 
 
 def breakout(prediction,CloseStream,VolumeStream,symbol):
-    invert=1
+    invert=1 ## switch shorts and longs, basically fakeout instead of breakout
     #if symbol=='BTCUSDT' or symbol=='ETHUSDT':
     #    invert=0
     Close = pd.Series(CloseStream).pct_change()
