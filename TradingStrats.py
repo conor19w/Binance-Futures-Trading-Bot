@@ -67,7 +67,7 @@ def candle_wick(prediction,Close,Open,High,Low):
 def fibMACD(prediction,Close,Open,High,Low):
     stoplossval = 0
     takeprofitval = 0
-    period = 299 ##Record peaks and troughs in last period timesteps
+    period = 100 ##Record peaks and troughs in last period timesteps
     MACD_signal = np.array(macd_signal(pd.Series(Close)))
     MACD = np.array(macd(pd.Series(Close)))
     Close_peaks = [] ##Store peak values
