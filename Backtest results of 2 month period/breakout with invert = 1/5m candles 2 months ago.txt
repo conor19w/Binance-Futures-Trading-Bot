@@ -1,0 +1,20 @@
+5 min OHLC Candle Sticks from a period of 2 month
+Account Balance: 949.0039560803525
+% Gain on Account: -5.099604391964749
+Total Returns: -50.99604391964749 
+
+Annualized Volatility: 21.9055%
+CAGR: -23.953%
+Sharpe Ratio: -1.1578
+Sortino Ratio: -1.7931
+Calmar Ratio: -2.0338
+Max Drawdown: 11.7773%
+Trades Made:  1940
+Successful Trades: 605
+Accuracy:  31.185567010309278
+# Shorts: 902
+Short W/L: 0.459546925566343
+Profit from Shorts: 85.05262311272887
+# Longs: 1037
+Long W/L: 0.4483240223463687
+Profit from Longs: 141.2389637331643
