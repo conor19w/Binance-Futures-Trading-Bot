@@ -15,7 +15,7 @@ from multiprocessing import Pool,Process,Value,Pipe
 from Data_Set import Data_set
 
 
-def Check_for_signals(pipe,leverage,order_Size):
+def Check_for_signals(pipe:Pipe,leverage,order_Size):
     client_trade = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret)
 
     ############## Vars used to keep track of orders ###################
@@ -309,7 +309,7 @@ def Check_for_signals(pipe,leverage,order_Size):
             print(exc_type, fname, exc_tb.tb_lineno)
 
 
-def web_soc_process(pipe):
+def web_soc_process(pipe:Pipe):
     ##keep process running
     while True:
         ##Check if all coins we are trading have received a new data point
