@@ -20,7 +20,6 @@ import numpy as np
 from datetime import timezone,datetime,date,timedelta
 import Helper
 import API_keys
-#import personal_strats as PS
 import download_Data as DD
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
@@ -29,86 +28,6 @@ Order_precision = -99 ##Precision Orders are measured up to
 trades = deque(maxlen=100000) ##keep track of shorts/Longs for graphing
 cashout = deque(maxlen=100000) ##keep track of Winning trades/ Losing trades
 signals= deque(maxlen=100000) ##when a siganl occured , NOT IN USE
-Open=[]
-High=[]
-Low=[]
-Close=[]
-Volume=[]
-Date=[]
-OpenStream=[]
-HighStream=[]
-LowStream=[]
-CloseStream=[]
-VolumeStream=[]
-DateStream = []
-Profit=0 ##Keep track of profit by flipping a single coin
-CurrentPos=-99 ##0 for short , 1 for Long
-positionPrice=0 ##Positions entry Price
-stoplossval = 1000 ##stoploss this is set by each individual strategy in TradingStrats.py
-correct=0 ##winning trades
-Highestprice=0
-trailing_stoploss=.2 ##not used
-profitgraph=[] #for graphing the profit change over time
-pp = pprint.PrettyPrinter()
-
-Sleep=0
-
-
-#OrderSize = 100
-tradeNO=0 ##number of trades
-######### variables used for trading Strats
-signal =-99
-stoplossval=0
-takeprofitval=0
-signal1=-99
-signal2=-99
-prediction=-99
-HighestUlt=50
-Highestval=-99
-PrevPos=-999
-prevsignal1=-999
-prevsignal2=-999
-prediction2=-99
-Highest=-999
-
-
-AccountBalance=-99 ##Start amount for paper trading
-EffectiveAccountBalance = -99
-positionSize = 0 ##altered later and sent as the orderQTY
-Stop_ID=''
-Limit_ID=''
-Order_ID=''
-current_date = datetime.now(timezone.utc)
-current_date = current_date.replace(tzinfo=timezone.utc)
-current_date = round(float(current_date.timestamp()*1000-.5))
-successful_Trades=0
-prevProfit = 0
-minuteFlag = 0
-
-
-
-High_1min = []
-Low_1min = []
-Close_1min= []
-Open_1min = []
-Date_1min = []
-#symbol = ["BTCUSDT"]
-#symbol=["ETHUSDT"]
-#symbol = ["DOGEUSDT"]
-#symbol = ['ADAUSDT']
-#symbol = ["OMGUSDT"]
-#symbol = ['XRPUSDT','SOLUSDT'] ###############################
-#symbol = ['MATICUSDT'] #############################
-#symbol = ["XRPUSDT"]
-#symbol=['BAKEUSDT']
-#symbol=['BNBUSDT']
-#symbol= ['SUSHIUSDT']
-#symbol = ["DOTUSDT"]
-#symbol = ["ALPHAUSDT"]
-#symbol = ['BATUSDT']
-#symbol = ["DOGEUSDT",'SOLUSDT']
-#symbol = ['DOGEUSDT', 'SOLUSDT','OMGUSDT','ADAUSDT','XRPUSDT','ETHUSDT','BTCUSDT','MATICUSDT','BNBUSDT','BAKEUSDT']#,'OMGUSDT']#,'ADAUSDT']#,'BTCUSDT']#,"BNBUSDT","XRPUSDT"]
-#symbol = ['SANDUSDT']
 
 symbol = ['RAYUSDT', 'NEARUSDT', 'AUDIOUSDT', 'HNTUSDT', 'DGBUSDT', 'ZRXUSDT', 'BCHUSDT', 'HOTUSDT', 'ARUSDT', 'FLMUSDT',
           'SFPUSDT', 'BELUSDT', 'RENUSDT', 'ADAUSDT', 'STORJUSDT', 'BZRXUSDT', 'CHRUSDT', 'WAVESUSDT', 'CHZUSDT', 'XRPUSDT',
@@ -123,26 +42,29 @@ symbol = ['RAYUSDT', 'NEARUSDT', 'AUDIOUSDT', 'HNTUSDT', 'DGBUSDT', 'ZRXUSDT', '
           'YFIUSDT', 'AXSUSDT', 'ZILUSDT', 'XEMUSDT', 'COMPUSDT', 'RUNEUSDT', 'AVAXUSDT', 'KNCUSDT', 'LPTUSDT', 'LRCUSDT',
           'MTLUSDT', 'VETUSDT', 'DASHUSDT', 'KEEPUSDT', 'LTCUSDT', 'DYDXUSDT', 'LINAUSDT', 'XLMUSDT', 'LINKUSDT', 'QTUMUSDT',
           'KSMUSDT', 'FILUSDT', 'STMXUSDT', 'BALUSDT', 'GALAUSDT', 'BATUSDT', 'AKROUSDT', 'XMRUSDT', 'COTIUSDT']
-#symbol = ['OMGUSDT']
-symbol = ['AUDIOUSDT', 'CHZUSDT', 'SANDUSDT', 'GRTUSDT',
-          'UNIUSDT', 'TLMUSDT', 'GTCUSDT', '1INCHUSDT',
-          'ATOMUSDT', 'SNXUSDT', 'ETHUSDT', 'CELOUSDT',
-          'TRXUSDT', 'CRVUSDT', 'SRMUSDT', 'IOTXUSDT',
-          'IOSTUSDT', 'OMGUSDT', 'BTCUSDT', 'REEFUSDT',
-          'ONTUSDT', 'MANAUSDT', 'DODOUSDT', 'LITUSDT',
-          'ICXUSDT', 'AAVEUSDT', 'ZILUSDT', 'XEMUSDT',
-          'COMPUSDT', 'LRCUSDT', 'VETUSDT', 'KEEPUSDT',
-          'DYDXUSDT', 'QTUMUSDT', 'GALAUSDT', 'BATUSDT', 'AKROUSDT']
 
-OrderSIZE = .02
-AccountBalance = 100
+###################################################################################################################################
+#######################################             SETTINGS            ###########################################################
+###################################################################################################################################
+
+EffectiveAccountBalance = -99 ##set later
+OrderSIZE = .02 ## Amount of effective account balance to use per trade
+AccountBalance = 1000
 leverage = 10  ##leverage being used
-test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
-test_set_length = "1 month ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
+test_set = 1  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
+test_set_length = "2 month ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
 time_period = 2  ##time_period in same units as test_set_length above
-TIME_INTERVAL = 1  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
+TIME_INTERVAL = 30  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
 load_data = 1 ##load data from a file, download the data using download_Data.py
-use_heikin_ashi = 0
+use_heikin_ashi = 0  ##May take a long time/ will look at speeding up in future
+use_trailing_stop = 0 ##flag to use trailing stop, If on when the takeprofitval is reached a trailing stop will be set with the below percentage distance
+trailing_stop_distance = .01 ## 1% trailing stop activated by hitting the takeprofitval for a coin
+
+
+
+
+
+
 
 ############################## pairTrading ##############################################
 pair_Trading = 0  ##Switch to backtest the pairtrading Long-Short strategy, switch off for any other strategy
@@ -157,6 +79,11 @@ if pair_Trading:
 STOP = 1  ##If strategy SLTP of type 9 multiplier for stoploss using ATR
 TAKE = 2.5 ##If strategy SLTP of type 9 multiplier for takeprofit using ATR
 
+###################################################################################################################################
+###################################################################################################################################
+###################################################################################################################################
+
+######### flags/variables: #######################
 Highest_lowest = 0
 Type = []
 stoplossval = []
@@ -166,21 +93,38 @@ positionSize = []
 positionPrice = []
 PrevPos = []
 prediction = []
+Open=[]
+High=[]
+Low=[]
+Close=[]
+Volume=[]
+Date=[]
+OpenStream=[]
+HighStream=[]
+LowStream=[]
+CloseStream=[]
+VolumeStream=[]
+DateStream = []
+Profit=0 ##Keep track of profit by flipping a single coin
+correct=0 ##winning trades
+profitgraph=[] #for graphing the profit change over time
+pp = pprint.PrettyPrinter()
+Sleep=0
+tradeNO=0 ##number of trades
+
+High_1min = []
+Low_1min = []
+Close_1min= []
+Open_1min = []
+Date_1min = []
 profitgraph.append(AccountBalance)
-
 count = 0
-Hold_pos = 0 ##no TP/SL, for strategies that buy and hold turn off otherwise
 percent = .01 ##percentage to hold out for
-
 originalBalance = copy(AccountBalance)
-waitflag = 0  ##wait until next candlestick before checking if stoploss/ takeprofit was hit
 fee = .00036
-
-##trailing stop variables
-break_even = 0  ##whether or not to move the stoploss into profit based of settings below
-break_even_flag = 0  ##flag don't change
-break_Even_Stage = [.7,1.75]  ##if we reach this point in of profit target move stoploss to corresponding point break_even_Amount
-break_even_Amount = [.1, .4]  ##where to move the stop to
+trailing_stop_value = -99 ##gets set automatically depending on the trailing stop percent, if used above
+#####################################################################################################################
+#####################################################################################################################
 
 period_string, time_CAGR = Helper.get_period_String(test_set_length, time_period)
 
@@ -188,7 +132,10 @@ if load_data:
     print("Loading Price Data")
     i = 0
     while i < len(symbol):
-        path = f"{DD.path}\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {period_string} ago UTC.joblib"
+        if test_set:
+            path = f"{DD.path}\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {period_string} ago UTC_test.joblib"
+        else:
+            path = f"{DD.path}\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {period_string} ago UTC.joblib"
         try:
             price_data = load(path)
             Date.append(price_data['Date'])
@@ -206,7 +153,7 @@ if load_data:
         except:
             try:
                 print(f"Data doesnt exist in path: {path}, Downloading Data to specified path now...")
-                DD.get_data(TIME_INTERVAL, symbol[i], f"{time_period} {period_string} ago UTC",test_set)
+                DD.get_data(TIME_INTERVAL,symbol[i],time_period,test_set,test_set_length)
                 price_data = load(path)
                 Date.append(price_data['Date'])
                 Open.append(price_data['Open'])
@@ -226,7 +173,7 @@ if load_data:
                     print(f"Invalid Symbol: {symbol[i]}, removing from data set")
                     symbol.pop(i)
                 else:
-                    print("Wrong path specified in download_Data.py")
+                    print(f"Wrong path specified in download_Data.py,error: {e}")
                     symbol.pop(i)
                     print("Fix path issue or else turn off load_data")
                     print("Contact me if still stuck @ wconor539@gmail.com")
@@ -344,33 +291,24 @@ for i in range(len(High_1min[0])-1):
 
                     ##Public Strats :) :
                     ## These strats require a call to SetSLTP as they return a Type param:
-                    prediction[j],signal1,signal2,Type[j] =TS.StochRSI_RSIMACD(prediction[j],CloseStream[j],signal1,signal2) ###########################################
                     #prediction[j],Type[j] = TS.StochRSIMACD(prediction[j], CloseStream[j],HighStream[j],LowStream[j])  ###########################################
                     #prediction[j], signal1, signal2, Type[j] = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction[j])
-                    #prediction[j], signal1, Type[j] = TS.RSIStochEMA(prediction[j],CloseStream[j],HighStream[j],LowStream[j],signal1,CurrentPos[j])
                     #prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
                     #prediction[j], Type[j] = TS.breakout(prediction[j],CloseStream[j],VolumeStream[j],symbol[j])
-                    #prediction[j],Type[j] = TS.Fractal2(CloseStream[j],LowStream[j],HighStream[j],signal1,prediction[j]) ###############################################
                     #prediction[j],Type[j] = TS.stochBB(prediction[j],CloseStream[j])
                     #prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
                     #prediction[j] , Type[j] = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
                     #prediction[j],Close_pos,count,stoplossval[j] = TS.single_candle_swing_pump(prediction[j],CloseStream[j],HighStream[j],LowStream[j],CurrentPos[j],Close_pos,count,stoplossval[j])
                     #stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
-
+                    #print(prediction[j])
 
                     #prediction[j],stoplossval[j], takeprofitval[j] = Strategy[j].make_decision(((OrderSIZE*EffectiveAccountBalance)/Open_1min[j][i+1])*AccountBalance,CloseStream[j][-1],VolumeStream[j][-1])
 
-                    #for q in CurrentPos:
-                    #    if q!=-99:
-                    #        prediction[j]=-99
                     ##These strats don't require a call to SetSLTP:
 
                     #prediction[j],stoplossval[j],takeprofitval[j] = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
-                    #prediction[j],stoplossval[j],takeprofitval[j] = TS.Fractal(CloseStream[j], LowStream[j], HighStream[j],OpenStream[j],prediction[j])
-                    # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.SARMACD200EMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
-                    # takeprofitval[j], stoplossval[j], prediction[j], signal1= TS.TripleEMA(stoplossval[j], takeprofitval[j],CloseStream[j],HighStream[j],LowStream[j],prediction[j],CurrentPos[j],signal1)
                     #prediction[j],Highest_lowest,Close_pos = TS.trend_Ride(prediction[j], CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos[j], Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
-                    #prediction[j],Close_pos = TS.RSI_trade(prediction[j],CloseStream[j],CurrentPos[j],Close_pos)
+                    prediction[j],Close_pos = TS.RSI_trade(prediction[j],CloseStream[j],CurrentPos[j],Close_pos)
 
                     ##########################################################################################################################################################################
                     ##########################################################################################################################################################################
@@ -380,6 +318,8 @@ for i in range(len(High_1min[0])-1):
                     #if prediction[j]==1:
                     #    prediction[j]=-99
                     ##########################################################################################################################################################################
+
+                    ##Ensure we only trade one coin at a time:
                     if prediction[j]!=-99:
                         for q in CurrentPos:
                             if q!=-99:
@@ -401,8 +341,8 @@ for i in range(len(High_1min[0])-1):
             #Close_pos = Strategy[j].Trade_timer(CurrentPos[j], Close_pos)
 
             ##If the trade won't cover the fee & profit something then don't place it
-            if (prediction[j] == 1 or prediction[j] == 0) and (.00125 * Close_1min[j][-1] > takeprofitval[j]) and (not pair_Trading) and (not Hold_pos):
-                prediction[j] = -99
+            #if (prediction[j] == 1 or prediction[j] == 0) and (.00125 * Close_1min[j][-1] > takeprofitval[j]) and (not pair_Trading) and (not Hold_pos):
+            #    prediction[j] = -99
     #################################################################
         #################################################################
 
@@ -411,61 +351,53 @@ for i in range(len(High_1min[0])-1):
                 positionSize[j]= (OrderSIZE*EffectiveAccountBalance)/positionPrice[j]
                 CurrentPos[j] = 0
                 tradeNO+=1
-                #Highestprice = positionPrice
-               #stoplossval = positionPrice * trailing_stoploss
                 trades.append({'x':i,'y':positionPrice[j],'type': "sell",'current_price': positionPrice[j]})
                 Profit -= Open_1min[j][i+1] * fee
                 AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
                 month_return -= positionSize[j] * Open_1min[j][i+1] * fee
-                waitflag = 1
                 prediction[j] = -99
             elif CurrentPos[j] == -99 and prediction[j] == 1:
                 positionPrice[j] = Open_1min[j][i+1] ##next open candle
                 positionSize[j] = (OrderSIZE * EffectiveAccountBalance) / positionPrice[j]
                 CurrentPos[j] = 1
                 tradeNO += 1
-                #Highestprice = positionPrice
-                #stoplossval = positionPrice * trailing_stoploss
                 trades.append({'x':i,'y':positionPrice[j], 'type': "buy",'current_price': positionPrice[j]})
                 Profit -= Open_1min[j][i+1] * fee
                 AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
                 month_return -= positionSize[j] * Open_1min[j][i+1] * fee
-                waitflag = 1
                 prediction[j] = -99
-            ############### break-even:
-            #if CurrentPos==0 and break_even and positionPrice-CloseStream[-1] > .0025*positionPrice:
 
 
-            if positionPrice[j] - Open_1min[j][i] < -stoplossval[j] and CurrentPos[j] == 0 and (not waitflag):# and not Hold_pos:
-                Profit +=-stoplossval[j] #positionPrice-CloseStream[len(CloseStream) - 1]  ##This will be positive if the price went down
+
+            if positionPrice[j] - Open_1min[j][i] < -stoplossval[j] and CurrentPos[j] == 0:# and not Hold_pos:
+                Profit +=-stoplossval[j]
                 month_return-=positionSize[j] *stoplossval[j]
-                AccountBalance += positionSize[j] * -stoplossval[j] # (positionPrice-CloseStream[len(CloseStream) - 1])
+                AccountBalance += positionSize[j] * -stoplossval[j]
                 positionPrice[j] = Open_1min[j][i]
                 Profit -= Open_1min[j][i] * fee
                 AccountBalance-= positionSize[j] * Open_1min[j][i] * fee
                 month_return -= positionSize[j] * Open_1min[j][i] * fee
                 cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "loss",'position':'short','Profit': -stoplossval[j]*positionSize[j]})
-                # CurrentPos = -99
+                profitgraph.append(AccountBalance)
                 CurrentPos[j] = -99
-                stopflag = -99
 
-            elif Open_1min[j][i] - positionPrice[j] < -stoplossval[j] and CurrentPos[j] == 1 and (not waitflag):# and not Hold_pos:
-                Profit +=-stoplossval[j] #CloseStream[len(CloseStream) - 1] - positionPrice ##This will be positive if the price went up
+            elif Open_1min[j][i] - positionPrice[j] < -stoplossval[j] and CurrentPos[j] == 1:# and not Hold_pos:
+                Profit +=-stoplossval[j]
                 month_return -= positionSize[j] *stoplossval[j]
-                AccountBalance += positionSize[j]* -stoplossval[j] #(CloseStream[len(CloseStream) - 1] - positionPrice)
+                AccountBalance += positionSize[j]* -stoplossval[j]
                 positionPrice[j] = Open_1min[j][i]
                 Profit -= Open_1min[j][i] * fee
                 AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
                 month_return -= positionSize[j] * Open_1min[j][i] * fee
                 cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "loss",'position':'long','Profit': -stoplossval[j]*positionSize[j]})
                 # CurrentPos = -99
+                profitgraph.append(AccountBalance)
                 CurrentPos[j] = -99
-                stopflag = -99
 
-            elif positionPrice[j] - Open_1min[j][i] > takeprofitval[j] and CurrentPos[j] == 0 and (not waitflag):# and not Hold_pos:
-                Profit += takeprofitval[j] #positionPrice - CloseStream[-1]
+            elif positionPrice[j] - Open_1min[j][i] > takeprofitval[j] and CurrentPos[j] == 0 and not use_trailing_stop:# and not Hold_pos:
+                Profit += takeprofitval[j]
                 month_return += positionSize[j] *takeprofitval[j]
-                AccountBalance += positionSize[j] *  takeprofitval[j] #(positionPrice - CloseStream[len(CloseStream) - 1])
+                AccountBalance += positionSize[j] *  takeprofitval[j]
                 correct += 1
                 positionPrice[j] = Open_1min[j][i]
                 Profit -= Open_1min[j][i] * fee
@@ -473,12 +405,12 @@ for i in range(len(High_1min[0])-1):
                 month_return -= positionSize[j] * Open_1min[j][i] * fee
                 cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "win",'position':'short','Profit': takeprofitval[j]*positionSize[j]})
                 CurrentPos[j] = -99
-                stopflag = -99
+                profitgraph.append(AccountBalance)
 
-            elif Open_1min[j][i] - positionPrice[j] > takeprofitval[j] and CurrentPos[j] == 1 and (not waitflag):# and not Hold_pos:
-                Profit +=  takeprofitval[j] #CloseStream[-1] - positionPrice
+            elif Open_1min[j][i] - positionPrice[j] > takeprofitval[j] and CurrentPos[j] == 1 and not use_trailing_stop:# and not Hold_pos:
+                Profit +=  takeprofitval[j]
                 month_return += positionSize[j] *takeprofitval[j]
-                AccountBalance += positionSize[j] *  takeprofitval[j] #(CloseStream[len(CloseStream) - 1] - positionPrice)
+                AccountBalance += positionSize[j] *  takeprofitval[j]
                 correct += 1
                 positionPrice[j] = Open_1min[j][i]
                 Profit -= Open_1min[j][i] * fee
@@ -486,13 +418,13 @@ for i in range(len(High_1min[0])-1):
                 month_return -= positionSize[j] * Open_1min[j][i] * fee
                 cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "win",'position':'long','Profit': takeprofitval[j]*positionSize[j]})
                 CurrentPos[j] = -99
-                stopflag = -99
-            elif (pair_Trading or Hold_pos) and (not waitflag) and Close_pos==1 and CurrentPos[j] == 1:
+                profitgraph.append(AccountBalance)
+
+            elif Close_pos==1 and CurrentPos[j] == 1:
                 prev_Profit = copy(Profit)
                 Profit += Open_1min[j][i+1] - positionPrice[j] ##sell at next open candle
                 month_return += positionSize[j] * (Open_1min[j][i+1]-positionPrice[j])
                 AccountBalance += positionSize[j] * (Open_1min[j][i+1]-positionPrice[j])
-                print((Open_1min[j][i + 1] - positionPrice[j]) * positionSize[j])
                 if prev_Profit<Profit:
                     correct += 1
                     cashout.append({'x': i, 'y': Open_1min[j][i + 1], 'type': "win", 'position': 'long',
@@ -505,14 +437,14 @@ for i in range(len(High_1min[0])-1):
                 AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
                 month_return -= positionSize[j] * Open_1min[j][i+1] * fee
                 CurrentPos[j] = -99
-                stopflag = -99
+                profitgraph.append(AccountBalance)
                 Close_pos = 0
-            elif (pair_Trading or Hold_pos) and (not waitflag) and Close_pos == 1 and CurrentPos[j] == 0:
+
+            elif Close_pos == 1 and CurrentPos[j] == 0:
                 prev_Profit = copy(Profit)
                 Profit += positionPrice[j] - Open_1min[j][i+1]
                 month_return += positionSize[j] * (positionPrice[j] - Open_1min[j][i+1])
                 AccountBalance += positionSize[j] *  (positionPrice[j] - Open_1min[j][i+1])
-                print(positionSize[j] *  (positionPrice[j] - Open_1min[j][i+1]))
                 if prev_Profit<Profit:
                     correct += 1
                     cashout.append({'x': i, 'y': Open_1min[j][i + 1], 'type': "win", 'position': 'short',
@@ -525,48 +457,60 @@ for i in range(len(High_1min[0])-1):
                 AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
                 month_return -= positionSize[j] * Open_1min[j][i+1] * fee
                 CurrentPos[j] = -99
-                stopflag = -99
+                profitgraph.append(AccountBalance)
                 Close_pos=0
 
-            #########################################################################################################################
-            ###########################   Trailing Stop Loss Logic:   ###############################################################
-            if CurrentPos[j] ==0 and break_even and break_even_flag == 0:
-                if positionPrice[j] - Close_1min[j][i] > break_Even_Stage[0] * takeprofitval[j]:
-                    ###### Set new Stop if we are in profit to breakeven
-                    ##Set new Stop in Profit:
-                    #stoplossval = -break_even_Amount[0]*takeprofitval
-                    stoplossval[j]*=break_even_Amount[0]
-                    break_even_flag+=1
-            elif CurrentPos[j] ==1 and break_even and break_even_flag == 0:
-                if Close_1min[j][i] - positionPrice[j] > break_Even_Stage[0] * takeprofitval[j]:
-                    ###### Set new Stop if we are in profit to breakeven
-                    ##Set new Stop in Profit:
-                    #stoplossval = -break_even_Amount[0]*takeprofitval
-                    stoplossval[j] *= break_even_Amount[0]
-                    break_even_flag += 1
-            if CurrentPos[j] ==0 and break_even and break_even_flag <= 1:
-                # LastPrice = float(client.get_ticker(symbol=symbol)['lastPrice'])
-                if positionPrice[j] - Close_1min[j][i] > break_Even_Stage[1] * takeprofitval[j]:
-                    ###### Set new Stop if we are in profit to breakeven
-                    ##Set new Stop in Profit:
-                    #stoplossval = -break_even_Amount[1] * takeprofitval
-                    stoplossval[j] *= break_even_Amount[1]
-                    break_even_flag += 1
-            elif CurrentPos[j] ==1 and break_even and break_even_flag <=1:
-                if Close_1min[j][i] - positionPrice[j] > break_Even_Stage[1] * takeprofitval[j]:
-                    ###### Set new Stop if we are in profit to breakeven
-                    ##Set new Stop in Profit:
-                    #stoplossval = -break_even_Amount[1]*takeprofitval
-                    stoplossval[j] *= break_even_Amount[1]
-                    break_even_flag += 1
-            ################################################################################################################################
-            ################################################################################################################################
-
-            waitflag=0
-
+            elif use_trailing_stop and CurrentPos[j] == 0:
+                #trailing_stop_value
+                if Open_1min[j][i] < positionPrice[j] - takeprofitval[j] and trailing_stop_value ==-99:
+                    ##takeprofit reached so set trailing_stop_value
+                    trailing_stop_value = (positionPrice[j] - takeprofitval[j])*(1 + trailing_stop_distance) ##price at which we will sell if moved up to
+                    
+                elif Open_1min[j][i] > trailing_stop_value and trailing_stop_value!=-99:
+                    ##trailing stop has been hit
+                    Profit += positionPrice[j] - trailing_stop_value
+                    month_return += positionSize[j] * (positionPrice[j] - trailing_stop_value)
+                    AccountBalance += positionSize[j] * (positionPrice[j] - trailing_stop_value)
+                    correct += 1
+                    positionPrice[j] = Open_1min[j][i]
+                    Profit -= trailing_stop_value * fee
+                    AccountBalance -= positionSize[j] * trailing_stop_value * fee
+                    month_return -= positionSize[j] * trailing_stop_value * fee
+                    cashout.append({'x': i, 'y': trailing_stop_value, 'type': "win", 'position': 'short',
+                                    'Profit': positionSize[j] * (positionPrice[j] - trailing_stop_value)})
+                    CurrentPos[j] = -99
+                    profitgraph.append(AccountBalance)
+                    trailing_stop_value = -99
+                    
+                elif Open_1min[j][i]*(1 + trailing_stop_distance) < trailing_stop_value and trailing_stop_value!=-99:
+                    trailing_stop_value = Open_1min[j][i]*(1 + trailing_stop_distance) ##move trailing stop as a new low was reached
+                    
+            elif use_trailing_stop and CurrentPos[j] ==1:
+                # trailing_stop_value
+                if Open_1min[j][i] > positionPrice[j] + takeprofitval[j] and trailing_stop_value == -99:
+                    ##takeprofit reached so set trailing_stop_value
+                    trailing_stop_value = (positionPrice[j] + takeprofitval[j]) * (1 - trailing_stop_distance)  ##price at which we will sell if moved up to
+                    
+                elif Open_1min[j][i] < trailing_stop_value and trailing_stop_value != -99:
+                    ##trailing stop has been hit
+                    Profit += trailing_stop_value - positionPrice[j]
+                    month_return += positionSize[j] * (trailing_stop_value - positionPrice[j])
+                    AccountBalance += positionSize[j] * (trailing_stop_value - positionPrice[j])
+                    correct += 1
+                    positionPrice[j] = Open_1min[j][i]
+                    Profit -= trailing_stop_value * fee
+                    AccountBalance -= positionSize[j] * trailing_stop_value * fee
+                    month_return -= positionSize[j] * trailing_stop_value * fee
+                    cashout.append({'x': i, 'y': trailing_stop_value, 'type': "win", 'position': 'short',
+                                    'Profit': positionSize[j] * (trailing_stop_value - positionPrice[j])})
+                    CurrentPos[j] = -99
+                    profitgraph.append(AccountBalance)
+                    trailing_stop_value = -99
+                    
+                elif Open_1min[j][i]*(1 - trailing_stop_distance) > trailing_stop_value and trailing_stop_value!=-99:
+                    trailing_stop_value = Open_1min[j][i]*(1 - trailing_stop_distance) ##move trailing stop as a new high was reached
+                    
             if CurrentPos[j] != PrevPos[j]:
-                signal1 = -99
-                signal2 = -99
                 print(f"\nCurrent Position {symbol[j]}:", CurrentPos[j])
                 print("Time:", Date_1min[j][i])
                 # print("Time Max",DateStream[max_pos])
@@ -589,8 +533,6 @@ for i in range(len(High_1min[0])-1):
         elif i==len(High_1min[0])-1 and ((time_period == 1 and test_set_length[2] == 'y') or (time_period == 12 and test_set_length[3] == 'm') or (time_period==52 and test_set_length[3] == 'w')):
             monthly_return.append(month_return)
             month_return = 0
-        if prev_Account_Bal!=AccountBalance:
-            profitgraph.append(AccountBalance)
         PrevPos=copy(CurrentPos)
 
 risk_free_rate = 1.41  ##10 year treasury rate
@@ -614,8 +556,7 @@ if pair_Trading and TPSL:
     print(f"Pair Trading {symbol}: {TIME_INTERVAL}min from a period of {time_period} {period_string} SL={percent_SL},TP={percent_TP}")
 else:
     print("\nSymbol(s):", symbol, "fee:", fee, "Order Size:", OrderSIZE, "Stoploss:", STOP, "Takeprofit:", TAKE)
-if break_even:
-    print("Moving Stoploss ON")
+
 print(f"{TIME_INTERVAL} min OHLC Candle Sticks from a period of {time_period} {period_string}")
 print("Account Balance:", AccountBalance)
 print("% Gain on Account:", ((AccountBalance - originalBalance) * 100) / originalBalance)
