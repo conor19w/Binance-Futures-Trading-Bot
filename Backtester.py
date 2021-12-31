@@ -57,7 +57,7 @@ time_period = 2  ##time_period in same units as test_set_length above
 TIME_INTERVAL = 30  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
 load_data = 1 ##load data from a file, download the data using download_Data.py
 use_heikin_ashi = 0  ##May take a long time/ will look at speeding up in future
-use_trailing_stop = 0 ##flag to use trailing stop, If on when the takeprofitval is reached a trailing stop will be set with the below percentage distance
+use_trailing_stop = 0 ##flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_distance = .01 ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
 
