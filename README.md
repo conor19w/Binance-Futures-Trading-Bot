@@ -1,14 +1,13 @@
 # Binance-Futures-Trading-Bot [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 ---
 ## To-Do list: (suggest something and I'll add it) 😃
-* Trailing Stop for live bot
 * Add option to overwrite saved price data so as not have to manually delete
 * Maybe Provide a standard bot strategy for Bot...
 * GUI if people were interested (could take a while I've no experience here)
 * Speed up Data Set aligner in Backtester with multiprocessing
 ---
 ## Latest Changes (if any):
-* Added trailing stop in Backtester (31/12/21)
+* Added trailing stop in Backtester.py & Bot.py (31/12/21)
 * Added some backtest results. (27/12/21)
 * Mainly Bug fixes lately no new features.
 ---
@@ -85,11 +84,11 @@ __This script will run a strategy on every coin on Binance & then generate graph
 ---
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
-* In __Bot.py__ on __line 334__ are the settings.
+* In __Bot.py__ on __line 341__ are the settings.
 * Choose the Interval you want to trade and the buffer of candlesticks your strategy will need.
 * leverage and order_size should be changed acording to your preference
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
-
+* Trailing stop: set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy.  
 __Strategies are implemented in Data_Set.py as a function named Make_decision() in the Data_set class__
 * Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to work properly
 * You might draw inspiration for a strategy from one In __TradingStrats.py__
