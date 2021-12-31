@@ -1,13 +1,14 @@
 # Binance-Futures-Trading-Bot [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 ---
 ## To-Do list: (suggest something and I'll add it) 😃
-* Trailing Stop
+* Trailing Stop for live bot
 * Add option to overwrite saved price data so as not have to manually delete
 * Maybe Provide a standard bot strategy for Bot...
 * GUI if people were interested (could take a while I've no experience here)
 * Speed up Data Set aligner in Backtester with multiprocessing
 ---
 ## Latest Changes (if any):
+* Added trailing stop in Backtester (31/12/21)
 * Added some backtest results. (27/12/21)
 * Mainly Bug fixes lately no new features.
 ---
@@ -55,10 +56,12 @@ Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * The data is split into an in-sample set and a test set, the flag __test_set__ decides which set we are running the strategy on, both sets are in same units as test_set_length but we adjust __time_period__ variable to change the in-sample data set length. The reason for splitting the data like this is to optimize parameters on the in-sample set and then once optimized run the strategy on the test-set to see if you have overfit your model by cherry picking values for parameters that suit the in-sample data.
 * The __time_period__ variable is the length of time in the past from today excluding the test-set, to run the strategy on. This is in the same units as the test_set_length.
 * The __TIME_INTERVAL__ variable is the interval for the candlesticks we want to trade on.
-* Next we want to choose our TA strategy, this is done after __line 295__ , uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
+* Settings are found at the top of the script, __line 50__.
+* Trailing Stop: turn the __use_trailing_stop__ flag on, specify the __trailing_stop_distance__ in decimal, now when a takeprofit margin target is hit the trailing stop will be placed and automatically & adjusted based off new Lows or Highs in price and the __trailing_stop_distance__ you've specified.
+* Next we want to choose our TA strategy, this is done after __line 292__ , uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
 * Some of the pre-coded strategies return a 'Type' variable, if a strategy returns the 'Type' variable you must call the SetSLTP() function from __TradingStrats.py__ in order to set the corresponding Stop loss value, and Take profit value, this function is found in TradingStrats.py
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
-* use_heikin_ashi is a flag __line 145__ that will create the heikin ashi candles for use, Called CloseStream_H, OpenStream_H, LowStream_H, HighStream_H which can be referenced or passed to Strategies.
+* use_heikin_ashi is a flag __line 59__ that will create the heikin ashi candles for use, Called CloseStream_H, OpenStream_H, LowStream_H, HighStream_H which can be referenced or passed to Strategies.
 
 #### Using Downloaded data for backtesting
 ---
