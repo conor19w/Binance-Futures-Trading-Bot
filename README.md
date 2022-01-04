@@ -1,7 +1,7 @@
 # Binance-Futures-Trading-Bot [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 ---
 ## To-Do list: (suggest something and I'll add it) 😃
-* Add option to overwrite saved price data so as not have to manually delete
+* Add option to overwrite saved price data so you don't have to manually delete the old data.
 * Maybe Provide a standard bot strategy for Bot...
 * GUI if people were interested (could take a while I've no experience here)
 * Speed up Data Set aligner in Backtester with multiprocessing
