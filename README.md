@@ -5,6 +5,8 @@
 * Maybe Provide a standard bot strategy for Bot...
 * GUI if people were interested (could take a while I've no experience here)
 * Speed up Data Set aligner in Backtester with multiprocessing
+### Strategy suggestions:
+* [Heikin Ashi](https://www.youtube.com/watch?v=g3XV1hjCv_8)
 ---
 ## Latest Changes (if any):
 * Added trailing stop in Backtester.py & Bot.py (31/12/21)
