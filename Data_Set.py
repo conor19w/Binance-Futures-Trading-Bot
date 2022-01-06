@@ -5,7 +5,8 @@ from ta.trend import ema_indicator,macd_signal,macd,sma_indicator,adx,sma_indica
 from ta.volatility import average_true_range,bollinger_pband,bollinger_hband,bollinger_lband,bollinger_mavg
 from ta.volume import ease_of_movement,on_balance_volume,force_index,money_flow_index
 from ta.momentum import tsi
-
+import numpy as np
+import pandas as pd
 class Data_set:
     def __init__(self,symbol,Open,Close,High,Low,Volume,Date,OP,CP,index):
         self.symbol = symbol
