@@ -9,6 +9,7 @@
 * [Heikin Ashi](https://www.youtube.com/watch?v=g3XV1hjCv_8) something like this
 ---
 ## Latest Changes (if any):
+* At the end of a backtest you can see the date & time that every trade was taken. So you can debug strategies by checking on tradingview/binance. (07/01/22)
 * Added trailing stop in Backtester.py & Bot.py (31/12/21)
 * Added some backtest results. (27/12/21)
 * Mainly Bug fixes lately no new features.
