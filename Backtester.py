@@ -361,7 +361,7 @@ for i in range(len(High_1min[0])-1):
                 month_return -= positionSize[j] * Open_1min[j][i+1] * fee
                 prediction[j] = -99
 
-                Trade_start = [symbol[j], Date_1min[j][i+1],CurrentPos[j],CloseStream_H[j][-1],OpenStream_H[j][-1]]  ##we enter trade on next candle
+                Trade_start = [symbol[j], Date_1min[j][i+1],CurrentPos[j]]  ##we enter trade on next candle
 
             elif CurrentPos[j] == -99 and prediction[j] == 1:
                 positionPrice[j] = Open_1min[j][i+1] ##next open candle
@@ -374,7 +374,7 @@ for i in range(len(High_1min[0])-1):
                 month_return -= positionSize[j] * Open_1min[j][i+1] * fee
                 prediction[j] = -99
 
-                Trade_start = [symbol[j], Date_1min[j][i+1],CurrentPos[j],CloseStream_H[j][-1],OpenStream_H[j][-1]]  ##we enter trade on next candle
+                Trade_start = [symbol[j], Date_1min[j][i+1],CurrentPos[j]]  ##we enter trade on next candle
 
 
             if positionPrice[j] - Open_1min[j][i] < -stoplossval[j] and CurrentPos[j] == 0:# and not Hold_pos:
