@@ -291,7 +291,7 @@ for i in range(len(High_1min[0])-1):
                 #Strategy.append(PS.hidden_fractal([1,1,0,0,1,0,0,0,0]))
                 #Strategy.append(TS.pump(DateStream[j], CloseStream[j], VolumeStream[j]))
             if not pair_Trading:
-                if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
+                if CurrentPos[j]==-99 and i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
                     break_even_flag=0
 
                     ##Public Strats :) :
