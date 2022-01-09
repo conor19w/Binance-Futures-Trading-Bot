@@ -23,7 +23,7 @@ import API_keys
 import download_Data as DD
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
-
+#import personal_strats as PS
 #data.reset_index(level=0, inplace=True)
 trades = deque(maxlen=100000) ##keep track of shorts/Longs for graphing
 cashout = deque(maxlen=100000) ##keep track of Winning trades/ Losing trades
@@ -48,12 +48,12 @@ symbol = ['RAYUSDT', 'NEARUSDT', 'AUDIOUSDT', 'HNTUSDT', 'DGBUSDT', 'ZRXUSDT', '
 ###################################################################################################################################
 
 EffectiveAccountBalance = -99 ##set later
-OrderSIZE = 1 ## Amount of effective account balance to use per trade
+OrderSIZE = .1 ## Amount of effective account balance to use per trade
 AccountBalance = 1000
 leverage = 10  ##leverage being used
 test_set = 1  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
-test_set_length = "10 day ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
-time_period = 10  ##time_period in same units as test_set_length above
+test_set_length = "2 month ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
+time_period = 2  ##time_period in same units as test_set_length above
 TIME_INTERVAL = 15  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
 load_data = 1 ##load data from a file, download the data using download_Data.py
 use_heikin_ashi = 1  ##May take a long time/ will look at speeding up in future
@@ -290,7 +290,7 @@ for i in range(len(High_1min[0])-1):
                 #Strategy.append(PS.fractal2([1,0,0,1,0,0,0,0,0]))
                 #Strategy.append(PS.hidden_fractal([1,1,0,0,1,0,0,0,0]))
                 #Strategy.append(TS.pump(DateStream[j], CloseStream[j], VolumeStream[j]))
-            if CurrentPos[j]==-99 and not pair_Trading:
+            if not pair_Trading:
                 if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
                     break_even_flag=0
 
@@ -306,10 +306,9 @@ for i in range(len(High_1min[0])-1):
                     #prediction[j],Close_pos,count,stoplossval[j] = TS.single_candle_swing_pump(prediction[j],CloseStream[j],HighStream[j],LowStream[j],CurrentPos[j],Close_pos,count,stoplossval[j])
                     #stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
                     #print(prediction[j])
-                    #prediction[j],stoplossval[j], takeprofitval[j] = Strategy[j].make_decision(((OrderSIZE*EffectiveAccountBalance)/Open_1min[j][i+1])*AccountBalance,CloseStream[j][-1],VolumeStream[j][-1])
+                    #prediction[j],stoplossval[j], takeprofitval[j] = Strategy[j].make_decision(((OrderSIZE*EffectiveAccountBalance)/Open_1min[j][i])*AccountBalance,CloseStream[j][-1],VolumeStream[j][-1])
 
                     ##These strats don't require a call to SetSLTP:
-
                     #prediction[j],stoplossval[j],takeprofitval[j] = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
                     #prediction[j],Highest_lowest,Close_pos = TS.trend_Ride(prediction[j], CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos[j], Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
                     #prediction[j],Close_pos = TS.RSI_trade(prediction[j],CloseStream[j],CurrentPos[j],Close_pos)
@@ -349,34 +348,6 @@ for i in range(len(High_1min[0])-1):
             #    prediction[j] = -99
     #################################################################
         #################################################################
-
-            if CurrentPos[j] == -99 and prediction[j] == 0:
-                positionPrice[j] = Open_1min[j][i+1]##next open candle #CloseStream[j][len(CloseStream[j]) - 1]
-                positionSize[j]= (OrderSIZE*EffectiveAccountBalance)/positionPrice[j]
-                CurrentPos[j] = 0
-                tradeNO+=1
-                trades.append({'x':i,'y':positionPrice[j],'type': "sell",'current_price': positionPrice[j]})
-                Profit -= Open_1min[j][i+1] * fee
-                AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
-                month_return -= positionSize[j] * Open_1min[j][i+1] * fee
-                prediction[j] = -99
-
-                Trade_start = [symbol[j], Date_1min[j][i+1],CurrentPos[j]]  ##we enter trade on next candle
-
-            elif CurrentPos[j] == -99 and prediction[j] == 1:
-                positionPrice[j] = Open_1min[j][i+1] ##next open candle
-                positionSize[j] = (OrderSIZE * EffectiveAccountBalance) / positionPrice[j]
-                CurrentPos[j] = 1
-                tradeNO += 1
-                trades.append({'x':i,'y':positionPrice[j], 'type': "buy",'current_price': positionPrice[j]})
-                Profit -= Open_1min[j][i+1] * fee
-                AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
-                month_return -= positionSize[j] * Open_1min[j][i+1] * fee
-                prediction[j] = -99
-
-                Trade_start = [symbol[j], Date_1min[j][i+1],CurrentPos[j]]  ##we enter trade on next candle
-
-
             if positionPrice[j] - Open_1min[j][i] < -stoplossval[j] and CurrentPos[j] == 0:# and not Hold_pos:
                 Profit +=-stoplossval[j]
                 month_return-=positionSize[j] *stoplossval[j]
@@ -430,21 +401,21 @@ for i in range(len(High_1min[0])-1):
 
             elif Close_pos==1 and CurrentPos[j] == 1:
                 prev_Profit = copy(Profit)
-                Profit += Open_1min[j][i+1] - positionPrice[j] ##sell at next open candle
-                month_return += positionSize[j] * (Open_1min[j][i+1]-positionPrice[j])
-                AccountBalance += positionSize[j] * (Open_1min[j][i+1]-positionPrice[j])
+                Profit += Open_1min[j][i] - positionPrice[j] ##sell at next open candle
+                month_return += positionSize[j] * (Open_1min[j][i]-positionPrice[j])
+                AccountBalance += positionSize[j] * (Open_1min[j][i]-positionPrice[j])
                 if prev_Profit<Profit:
                     correct += 1
                     winning_trades.append(Trade_start)
-                    cashout.append({'x': i, 'y': Open_1min[j][i + 1], 'type': "win", 'position': 'long',
-                                    'Profit': (Open_1min[j][i + 1]- positionPrice[j]) * positionSize[j]})
+                    cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "win", 'position': 'long',
+                                    'Profit': (Open_1min[j][i]- positionPrice[j]) * positionSize[j]})
                 else:
                     losing_trades.append(Trade_start)
-                    cashout.append({'x': i, 'y': Open_1min[j][i + 1], 'type': "loss", 'position': 'long',
-                                    'Profit': (Open_1min[j][i + 1] - positionPrice[j]) * positionSize[j]})
-                Profit -= Open_1min[j][i+1] * fee
-                AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
-                month_return -= positionSize[j] * Open_1min[j][i+1] * fee
+                    cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "loss", 'position': 'long',
+                                    'Profit': (Open_1min[j][i] - positionPrice[j]) * positionSize[j]})
+                Profit -= Open_1min[j][i] * fee
+                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
+                month_return -= positionSize[j] * Open_1min[j][i] * fee
                 CurrentPos[j] = -99
                 profitgraph.append(AccountBalance)
                 Close_pos = 0
@@ -453,21 +424,21 @@ for i in range(len(High_1min[0])-1):
 
             elif Close_pos == 1 and CurrentPos[j] == 0:
                 prev_Profit = copy(Profit)
-                Profit += positionPrice[j] - Open_1min[j][i+1]
-                month_return += positionSize[j] * (positionPrice[j] - Open_1min[j][i+1])
-                AccountBalance += positionSize[j] *  (positionPrice[j] - Open_1min[j][i+1])
+                Profit += positionPrice[j] - Open_1min[j][i]
+                month_return += positionSize[j] * (positionPrice[j] - Open_1min[j][i])
+                AccountBalance += positionSize[j] *  (positionPrice[j] - Open_1min[j][i])
                 if prev_Profit<Profit:
                     correct += 1
                     winning_trades.append(Trade_start)
-                    cashout.append({'x': i, 'y': Open_1min[j][i + 1], 'type': "win", 'position': 'short',
-                                    'Profit': (positionPrice[j] - Open_1min[j][i+1]) * positionSize[j]})
+                    cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "win", 'position': 'short',
+                                    'Profit': (positionPrice[j] - Open_1min[j][i]) * positionSize[j]})
                 else:
                     losing_trades.append(Trade_start)
-                    cashout.append({'x': i, 'y': Open_1min[j][i + 1], 'type': "loss", 'position': 'short',
-                                    'Profit': (positionPrice[j] - Open_1min[j][i+1]) * positionSize[j]})
-                Profit -= Open_1min[j][i+1] * fee
-                AccountBalance -= positionSize[j] * Open_1min[j][i+1] * fee
-                month_return -= positionSize[j] * Open_1min[j][i+1] * fee
+                    cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "loss", 'position': 'short',
+                                    'Profit': (positionPrice[j] - Open_1min[j][i]) * positionSize[j]})
+                Profit -= Open_1min[j][i] * fee
+                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
+                month_return -= positionSize[j] * Open_1min[j][i] * fee
                 CurrentPos[j] = -99
                 profitgraph.append(AccountBalance)
                 Close_pos=0
@@ -479,12 +450,13 @@ for i in range(len(High_1min[0])-1):
                 if Open_1min[j][i] < positionPrice[j] - takeprofitval[j] and trailing_stop_value ==-99:
                     ##takeprofit reached so set trailing_stop_value
                     trailing_stop_value = (positionPrice[j] - takeprofitval[j])*(1 + trailing_stop_distance) ##price at which we will sell if moved up to
-
+                    print("Trailing Stop: ", trailing_stop_value)
                 elif Open_1min[j][i] > trailing_stop_value and trailing_stop_value!=-99:
                     ##trailing stop has been hit
                     Profit += positionPrice[j] - trailing_stop_value
                     month_return += positionSize[j] * (positionPrice[j] - trailing_stop_value)
                     AccountBalance += positionSize[j] * (positionPrice[j] - trailing_stop_value)
+                    print("Trailing Stop Profit", positionSize[j] * (positionPrice[j] - trailing_stop_value))
                     correct += 1
                     Profit -= trailing_stop_value * fee
                     AccountBalance -= positionSize[j] * trailing_stop_value * fee
@@ -498,18 +470,20 @@ for i in range(len(High_1min[0])-1):
 
                 elif Open_1min[j][i]*(1 + trailing_stop_distance) < trailing_stop_value and trailing_stop_value!=-99:
                     trailing_stop_value = Open_1min[j][i]*(1 + trailing_stop_distance) ##move trailing stop as a new low was reached
-
+                    print("Trailing Stop: ", trailing_stop_value)
             elif use_trailing_stop and CurrentPos[j] ==1:
                 # trailing_stop_value
                 if Open_1min[j][i] > positionPrice[j] + takeprofitval[j] and trailing_stop_value == -99:
                     ##takeprofit reached so set trailing_stop_value
                     trailing_stop_value = (positionPrice[j] + takeprofitval[j]) * (1 - trailing_stop_distance)  ##price at which we will sell if moved up to
+                    print("Trailing Stop: ",trailing_stop_value)
 
                 elif Open_1min[j][i] < trailing_stop_value and trailing_stop_value != -99:
                     ##trailing stop has been hit
                     Profit += trailing_stop_value - positionPrice[j]
                     month_return += positionSize[j] * (trailing_stop_value - positionPrice[j])
                     AccountBalance += positionSize[j] * (trailing_stop_value - positionPrice[j])
+                    print("Trailing Stop Profit",positionSize[j] * (trailing_stop_value - positionPrice[j]))
                     correct += 1
                     Profit -= trailing_stop_value * fee
                     AccountBalance -= positionSize[j] * trailing_stop_value * fee
@@ -523,6 +497,35 @@ for i in range(len(High_1min[0])-1):
 
                 elif Open_1min[j][i]*(1 - trailing_stop_distance) > trailing_stop_value and trailing_stop_value!=-99:
                     trailing_stop_value = Open_1min[j][i]*(1 - trailing_stop_distance) ##move trailing stop as a new high was reached
+                    print("Trailing Stop: ", trailing_stop_value)
+
+            if CurrentPos[j] == -99 and prediction[j] == 0:
+                positionPrice[j] = Open_1min[j][i]##next open candle #CloseStream[j][len(CloseStream[j]) - 1]
+                positionSize[j]= (OrderSIZE*EffectiveAccountBalance)/positionPrice[j]
+                CurrentPos[j] = 0
+                tradeNO+=1
+                trades.append({'x':i,'y':positionPrice[j],'type': "sell",'current_price': positionPrice[j]})
+                Profit -= Open_1min[j][i] * fee
+                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
+                month_return -= positionSize[j] * Open_1min[j][i] * fee
+                prediction[j] = -99
+
+                Trade_start = [symbol[j], Date_1min[j][i],CurrentPos[j]]  ##we enter trade on next candle
+
+            elif CurrentPos[j] == -99 and prediction[j] == 1:
+                positionPrice[j] = Open_1min[j][i] ##next open candle
+                positionSize[j] = (OrderSIZE * EffectiveAccountBalance) / positionPrice[j]
+                CurrentPos[j] = 1
+                tradeNO += 1
+                trades.append({'x':i,'y':positionPrice[j], 'type': "buy",'current_price': positionPrice[j]})
+                Profit -= Open_1min[j][i] * fee
+                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
+                month_return -= positionSize[j] * Open_1min[j][i] * fee
+                prediction[j] = -99
+
+                Trade_start = [symbol[j], Date_1min[j][i],CurrentPos[j]]  ##we enter trade on next candle
+
+
 
             if CurrentPos[j] != PrevPos[j]:
                 print(f"\nCurrent Position {symbol[j]}:", CurrentPos[j])
@@ -673,4 +676,4 @@ plt.ylabel('Dollars')
 plt.xlabel('# Trades')
 #plt.legend(loc=2)
 plt.show()
-#time.sleep(60) ##
+#time.sleep(60) ##don't close for 1 min
