@@ -54,30 +54,11 @@ leverage = 10  ##leverage being used
 test_set = 1  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
 test_set_length = "2 month ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
 time_period = 2  ##time_period in same units as test_set_length above
-TIME_INTERVAL = 15  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
+TIME_INTERVAL = 5  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
 load_data = 1 ##load data from a file, download the data using download_Data.py
-use_heikin_ashi = 1  ##May take a long time/ will look at speeding up in future
+use_heikin_ashi = 0 
 use_trailing_stop = 0 ##   (Causing rounding error i think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_distance = .01 ## 1% trailing stop activated by hitting the takeprofitval for a coin
-
-
-
-
-
-
-
-############################## pairTrading ##############################################
-pair_Trading = 0  ##Switch to backtest the pairtrading Long-Short strategy, switch off for any other strategy
-TPSL = 0 ## type of take profit for pair trading
-percent_TP = .08 ##percent to takeprofit if TPSL switched on
-percent_SL = .01 ##percent to stoploss if TPSL switched on
-log = 0 ###log prices, not recommended as implementation may be wrong, something i'm working on understanding better
-Close_pos = 0 ##flag to close the position on next open if pair trading
-if pair_Trading:
-    symbol = ['RENUSDT','ATOMUSDT']
-#################################################################################################################
-STOP = 1  ##If strategy SLTP of type 9 multiplier for stoploss using ATR
-TAKE = 2.5 ##If strategy SLTP of type 9 multiplier for takeprofit using ATR
 
 ###################################################################################################################################
 ###################################################################################################################################
@@ -85,14 +66,17 @@ TAKE = 2.5 ##If strategy SLTP of type 9 multiplier for takeprofit using ATR
 
 ######### flags/variables: #######################
 Highest_lowest = 0
-Type = []
-stoplossval = []
-takeprofitval = []
-CurrentPos = []
-positionSize = []
-positionPrice = []
-PrevPos = []
-prediction = []
+Type = -99
+stoplossval = -99
+takeprofitval = -99
+CurrentPos = -99
+positionSize = -99
+positionPrice = -99
+PrevPos = -99
+prediction = -99
+Trading_index = -99 ##index of coin we are trading
+Trade_Stage = 0 ##flag to say in a trade
+Close_pos = 0
 Open=[]
 High=[]
 Low=[]
@@ -233,14 +217,6 @@ if use_heikin_ashi:
     print("Finished")
 
 for i in range(len(symbol)):
-    Type.append(-99)
-    stoplossval.append(0)
-    takeprofitval.append(0)
-    CurrentPos.append(-99)
-    positionSize.append(0)
-    positionPrice.append(0)
-    PrevPos.append(-99)
-    prediction.append(-99)
     CloseStream.append([])
     OpenStream.append([])
     HighStream.append([])
@@ -283,15 +259,262 @@ for i in range(len(High_1min[0])-1):
         prev_Account_Bal=copy(AccountBalance)
         EffectiveAccountBalance = AccountBalance*leverage
 
-        for j in range(len(prediction)):
-            if len(OpenStream[0]) == 100 and not pair_Trading:
-                pass
-                # Strategy = PS.sup_res(CloseStream[0]) ##not a strategy ive made public
-                #Strategy.append(PS.fractal2([1,0,0,1,0,0,0,0,0]))
-                #Strategy.append(PS.hidden_fractal([1,1,0,0,1,0,0,0,0]))
-                #Strategy.append(TS.pump(DateStream[j], CloseStream[j], VolumeStream[j]))
-            if not pair_Trading:
-                if CurrentPos[j]==-99 and i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
+        if len(OpenStream[0]) == 100:
+            pass
+            # Strategy = PS.sup_res(CloseStream[0]) ##not a strategy ive made public
+            #Strategy.append(PS.fractal2([1,0,0,1,0,0,0,0,0]))
+            #Strategy.append(PS.hidden_fractal([1,1,0,0,1,0,0,0,0]))
+            #Strategy.append(TS.pump(DateStream[j], CloseStream[j], VolumeStream[j]))
+
+
+        if Trade_Stage == 1:
+            if positionPrice - Open_1min[Trading_index][i] < -stoplossval and CurrentPos == 0:  # and not Hold_pos:
+                Profit += -stoplossval
+                month_return -= positionSize * stoplossval
+                AccountBalance += positionSize * -stoplossval
+                Profit -= Open_1min[Trading_index][i] * fee
+                AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
+                month_return -= positionSize * Open_1min[Trading_index][i] * fee
+                cashout.append({'x': i, 'y': Open_1min[Trading_index][i], 'type': "loss", 'position': 'short',
+                                'Profit': -stoplossval * positionSize})
+                profitgraph.append(AccountBalance)
+                CurrentPos = -99
+                losing_trades.append(Trade_start)
+                Trade_Stage = 0
+                print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
+                print("Time:", Date_1min[Trading_index][i])
+                # print("Time Max",DateStream[max_pos])
+                # print("Time Min", DateStream[min_pos])
+                try:
+                    print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
+                          (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
+                          "TakeProfit:",
+                          takeprofitval)
+                except Exception as e:
+                    pass
+                Trading_index = -99
+
+            elif Open_1min[Trading_index][
+                i] - positionPrice < -stoplossval and CurrentPos == 1:  # and not Hold_pos:
+                Profit += -stoplossval
+                month_return -= positionSize * stoplossval
+                AccountBalance += positionSize * -stoplossval
+                Profit -= Open_1min[Trading_index][i] * fee
+                AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
+                month_return -= positionSize * Open_1min[Trading_index][i] * fee
+                cashout.append({'x': i, 'y': Open_1min[Trading_index][i], 'type': "loss", 'position': 'long',
+                                'Profit': -stoplossval * positionSize})
+                # CurrentPos = -99
+                profitgraph.append(AccountBalance)
+                CurrentPos = -99
+                losing_trades.append(Trade_start)
+                Trade_Stage = 0
+                print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
+                print("Time:", Date_1min[Trading_index][i])
+                # print("Time Max",DateStream[max_pos])
+                # print("Time Min", DateStream[min_pos])
+                try:
+                    print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
+                          (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
+                          "TakeProfit:",
+                          takeprofitval)
+                except Exception as e:
+                    pass
+                Trading_index = -99
+
+            elif positionPrice - Open_1min[Trading_index][
+                i] > takeprofitval and CurrentPos == 0 and not use_trailing_stop:  # and not Hold_pos:
+                Profit += takeprofitval
+                month_return += positionSize * takeprofitval
+                AccountBalance += positionSize * takeprofitval
+                correct += 1
+                Profit -= Open_1min[Trading_index][i] * fee
+                AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
+                month_return -= positionSize * Open_1min[Trading_index][i] * fee
+                cashout.append({'x': i, 'y': Open_1min[Trading_index][i], 'type': "win", 'position': 'short',
+                                'Profit': takeprofitval * positionSize})
+                CurrentPos = -99
+                profitgraph.append(AccountBalance)
+                Trade_Stage = 0
+                print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
+                print("Time:", Date_1min[Trading_index][i])
+                # print("Time Max",DateStream[max_pos])
+                # print("Time Min", DateStream[min_pos])
+                try:
+                    print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
+                          (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
+                          "TakeProfit:",
+                          takeprofitval)
+                except Exception as e:
+                    pass
+                winning_trades.append(Trade_start)
+                Trading_index = -99
+
+            elif Open_1min[Trading_index][
+                i] - positionPrice > takeprofitval and CurrentPos == 1 and not use_trailing_stop:  # and not Hold_pos:
+                Profit += takeprofitval
+                month_return += positionSize * takeprofitval
+                AccountBalance += positionSize * takeprofitval
+                correct += 1
+                Profit -= Open_1min[Trading_index][i] * fee
+                AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
+                month_return -= positionSize * Open_1min[Trading_index][i] * fee
+                cashout.append({'x': i, 'y': Open_1min[Trading_index][i], 'type': "win", 'position': 'long',
+                                'Profit': takeprofitval * positionSize})
+                CurrentPos = -99
+                profitgraph.append(AccountBalance)
+                Trade_Stage = 0
+                print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
+                print("Time:", Date_1min[Trading_index][i])
+                # print("Time Max",DateStream[max_pos])
+                # print("Time Min", DateStream[min_pos])
+                try:
+                    print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
+                          (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
+                          "TakeProfit:",
+                          takeprofitval)
+                except Exception as e:
+                    pass
+                winning_trades.append(Trade_start)
+                Trading_index = -99
+
+            elif Close_pos == 1 and CurrentPos == 1:
+                prev_Profit = copy(Profit)
+                Profit += Open_1min[Trading_index][i] - positionPrice  ##sell at next open candle
+                month_return += positionSize * (Open_1min[Trading_index][i] - positionPrice)
+                AccountBalance += positionSize * (Open_1min[Trading_index][i] - positionPrice)
+                if prev_Profit < Profit:
+                    correct += 1
+                    winning_trades.append(Trade_start)
+                    cashout.append({'x': i, 'y': Open_1min[Trading_index][i], 'type': "win", 'position': 'long',
+                                    'Profit': (Open_1min[Trading_index][i] - positionPrice) * positionSize})
+                else:
+                    losing_trades.append(Trade_start)
+                    cashout.append({'x': i, 'y': Open_1min[Trading_index][i], 'type': "loss", 'position': 'long',
+                                    'Profit': (Open_1min[Trading_index][i] - positionPrice) * positionSize})
+                Profit -= Open_1min[Trading_index][i] * fee
+                AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
+                month_return -= positionSize * Open_1min[Trading_index][i] * fee
+                CurrentPos = -99
+                profitgraph.append(AccountBalance)
+                Trade_Stage = 0
+                print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
+                print("Time:", Date_1min[Trading_index][i])
+                # print("Time Max",DateStream[max_pos])
+                # print("Time Min", DateStream[min_pos])
+                try:
+                    print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
+                          (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
+                          "TakeProfit:",
+                          takeprofitval)
+                except Exception as e:
+                    pass
+
+                Close_pos = 0
+                Trading_index = -99
+
+                print("Position Closed")
+
+            elif Close_pos == 1 and CurrentPos == 0:
+                prev_Profit = copy(Profit)
+                Profit += positionPrice - Open_1min[Trading_index][i]
+                month_return += positionSize * (positionPrice - Open_1min[Trading_index][i])
+                AccountBalance += positionSize * (positionPrice - Open_1min[Trading_index][i])
+                if prev_Profit < Profit:
+                    correct += 1
+                    winning_trades.append(Trade_start)
+                    cashout.append({'x': i, 'y': Open_1min[Trading_index][i], 'type': "win", 'position': 'short',
+                                    'Profit': (positionPrice - Open_1min[Trading_index][i]) * positionSize})
+                else:
+                    losing_trades.append(Trade_start)
+                    cashout.append({'x': i, 'y': Open_1min[Trading_index][i], 'type': "loss", 'position': 'short',
+                                    'Profit': (positionPrice - Open_1min[Trading_index][i]) * positionSize})
+                Profit -= Open_1min[Trading_index][i] * fee
+                AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
+                month_return -= positionSize * Open_1min[Trading_index][i] * fee
+                CurrentPos = -99
+                profitgraph.append(AccountBalance)
+                Close_pos = 0
+                Trade_Stage = 0
+                print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
+                print("Time:", Date_1min[Trading_index][i])
+                # print("Time Max",DateStream[max_pos])
+                # print("Time Min", DateStream[min_pos])
+                try:
+                    print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
+                          (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
+                          "TakeProfit:",
+                          takeprofitval)
+                except Exception as e:
+                    pass
+                Trading_index = -99
+
+                print("Position Closed")
+
+            elif use_trailing_stop and CurrentPos == 0:
+                # trailing_stop_value
+                if Open_1min[Trading_index][i] < positionPrice - takeprofitval and trailing_stop_value == -99:
+                    ##takeprofit reached so set trailing_stop_value
+                    trailing_stop_value = (positionPrice - takeprofitval) * (
+                                1 + trailing_stop_distance)  ##price at which we will sell if moved up to
+                    print("Trailing Stop: ", trailing_stop_value)
+                elif Open_1min[Trading_index][i] > trailing_stop_value and trailing_stop_value != -99:
+                    ##trailing stop has been hit
+                    Profit += positionPrice - trailing_stop_value
+                    month_return += positionSize * (positionPrice - trailing_stop_value)
+                    AccountBalance += positionSize * (positionPrice - trailing_stop_value)
+                    print("Trailing Stop Profit", positionSize * (positionPrice - trailing_stop_value))
+                    correct += 1
+                    Profit -= trailing_stop_value * fee
+                    AccountBalance -= positionSize * trailing_stop_value * fee
+                    month_return -= positionSize * trailing_stop_value * fee
+                    cashout.append({'x': i, 'y': trailing_stop_value, 'type': "win", 'position': 'short',
+                                    'Profit': positionSize * (positionPrice - trailing_stop_value)})
+                    CurrentPos = -99
+                    profitgraph.append(AccountBalance)
+                    trailing_stop_value = -99
+                    winning_trades.append(Trade_start)
+                    Trade_Stage = 0
+                elif Open_1min[Trading_index][i] * (
+                        1 + trailing_stop_distance) < trailing_stop_value and trailing_stop_value != -99:
+                    trailing_stop_value = Open_1min[Trading_index][i] * (
+                                1 + trailing_stop_distance)  ##move trailing stop as a new low was reached
+                    print("Trailing Stop: ", trailing_stop_value)
+            elif use_trailing_stop and CurrentPos == 1:
+                # trailing_stop_value
+                if Open_1min[Trading_index][i] > positionPrice + takeprofitval and trailing_stop_value == -99:
+                    ##takeprofit reached so set trailing_stop_value
+                    trailing_stop_value = (positionPrice + takeprofitval) * (
+                                1 - trailing_stop_distance)  ##price at which we will sell if moved up to
+                    print("Trailing Stop: ", trailing_stop_value)
+
+                elif Open_1min[Trading_index][i] < trailing_stop_value and trailing_stop_value != -99:
+                    ##trailing stop has been hit
+                    Profit += trailing_stop_value - positionPrice
+                    month_return += positionSize * (trailing_stop_value - positionPrice)
+                    AccountBalance += positionSize * (trailing_stop_value - positionPrice)
+                    print("Trailing Stop Profit", positionSize * (trailing_stop_value - positionPrice))
+                    correct += 1
+                    Profit -= trailing_stop_value * fee
+                    AccountBalance -= positionSize * trailing_stop_value * fee
+                    month_return -= positionSize * trailing_stop_value * fee
+                    cashout.append({'x': i, 'y': trailing_stop_value, 'type': "win", 'position': 'short',
+                                    'Profit': positionSize * (trailing_stop_value - positionPrice)})
+                    CurrentPos = -99
+                    profitgraph.append(AccountBalance)
+                    trailing_stop_value = -99
+                    winning_trades.append(Trade_start)
+                    Trade_Stage = 0
+                elif Open_1min[Trading_index][i] * (
+                        1 - trailing_stop_distance) > trailing_stop_value and trailing_stop_value != -99:
+                    trailing_stop_value = Open_1min[Trading_index][i] * (
+                                1 - trailing_stop_distance)  ##move trailing stop as a new high was reached
+                    print("Trailing Stop: ", trailing_stop_value)
+
+
+        elif Trade_Stage==0:
+            for j in range(len(symbol)):
+                if i%TIME_INTERVAL==0 and (i!=0 or TIME_INTERVAL==1):
                     break_even_flag=0
 
                     ##Public Strats :) :
@@ -321,223 +544,72 @@ for i in range(len(High_1min[0])-1):
                     #if prediction[j]==1:
                     #    prediction[j]=-99
                     ##########################################################################################################################################################################
-
-                    ##Ensure we only trade one coin at a time:
-                    if prediction[j]!=-99:
-                        for q in CurrentPos:
-                            if q!=-99:
-                                prediction[j]=-99
-            elif not pair_Trading:
-                prediction[j]=-99
-
-            elif pair_Trading and CurrentPos[0]==CurrentPos[1]==prediction[0]==prediction[1]==-99:
-                ##Pair Trading
-
-
-                if not TPSL:
-                    prediction, Type = TS.pairTrading(prediction, CloseStream[0], CloseStream[1], log, TPSL, percent_TP,percent_SL)
-                    stoplossval[0], takeprofitval[0] = SetSLTP(stoplossval[0], takeprofitval[0], CloseStream[0],HighStream[0], LowStream[0], prediction[0],CurrentPos[0], 9, SL=STOP, TP=TAKE)
-                    stoplossval[1], takeprofitval[1] = SetSLTP(stoplossval[1], takeprofitval[1], CloseStream[1],HighStream[1], LowStream[1], prediction[1],CurrentPos[1], 9, SL=STOP, TP=TAKE)
-                else:
-                    prediction, Type, takeprofitval[0], takeprofitval[1],stoplossval[0],stoplossval[1] = TS.pairTrading(prediction,CloseStream[0],CloseStream[1],log, TPSL,percent_TP, percent_SL)
-
             #Close_pos = Strategy[j].Trade_timer(CurrentPos[j], Close_pos)
 
             ##If the trade won't cover the fee & profit something then don't place it
             #if (prediction[j] == 1 or prediction[j] == 0) and (.00125 * Close_1min[j][-1] > takeprofitval[j]) and (not pair_Trading) and (not Hold_pos):
             #    prediction[j] = -99
-    #################################################################
-        #################################################################
-            if positionPrice[j] - Open_1min[j][i] < -stoplossval[j] and CurrentPos[j] == 0:# and not Hold_pos:
-                Profit +=-stoplossval[j]
-                month_return-=positionSize[j] *stoplossval[j]
-                AccountBalance += positionSize[j] * -stoplossval[j]
-                Profit -= Open_1min[j][i] * fee
-                AccountBalance-= positionSize[j] * Open_1min[j][i] * fee
-                month_return -= positionSize[j] * Open_1min[j][i] * fee
-                cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "loss",'position':'short','Profit': -stoplossval[j]*positionSize[j]})
-                profitgraph.append(AccountBalance)
-                CurrentPos[j] = -99
-                losing_trades.append(Trade_start)
-
-            elif Open_1min[j][i] - positionPrice[j] < -stoplossval[j] and CurrentPos[j] == 1:# and not Hold_pos:
-                Profit +=-stoplossval[j]
-                month_return -= positionSize[j] *stoplossval[j]
-                AccountBalance += positionSize[j]* -stoplossval[j]
-                Profit -= Open_1min[j][i] * fee
-                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
-                month_return -= positionSize[j] * Open_1min[j][i] * fee
-                cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "loss",'position':'long','Profit': -stoplossval[j]*positionSize[j]})
-                # CurrentPos = -99
-                profitgraph.append(AccountBalance)
-                CurrentPos[j] = -99
-                losing_trades.append(Trade_start)
-
-            elif positionPrice[j] - Open_1min[j][i] > takeprofitval[j] and CurrentPos[j] == 0 and not use_trailing_stop:# and not Hold_pos:
-                Profit += takeprofitval[j]
-                month_return += positionSize[j] *takeprofitval[j]
-                AccountBalance += positionSize[j] *  takeprofitval[j]
-                correct += 1
-                Profit -= Open_1min[j][i] * fee
-                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
-                month_return -= positionSize[j] * Open_1min[j][i] * fee
-                cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "win",'position':'short','Profit': takeprofitval[j]*positionSize[j]})
-                CurrentPos[j] = -99
-                profitgraph.append(AccountBalance)
-                winning_trades.append(Trade_start)
-
-            elif Open_1min[j][i] - positionPrice[j] > takeprofitval[j] and CurrentPos[j] == 1 and not use_trailing_stop:# and not Hold_pos:
-                Profit +=  takeprofitval[j]
-                month_return += positionSize[j] *takeprofitval[j]
-                AccountBalance += positionSize[j] *  takeprofitval[j]
-                correct += 1
-                Profit -= Open_1min[j][i] * fee
-                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
-                month_return -= positionSize[j] * Open_1min[j][i] * fee
-                cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "win",'position':'long','Profit': takeprofitval[j]*positionSize[j]})
-                CurrentPos[j] = -99
-                profitgraph.append(AccountBalance)
-                winning_trades.append(Trade_start)
-
-            elif Close_pos==1 and CurrentPos[j] == 1:
-                prev_Profit = copy(Profit)
-                Profit += Open_1min[j][i] - positionPrice[j] ##sell at next open candle
-                month_return += positionSize[j] * (Open_1min[j][i]-positionPrice[j])
-                AccountBalance += positionSize[j] * (Open_1min[j][i]-positionPrice[j])
-                if prev_Profit<Profit:
-                    correct += 1
-                    winning_trades.append(Trade_start)
-                    cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "win", 'position': 'long',
-                                    'Profit': (Open_1min[j][i]- positionPrice[j]) * positionSize[j]})
-                else:
-                    losing_trades.append(Trade_start)
-                    cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "loss", 'position': 'long',
-                                    'Profit': (Open_1min[j][i] - positionPrice[j]) * positionSize[j]})
-                Profit -= Open_1min[j][i] * fee
-                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
-                month_return -= positionSize[j] * Open_1min[j][i] * fee
-                CurrentPos[j] = -99
-                profitgraph.append(AccountBalance)
-                Close_pos = 0
-
-                print("Position Closed")
-
-            elif Close_pos == 1 and CurrentPos[j] == 0:
-                prev_Profit = copy(Profit)
-                Profit += positionPrice[j] - Open_1min[j][i]
-                month_return += positionSize[j] * (positionPrice[j] - Open_1min[j][i])
-                AccountBalance += positionSize[j] *  (positionPrice[j] - Open_1min[j][i])
-                if prev_Profit<Profit:
-                    correct += 1
-                    winning_trades.append(Trade_start)
-                    cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "win", 'position': 'short',
-                                    'Profit': (positionPrice[j] - Open_1min[j][i]) * positionSize[j]})
-                else:
-                    losing_trades.append(Trade_start)
-                    cashout.append({'x': i, 'y': Open_1min[j][i], 'type': "loss", 'position': 'short',
-                                    'Profit': (positionPrice[j] - Open_1min[j][i]) * positionSize[j]})
-                Profit -= Open_1min[j][i] * fee
-                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
-                month_return -= positionSize[j] * Open_1min[j][i] * fee
-                CurrentPos[j] = -99
-                profitgraph.append(AccountBalance)
-                Close_pos=0
-
-                print("Position Closed")
-
-            elif use_trailing_stop and CurrentPos[j] == 0:
-                #trailing_stop_value
-                if Open_1min[j][i] < positionPrice[j] - takeprofitval[j] and trailing_stop_value ==-99:
-                    ##takeprofit reached so set trailing_stop_value
-                    trailing_stop_value = (positionPrice[j] - takeprofitval[j])*(1 + trailing_stop_distance) ##price at which we will sell if moved up to
-                    print("Trailing Stop: ", trailing_stop_value)
-                elif Open_1min[j][i] > trailing_stop_value and trailing_stop_value!=-99:
-                    ##trailing stop has been hit
-                    Profit += positionPrice[j] - trailing_stop_value
-                    month_return += positionSize[j] * (positionPrice[j] - trailing_stop_value)
-                    AccountBalance += positionSize[j] * (positionPrice[j] - trailing_stop_value)
-                    print("Trailing Stop Profit", positionSize[j] * (positionPrice[j] - trailing_stop_value))
-                    correct += 1
-                    Profit -= trailing_stop_value * fee
-                    AccountBalance -= positionSize[j] * trailing_stop_value * fee
-                    month_return -= positionSize[j] * trailing_stop_value * fee
-                    cashout.append({'x': i, 'y': trailing_stop_value, 'type': "win", 'position': 'short',
-                                    'Profit': positionSize[j] * (positionPrice[j] - trailing_stop_value)})
-                    CurrentPos[j] = -99
-                    profitgraph.append(AccountBalance)
-                    trailing_stop_value = -99
-                    winning_trades.append(Trade_start)
-
-                elif Open_1min[j][i]*(1 + trailing_stop_distance) < trailing_stop_value and trailing_stop_value!=-99:
-                    trailing_stop_value = Open_1min[j][i]*(1 + trailing_stop_distance) ##move trailing stop as a new low was reached
-                    print("Trailing Stop: ", trailing_stop_value)
-            elif use_trailing_stop and CurrentPos[j] ==1:
-                # trailing_stop_value
-                if Open_1min[j][i] > positionPrice[j] + takeprofitval[j] and trailing_stop_value == -99:
-                    ##takeprofit reached so set trailing_stop_value
-                    trailing_stop_value = (positionPrice[j] + takeprofitval[j]) * (1 - trailing_stop_distance)  ##price at which we will sell if moved up to
-                    print("Trailing Stop: ",trailing_stop_value)
-
-                elif Open_1min[j][i] < trailing_stop_value and trailing_stop_value != -99:
-                    ##trailing stop has been hit
-                    Profit += trailing_stop_value - positionPrice[j]
-                    month_return += positionSize[j] * (trailing_stop_value - positionPrice[j])
-                    AccountBalance += positionSize[j] * (trailing_stop_value - positionPrice[j])
-                    print("Trailing Stop Profit",positionSize[j] * (trailing_stop_value - positionPrice[j]))
-                    correct += 1
-                    Profit -= trailing_stop_value * fee
-                    AccountBalance -= positionSize[j] * trailing_stop_value * fee
-                    month_return -= positionSize[j] * trailing_stop_value * fee
-                    cashout.append({'x': i, 'y': trailing_stop_value, 'type': "win", 'position': 'short',
-                                    'Profit': positionSize[j] * (trailing_stop_value - positionPrice[j])})
-                    CurrentPos[j] = -99
-                    profitgraph.append(AccountBalance)
-                    trailing_stop_value = -99
-                    winning_trades.append(Trade_start)
-
-                elif Open_1min[j][i]*(1 - trailing_stop_distance) > trailing_stop_value and trailing_stop_value!=-99:
-                    trailing_stop_value = Open_1min[j][i]*(1 - trailing_stop_distance) ##move trailing stop as a new high was reached
-                    print("Trailing Stop: ", trailing_stop_value)
-
-            if CurrentPos[j] == -99 and prediction[j] == 0:
-                positionPrice[j] = Open_1min[j][i]##next open candle #CloseStream[j][len(CloseStream[j]) - 1]
-                positionSize[j]= (OrderSIZE*EffectiveAccountBalance)/positionPrice[j]
-                CurrentPos[j] = 0
-                tradeNO+=1
-                trades.append({'x':i,'y':positionPrice[j],'type': "sell",'current_price': positionPrice[j]})
-                Profit -= Open_1min[j][i] * fee
-                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
-                month_return -= positionSize[j] * Open_1min[j][i] * fee
-                prediction[j] = -99
-
-                Trade_start = [symbol[j], Date_1min[j][i],CurrentPos[j]]  ##we enter trade on next candle
-
-            elif CurrentPos[j] == -99 and prediction[j] == 1:
-                positionPrice[j] = Open_1min[j][i] ##next open candle
-                positionSize[j] = (OrderSIZE * EffectiveAccountBalance) / positionPrice[j]
-                CurrentPos[j] = 1
-                tradeNO += 1
-                trades.append({'x':i,'y':positionPrice[j], 'type': "buy",'current_price': positionPrice[j]})
-                Profit -= Open_1min[j][i] * fee
-                AccountBalance -= positionSize[j] * Open_1min[j][i] * fee
-                month_return -= positionSize[j] * Open_1min[j][i] * fee
-                prediction[j] = -99
-
-                Trade_start = [symbol[j], Date_1min[j][i],CurrentPos[j]]  ##we enter trade on next candle
+            #################################################################
+            #################################################################
 
 
+                if CurrentPos == -99 and prediction == 0:
+                    Trading_index = j
+                    positionPrice = Open_1min[Trading_index][i]##next open candle #CloseStream[j][len(CloseStream[j]) - 1]
+                    positionSize= (OrderSIZE*EffectiveAccountBalance)/positionPrice
+                    CurrentPos = 0
+                    tradeNO+=1
+                    Trade_Stage = 1
+                    trades.append({'x':i,'y':positionPrice,'type': "sell",'current_price': positionPrice})
+                    Profit -= Open_1min[Trading_index][i] * fee
+                    AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
+                    month_return -= positionSize * Open_1min[Trading_index][i] * fee
+                    prediction = -99
 
-            if CurrentPos[j] != PrevPos[j]:
-                print(f"\nCurrent Position {symbol[j]}:", CurrentPos[j])
-                print("Time:", Date_1min[j][i])
-                # print("Time Max",DateStream[max_pos])
-                # print("Time Min", DateStream[min_pos])
-                try:
-                    print("Account Balance: ", AccountBalance, "Order Size:", positionSize[j], "PV:",
-                          (Profit * 100) / (tradeNO * CloseStream[j][-1]), "Stoploss:", stoplossval[j], "TakeProfit:",
-                          takeprofitval[j])
-                except Exception as e:
-                    pass
+                    Trade_start = [symbol[Trading_index], Date_1min[Trading_index][i],CurrentPos]  ##we enter trade on next candle
+
+                    print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
+                    print("Time:", Date_1min[Trading_index][i])
+                    # print("Time Max",DateStream[max_pos])
+                    # print("Time Min", DateStream[min_pos])
+                    try:
+                        print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
+                              (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
+                              "TakeProfit:",
+                              takeprofitval)
+                    except Exception as e:
+                        pass
+                    break
+
+
+                elif CurrentPos == -99 and prediction == 1:
+                    Trading_index = j
+                    positionPrice = Open_1min[Trading_index][i] ##next open candle
+                    positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice
+                    CurrentPos = 1
+                    tradeNO += 1
+                    Trade_Stage = 1
+                    trades.append({'x':i,'y':positionPrice, 'type': "buy",'current_price': positionPrice})
+                    Profit -= Open_1min[Trading_index][i] * fee
+                    AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
+                    month_return -= positionSize * Open_1min[Trading_index][i] * fee
+                    prediction = -99
+
+                    Trade_start = [symbol[Trading_index], Date_1min[Trading_index][i],CurrentPos]  ##we enter trade on next candle
+
+                    print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
+                    print("Time:", Date_1min[Trading_index][i])
+                    # print("Time Max",DateStream[max_pos])
+                    # print("Time Min", DateStream[min_pos])
+                    try:
+                        print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
+                              (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
+                              "TakeProfit:",
+                              takeprofitval)
+                    except Exception as e:
+                        pass
+                    break
+
         if i%1440==0 and i!=0:
             Daily_return.append(AccountBalance)#(day_return/day_start_equity)
             #day_return=0
@@ -550,7 +622,6 @@ for i in range(len(High_1min[0])-1):
         elif i==len(High_1min[0])-1 and ((time_period == 1 and test_set_length[2] == 'y') or (time_period == 12 and test_set_length[3] == 'm') or (time_period==52 and test_set_length[3] == 'w')):
             monthly_return.append(month_return)
             month_return = 0
-        PrevPos=copy(CurrentPos)
 
 risk_free_rate = 1.41  ##10 year treasury rate
 df=pd.DataFrame({'Account_Balance':Daily_return})
@@ -569,10 +640,6 @@ sortino_ratio = (CAGR - risk_free_rate)/neg_vol
 calmar_ratio = CAGR/max_dd
 
 
-if pair_Trading and TPSL:
-    print(f"Pair Trading {symbol}: {TIME_INTERVAL}min from a period of {time_period} {period_string} SL={percent_SL},TP={percent_TP}")
-else:
-    print("\nSymbol(s):", symbol, "fee:", fee, "Order Size:", OrderSIZE, "Stoploss:", STOP, "Takeprofit:", TAKE)
 
 print(f"{TIME_INTERVAL} min OHLC Candle Sticks from a period of {time_period} {period_string}")
 print("Account Balance:", AccountBalance)
@@ -665,13 +732,8 @@ print("Winning Trades: ",winning_trades,"\n","Losing Trades: ",losing_trades)
 plt.plot(profitgraph)
 #ax2.plot(profitgraph)
 #plt.plot(Close)
-if not pair_Trading:
-    plt.title(f"{symbol}: {TIME_INTERVAL}min from a period of {time_period} {period_string} SL={STOP},TP={TAKE}")
-else:
-    if not TPSL:
-        plt.title(f"Pair Trading {symbol}: {TIME_INTERVAL}min from a period of {time_period} {period_string} SL={STOP},TP={TAKE}")
-    else:
-        plt.title(f"Pair Trading {symbol}: {TIME_INTERVAL}min from a period of {time_period} {period_string} SL={percent_SL},TP={percent_TP}")
+
+plt.title(f"{symbol}: {TIME_INTERVAL}min from a period of {time_period} {period_string}")
 plt.ylabel('Dollars')
 plt.xlabel('# Trades')
 #plt.legend(loc=2)
