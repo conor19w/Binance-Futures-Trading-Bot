@@ -32,23 +32,9 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 *  [✓] Read Info [✓] Enable Trading [✓] Enable Futures [X] Enable Withdrawals
 * Whitelist your IP address to further secure your account, and so that your API keys don't expire after 1 month.
 * Fill in your api keys into api_secret and api_key in [API_keys.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/API_keys.py).
-* ---
+---
 ### YouTube Channels with Strategy Ideas:
 [__Trade Pro__](https://www.youtube.com/channel/UCrXjzUN6EtlyhaaAerbPfkQ) | [__Strategy Testing__](https://www.youtube.com/c/TradingStrategyTesting) | [__Trading Journal__](https://www.youtube.com/c/TradingJournal1) | [__Critical Trading__](https://www.youtube.com/c/CriticalTrading) | [__The Moving Average__](https://www.youtube.com/channel/UCYFQzaZyTUzY-Tiytyv3HhA)  
----
-### __Back Test top performers:__
----
-__Not indicative of future returns, Check out the other backtests although results were poor on some that was due to transaction fees in many cases so maybe altering to take less trades or add confirmation could work. All of the strategies can be improved on but this is just a good place to start.__  
----
-__Golden Cross 15m candles__  
----
-![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/goldenCross/15m%20candles%202%20months%20ago.png)  
-__Triple EMA Stochastic RSI 15m candles__
----
-![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMAStochasticRSIATR/15m%20candles%202%20months%20ago.png)  
-__Triple EMA 4hr candles__
----
-![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMA/4hr%20candles%202%20months%20ago.png)
 ---
 ### Back test strategies in [Backtester.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtester.py)
 ---
@@ -63,7 +49,7 @@ Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * Some of the pre-coded strategies return a 'Type' variable, if a strategy returns the 'Type' variable you must call the SetSLTP() function from __TradingStrats.py__ in order to set the corresponding Stop loss value, and Take profit value, this function is found in TradingStrats.py
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 * use_heikin_ashi is a flag __line 59__ that will create the heikin ashi candles for use, Called CloseStream_H, OpenStream_H, LowStream_H, HighStream_H which can be referenced or passed to Strategies.
-
+---
 #### Using Downloaded data for backtesting
 ---
 * Reason to do this is to speed up backtesting 
@@ -87,6 +73,22 @@ __Strategies are implemented in Data_Set.py as a function named Make_decision() 
 * Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to work properly
 * You might draw inspiration for a strategy from one In __TradingStrats.py__
 ---
+
+### __Back Test top performers:__
+---
+__Not indicative of future returns, Check out the other backtests although results were poor on some that was due to transaction fees in many cases so maybe altering to take less trades or add confirmation could work. All of the strategies can be improved on but this is just a good place to start.__  
+---
+__Golden Cross 15m candles__  
+---
+![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/goldenCross/15m%20candles%202%20months%20ago.png)  
+__Triple EMA Stochastic RSI 15m candles__
+---
+![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMAStochasticRSIATR/15m%20candles%202%20months%20ago.png)  
+__Triple EMA 4hr candles__
+---
+![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMA/4hr%20candles%202%20months%20ago.png)
+---
+
 ###### (Depreciated) __Bot__(depreciated).py
 ###### (Depreciated) __Strategy_Tester(Depreciated).py__
 # Contact me [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
