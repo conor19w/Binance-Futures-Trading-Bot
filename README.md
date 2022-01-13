@@ -73,15 +73,7 @@ __replacing your_name with the user that you are logged into.__
 * Switch __load_data__ on in __Backtester.py__ on __line 120__, now when you run the script it will load from the folder & if the specified candlestick data isn't present in the folder then it will be downloaded and saved for future use.  
 __NOTE: this data is static so if you want up to date data in future you will have to manually delete the data from the folder on your desktop and then run the script again.
 Otherwise you can just turn load_data off and pull data from the server everytime you want to run a backtest.__
-#### Strategy_Tester.py
----
-__This script will run a strategy on every coin on Binance & then generate graphs and statistics which are saved to a folder on the desktop.__
-* __Line 29 to Line 43__ are the settings which should be clear with the comments I've provided
-* Create a folder on the desktop called Strategy_tester with another folder matching the __Strategy_name__ variable, this is where the data will be stored when you run.
-* Change __path1__ on __line 44__ to reflect the location of the Strategy_tester folder you've just created.
-* Uncomment a strategy after __line 258__ or else call your custom strategy here, following the same guidelines layed out in the backtesting section above.
-* Now run the script with the settings you've chosen and check up on the graphs and statistics that are created soon after.
----
+
 ### Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
 ---
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
@@ -95,8 +87,8 @@ __Strategies are implemented in Data_Set.py as a function named Make_decision() 
 * Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to work properly
 * You might draw inspiration for a strategy from one In __TradingStrats.py__
 ---
-###### (Depreciated) Run strategies live in [Bot__(depreciated).py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot__(depreciated).py)
-
+###### (Depreciated) __Bot__(depreciated).py
+###### (Depreciated) __Strategy_Tester(Depreciated).py__
 # Contact me [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 * If you have any querys about anything, or need me to explain any blocks of code please reach out to me at wconor539@gmail.com.
 * If you have any suggestions or requests please reach out to me as well.  
