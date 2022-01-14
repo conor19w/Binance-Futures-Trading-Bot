@@ -78,7 +78,7 @@ if save_data:
     load_data= 0
 
 #### Trade graph settings ####
-graph_trades_and_save_to_folder = 1 ##If true a graph for each of the trades taken by your strategy will be created and saved to a new folder on the desktop
+graph_trades_and_save_to_folder = 0 ##If true a graph for each of the trades taken by your strategy will be created and saved to a new folder on the desktop
 trade_graph_folder = 'trade_graphs' ##Name of folder you want to create and save the graphs in on the desktop
 
 ## indicators to graph.
@@ -86,18 +86,18 @@ trade_graph_folder = 'trade_graphs' ##Name of folder you want to create and save
 period_leading_to_signal = 15 ##How many bars before a signal to use for graph
 period_after_signal = 15 ##How many bars before a signal to use for graph
 use_heikin_ashi = 0
-use_emas = 1
+use_emas = 0
 use_smas = 0
 sma_lengths = [20,50,100] ##length of SMA's should match your strategy
 ema_lengths = [5,20,50] ##lengths of the EMA's should match your strategy
 ###These use the default settings if customization is needed you can do that down further in the script, look at sections starting 'if graph_trades_and_save_to_folder' to customize
-use_stochastic = 1
-use_stochastic_rsi = 0
-use_ease_of_movement = 0
-use_rsi = 0
-use_macd = 0
-use_atr = 0
-use_bollinger_bands = 0
+use_stochastic = 0
+use_stochastic_rsi = 0 ##coming soon
+use_ease_of_movement = 0 ##coming soon
+use_rsi = 0 ##coming soon
+use_macd = 0 ##coming soon
+use_atr = 0 ##coming soon
+use_bollinger_bands = 0 ##coming soon
 ###################################################################################################################################
 ###################################################################################################################################
 ###################################################################################################################################
