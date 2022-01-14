@@ -27,13 +27,7 @@ Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
 #import personal_strats as PS
 
-import math
-import statsmodels.api as sm
-from sklearn import tree
-from statsmodels.tsa.stattools import adfuller,coint
-from math import log10, floor
 from copy import copy
-import time
 trades = deque(maxlen=100000) ##keep track of shorts/Longs for graphing
 cashout = deque(maxlen=100000) ##keep track of Winning trades/ Losing trades
 signals= deque(maxlen=100000) ##when a siganl occured , NOT IN USE
@@ -75,7 +69,7 @@ if save_data:
     load_data= 0
 
 #### Trade graph settings ####
-graph_trades_and_save_to_folder = 1 ##If true a graph for each of the trades taken by your strategy will be created and saved to a new folder on the desktop
+graph_trades_and_save_to_folder = 0 ##If true a graph for each of the trades taken by your strategy will be created and saved to a new folder on the desktop
 trade_graph_folder = 'trade_graphs' ##Name of folder you want to create and save the graphs in on the desktop
 
 ## indicators to graph.
@@ -95,8 +89,8 @@ use_stochastic_rsi = 0
 use_ease_of_movement = 0
 use_rsi = 0
 use_macd = 0
-use_atr = 1
-use_bollinger_bands = 1
+use_atr = 0
+use_bollinger_bands = 0
 use_awesome=0 ##awesome oscillator
 use_adx=0
 use_cci=0
@@ -105,7 +99,7 @@ use_fi=0 ##force index
 use_mfi=0 ##money flow index
 use_tsi=0 ##True strength index
 use_acc_dist = 0 ##Accumulation Distribution
-use_vwap = 1 ##Volume weighted average price
+use_vwap = 0 ##Volume weighted average price
 ###################################################################################################################################
 ###################################################################################################################################
 ###################################################################################################################################
