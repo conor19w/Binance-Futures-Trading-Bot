@@ -378,6 +378,160 @@ def tripleEMA(CloseStream,OpenStream,prediction):
         prediction=1
     return prediction,3
 
+
+
+def heikin_ashi_ema2(CloseStream,OpenStream_H,HighStream_H,LowStream_H,CloseStream_H,prediction,stoplossval,takeprofitval,CurrentPos,Close_pos):
+    if CurrentPos == -99:
+        stoplossval = -99
+        takeprofitval = -99
+        prediction = -99
+        fastd = np.array(stochrsi_d(pd.Series(CloseStream)))
+        fastk = np.array(stochrsi_k(pd.Series(CloseStream)))
+        EMA200 = np.array(ema_indicator(pd.Series(CloseStream),window=200))
+
+        short_threshold = .7 ##If RSI falls below this don't open any shorts
+        long_threshold = .3 ##If RSI goes above this don't open any longs
+        TP_percent = .02
+        SL_percent = .005
+
+        ##Check Most recent Candles to see if we got a cross down and we are below 200EMA
+        if fastk[-2] > fastd[-2] and fastk[-1] < fastd[-1] and CloseStream_H[-1]<EMA200[-1]:
+            for i in range(10, 2, -1):
+                ##Find Bearish Meta Candle
+                if CloseStream_H[-i] < OpenStream_H[-i] and OpenStream_H[-i] == HighStream_H[-i]:
+                    for j in range(i, 2, -1):
+                        ##Find cross below EMA200
+                        if CloseStream_H[-j] > EMA200[-j] and CloseStream_H[-j+1] < EMA200[-j+1] and OpenStream_H[-j]>CloseStream_H[-j]:
+                            ##Now look for Overbought signal
+                            flag = 1
+                            for r in range(j,0,-1):
+                                if fastd[-r] < short_threshold or fastk[-r] < short_threshold:
+                                    flag = 0
+                            if flag:
+                                ##Open a trade
+                                prediction = 0
+                                stoplossval = SL_percent * CloseStream[-1]
+                                takeprofitval = TP_percent * CloseStream[-1]
+                                break ##break out of current loop
+                    if prediction == 0:
+                        break
+        ##Check Most recent Candles to see if we got a cross up and we are above 200EMA
+        elif fastk[-2] < fastd[-2] and fastk[-1] > fastd[-1] and CloseStream_H[-1] > EMA200[-1]:
+            for i in range(10, 2, -1):
+                ##Find Bullish Meta Candle
+                if CloseStream_H[-i] > OpenStream_H[-i] and OpenStream_H[-i] == LowStream_H[-i]:
+                    for j in range(i, 2, -1):
+                        ##Find cross above EMA200
+                        if CloseStream_H[-j] < EMA200[-j] and CloseStream_H[-j + 1] > EMA200[-j + 1] and OpenStream_H[-j]<CloseStream_H[-j]:
+                            ##Now look for OverSold signal
+                            flag = 1
+                            for r in range(j, 0, -1):
+                                if fastd[-r] > long_threshold or fastk[-r] > long_threshold:
+                                    flag = 0
+                            if flag:
+                                print("Fastk: ",fastk[-j:0])
+                                print("Fastd: ",fastd[-j:0])
+                                ##Open a trade
+                                prediction = 1
+                                stoplossval = SL_percent * CloseStream[-1]
+                                takeprofitval = TP_percent * CloseStream[-1]
+                                break ##break out of current loop
+                    if prediction == 1:
+                        break
+
+    elif CurrentPos == 1 and CloseStream_H[-1]<OpenStream_H[-1]:
+        Close_pos = 1
+    elif CurrentPos == 0 and CloseStream_H[-1]>OpenStream_H[-1]:
+        Close_pos = 1
+    else:
+        Close_pos = 0
+
+    return prediction,stoplossval,takeprofitval,Close_pos
+
+
+
+def heikin_ashi_ema(CloseStream,OpenStream_H,CloseStream_H,prediction,stoplossval,takeprofitval,CurrentPos,Close_pos):
+    if CurrentPos == -99:
+        stoplossval = -99
+        takeprofitval = -99
+        prediction = -99
+        fastd = np.array(stochrsi_d(pd.Series(CloseStream)))
+        fastk = np.array(stochrsi_k(pd.Series(CloseStream)))
+        EMA200 = np.array(ema_indicator(pd.Series(CloseStream),window=200))
+
+        short_threshold = .8 ##If RSI falls below this don't open any shorts
+        long_threshold = .2 ##If RSI goes above this don't open any longs
+        TP_percent = .03
+        SL_percent = .01
+        ##look for shorts
+        if fastk[-1] > short_threshold and fastd[-1] > short_threshold:
+            ##Check last 10 candles, a bit overkill
+            for i in range(10,2,-1):
+                if fastd[-i] >= .8 and fastk[-i] >= .8:
+                    ##both oscillators in the overbought position
+                    for j in range(i,2,-1):
+                        ##now check if we get a cross on the in the next few candles
+                        if fastk[-j] > fastd[-j] and fastk[-j+1] <fastd[-j+1]:
+                            flag = 1
+                            for r in range(j,2,-1):
+                                ##we passed the threshold
+                                if fastk[r] < short_threshold or fastd[r] < short_threshold:
+                                    flag = 0
+                                    break
+                            ##Cross down on the k and d lines, look for the candle stick pattern
+                            if CloseStream_H[-3]>EMA200[-3] and CloseStream_H[-2]<EMA200[-2] and flag:
+                                ##closed below 200EMA
+                                if CloseStream_H[-1] < OpenStream_H[-1]:
+                                    ##bearish candle
+                                    ##all conditions met so open a short
+                                    prediction = 0
+                                    stoplossval = SL_percent * CloseStream[-1]
+                                    takeprofitval = TP_percent * CloseStream[-1]
+                                else:
+                                    break ##break out of the current for loop
+                            else:
+                                break ##break out of the current for loop
+        ##Look for longs
+        elif fastk[-1] < long_threshold and fastd[-1] < long_threshold:
+            ##Check last 10 candles, a bit overkill
+            for i in range(10, 2, -1):
+                if fastd[-i] <= .2 and fastk[-i] <= .2:
+                    ##both oscillators in the overbought position
+                    for j in range(i, 2, -1):
+                        ##now check if we get a cross on the in the next few candles
+                        if fastk[-j] < fastd[-j] and fastk[-j + 1] > fastd[-j + 1] and fastk[-1] < long_threshold and fastd[-1] < long_threshold:
+                            flag = 1
+                            for r in range(j, 2, -1):
+                                ##we passed the threshold
+                                if fastk[r] > long_threshold or fastd[r] > long_threshold:
+                                    flag = 0
+                                    break
+                            ##Cross up on the k and d lines, look for the candle stick pattern
+                            ##candle crosses 200EMA
+                            if CloseStream_H[-3] < EMA200[-3] and CloseStream_H[-2] > EMA200[-2] and flag:
+                                ##closed above 200EMA
+                                if CloseStream_H[-1] > OpenStream_H[-1]:
+                                    ##bullish candle
+                                    ##all conditions met so open a long
+                                    prediction = 1
+                                    stoplossval = SL_percent * CloseStream[-1]
+                                    takeprofitval = TP_percent * CloseStream[-1]
+                                else:
+                                    break  ##break out of the current for loop
+                            else:
+                                break ##break out of the current for loop
+    elif CurrentPos == 1 and CloseStream_H[-1]<OpenStream_H[-1]:
+        Close_pos = 1
+    elif CurrentPos == 0 and CloseStream_H[-1]>OpenStream_H[-1]:
+        Close_pos = 1
+    else:
+        Close_pos = 0
+
+    return prediction,stoplossval,takeprofitval,Close_pos
+
+
+
+
 def tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,prediction):
     #newOrder = 0
     Close = np.array(CloseStream)
@@ -515,7 +669,7 @@ def stochBB(prediction,CloseStream):
 
 
 def breakout(prediction,CloseStream,VolumeStream,symbol):
-    invert=1 ## switch shorts and longs, basically fakeout instead of breakout
+    invert=0 ## switch shorts and longs, basically fakeout instead of breakout
     #if symbol=='BTCUSDT' or symbol=='ETHUSDT':
     #    invert=0
     Close = pd.Series(CloseStream).pct_change()
@@ -789,11 +943,11 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,predicti
     elif Type==6:
         ATR = np.array(average_true_range(pd.Series(HighStream), pd.Series(LowStream), pd.Series(CloseStream)))
         if prediction == 0 and CurrentPos == -99:
-            stoplossval = 0.5 * ATR[-1]
-            takeprofitval = 2 * ATR[-1]
+            stoplossval = .5 * ATR[-1]
+            takeprofitval = 3 * ATR[-1]
         elif prediction == 1 and CurrentPos == -99:
-            stoplossval = 0.5 * ATR[-1]
-            takeprofitval = 2 * ATR[-1]
+            stoplossval = .5 * ATR[-1]
+            takeprofitval = 3 * ATR[-1]
 
     elif Type==7:
         stoplossval = .007*CloseStream[-1]
