@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from copy import copy
 import TradingStrats as TS
 import create_trade_graphs
+import trade_graph_info
 from TradingStrats import SetSLTP
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
@@ -25,11 +26,7 @@ import download_Data as DD
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
 #import personal_strats as PS
-from ta.momentum import stochrsi_d,stochrsi_k,stoch,stoch_signal,rsi,awesome_oscillator
-from ta.trend import ema_indicator,macd_signal,macd,sma_indicator,adx,sma_indicator,cci
-from ta.volatility import average_true_range,bollinger_pband,bollinger_hband,bollinger_lband,bollinger_mavg,bollinger_wband
-from ta.volume import ease_of_movement,on_balance_volume,force_index,money_flow_index
-from ta.momentum import tsi
+
 import math
 import statsmodels.api as sm
 from sklearn import tree
@@ -83,21 +80,32 @@ trade_graph_folder = 'trade_graphs' ##Name of folder you want to create and save
 
 ## indicators to graph.
 # less is more, the graphs will be messy if too many are used
-period_leading_to_signal = 15 ##How many bars before a signal to use for graph
-period_after_signal = 15 ##How many bars before a signal to use for graph
+##If your strategy is lacking try turning on some of these and see if they could improve trades
+
+period_leading_to_signal = 20 ##How many bars before a signal to use for graph
+period_after_signal = 20 ##How many bars before a signal to use for graph
 use_heikin_ashi = 0
-use_emas = 1
+use_emas = 0
 use_smas = 0
 sma_lengths = [20,50,100] ##length of SMA's should match your strategy
 ema_lengths = [5,20,50] ##lengths of the EMA's should match your strategy
 ###These use the default settings if customization is needed you can do that down further in the script, look at sections starting 'if graph_trades_and_save_to_folder' to customize
-use_stochastic = 1
+use_stochastic = 0
 use_stochastic_rsi = 0
 use_ease_of_movement = 0
 use_rsi = 0
 use_macd = 0
-use_atr = 0
-use_bollinger_bands = 0
+use_atr = 1
+use_bollinger_bands = 1
+use_awesome=0 ##awesome oscillator
+use_adx=0
+use_cci=0
+use_obv=0 ##on balance volume
+use_fi=0 ##force index
+use_mfi=0 ##money flow index
+use_tsi=0 ##True strength index
+use_acc_dist = 0 ##Accumulation Distribution
+use_vwap = 1 ##Volume weighted average price
 ###################################################################################################################################
 ###################################################################################################################################
 ###################################################################################################################################
@@ -731,29 +739,12 @@ for i in range(len(High_1min[0])-1):
                             trade_data[f'Trade_{tradeNO}']['high'] = High[Trading_index][i - period_leading_to_signal:i + period_after_signal]
                         trade_data[f'Trade_{tradeNO}']['volume'] = Volume[Trading_index][i - period_leading_to_signal:i + period_after_signal]
 
-                        if use_emas:
-                            for x in ema_lengths:
-                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA'] = {}
-                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA']['axis'] = 0 ##0 for on the same graph as the candles
-                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA']['y'] = np.array(ema_indicator(pd.Series(Close[Trading_index][i-300:i+period_after_signal]),x))[-period_leading_to_signal-period_after_signal:]
-                        if use_smas:
-                            for x in sma_lengths:
-                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA'] = {}
-                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA']['axis'] = 0  ##0 for on the same graph as the candles
-                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA']['y'] = np.array(sma_indicator(pd.Series(Close[Trading_index][i-300:i+period_after_signal]),x))[-period_leading_to_signal-period_after_signal:]
-                        num_indicators = 2
-                        if use_stochastic:
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH']={}
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal'] = {}
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH']['axis'] = num_indicators
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH']['y'] = np.array(stoch(pd.Series(High[Trading_index][i - 300:i + period_after_signal]),pd.Series(Low[Trading_index][i - 300:i + period_after_signal]),
-                                                                        pd.Series(Close[Trading_index][i - 300:i + period_after_signal])))[-period_leading_to_signal - period_after_signal:]
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal']['axis'] = num_indicators
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal']['y'] = np.array(stoch_signal(pd.Series(High[Trading_index][i - 300:i + period_after_signal]),pd.Series(Low[Trading_index][i - 300:i + period_after_signal]),
-                                                                                pd.Series(Close[Trading_index][i - 300:i + period_after_signal])))[-period_leading_to_signal - period_after_signal:]
-                            num_indicators+=1
+                        trade_data[f'Trade_{tradeNO}'] = trade_graph_info.create_dict(trade_data[f'Trade_{tradeNO}'],
+                                    Trading_index,pd.Series(Volume[Trading_index][i - 300:i + period_after_signal]), pd.Series(High[Trading_index][i - 300:i + period_after_signal]),
+                                    pd.Series(Low[Trading_index][i - 300:i + period_after_signal]), pd.Series(Close[Trading_index][i - 300:i + period_after_signal]),
+                                    period_leading_to_signal, period_after_signal, use_emas,use_smas,sma_lengths, ema_lengths, use_stochastic, use_stochastic_rsi,
+                                    use_ease_of_movement,use_rsi, use_macd, use_atr, use_bollinger_bands, use_awesome, use_adx, use_cci,use_obv, use_fi, use_mfi, use_tsi,use_acc_dist,use_vwap)
 
-                        trade_data[f'Trade_{tradeNO}']['num_indicators'] = num_indicators
                     tradeNO += 1
 
                     break
@@ -808,29 +799,13 @@ for i in range(len(High_1min[0])-1):
                             trade_data[f'Trade_{tradeNO}']['low'] = Low[Trading_index][i - period_leading_to_signal:i + period_after_signal]
                             trade_data[f'Trade_{tradeNO}']['high'] = High[Trading_index][i - period_leading_to_signal:i + period_after_signal]
                         trade_data[f'Trade_{tradeNO}']['volume'] = Volume[Trading_index][i - period_leading_to_signal:i + period_after_signal]
-                        if use_emas:
-                            for x in ema_lengths:
-                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA'] = {}
-                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA']['axis'] = 0  ##0 for on the same graph as the candles
-                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA']['y'] = np.array(ema_indicator(pd.Series(Close[Trading_index][i - 300:i + period_after_signal]), x))[-period_leading_to_signal - period_after_signal:]
-                        if use_smas:
-                            for x in sma_lengths:
-                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA'] = {}
-                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA']['axis'] = 0  ##0 for on the same graph as the candles
-                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA']['y'] = np.array(sma_indicator(pd.Series(Close[Trading_index][i - 300:i + period_after_signal]), x))[-period_leading_to_signal - period_after_signal:]
-                        num_indicators = 2
-                        if use_stochastic:
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH'] = {}
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal'] = {}
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH']['axis'] = num_indicators
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH']['y'] = np.array(stoch(pd.Series(High[Trading_index][i - 300:i + period_after_signal]),pd.Series(Low[Trading_index][i - 300:i + period_after_signal]),
-                                      pd.Series(Close[Trading_index][i - 300:i + period_after_signal])))[-period_leading_to_signal - period_after_signal:]
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal']['axis'] = num_indicators
-                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal']['y'] = np.array(stoch_signal(pd.Series(High[Trading_index][i - 300:i + period_after_signal]),pd.Series(Low[Trading_index][i - 300:i + period_after_signal]),
-                                             pd.Series(Close[Trading_index][i - 300:i + period_after_signal])))[-period_leading_to_signal - period_after_signal:]
 
-                            num_indicators += 1
-                        trade_data[f'Trade_{tradeNO}']['num_indicators'] = num_indicators
+                        trade_data[f'Trade_{tradeNO}'] = trade_graph_info.create_dict(trade_data[f'Trade_{tradeNO}'],Trading_index,
+                            pd.Series(Volume[Trading_index][i - 300:i + period_after_signal]), pd.Series(High[Trading_index][i - 300:i + period_after_signal]),
+                            pd.Series(Low[Trading_index][i - 300:i + period_after_signal]),pd.Series(Close[Trading_index][i - 300:i + period_after_signal]),
+                            period_leading_to_signal,period_after_signal, use_emas,use_smas, sma_lengths,ema_lengths, use_stochastic,use_stochastic_rsi,
+                            use_ease_of_movement, use_rsi,use_macd, use_atr,use_bollinger_bands, use_awesome,use_adx, use_cci, use_obv, use_fi,use_mfi, use_tsi,use_acc_dist,use_vwap)
+
                     tradeNO += 1
                     break
 
