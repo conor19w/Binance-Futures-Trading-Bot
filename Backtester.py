@@ -11,6 +11,7 @@ from binance.client import Client
 import matplotlib.pyplot as plt
 from copy import copy
 import TradingStrats as TS
+import create_trade_graphs
 from TradingStrats import SetSLTP
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
@@ -24,13 +25,25 @@ import download_Data as DD
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
 #import personal_strats as PS
-#data.reset_index(level=0, inplace=True)
+from ta.momentum import stochrsi_d,stochrsi_k,stoch,stoch_signal,rsi,awesome_oscillator
+from ta.trend import ema_indicator,macd_signal,macd,sma_indicator,adx,sma_indicator,cci
+from ta.volatility import average_true_range,bollinger_pband,bollinger_hband,bollinger_lband,bollinger_mavg,bollinger_wband
+from ta.volume import ease_of_movement,on_balance_volume,force_index,money_flow_index
+from ta.momentum import tsi
+import math
+import statsmodels.api as sm
+from sklearn import tree
+from statsmodels.tsa.stattools import adfuller,coint
+from math import log10, floor
+from copy import copy
+import time
 trades = deque(maxlen=100000) ##keep track of shorts/Longs for graphing
 cashout = deque(maxlen=100000) ##keep track of Winning trades/ Losing trades
 signals= deque(maxlen=100000) ##when a siganl occured , NOT IN USE
 
+
 symbol = ['RAYUSDT', 'NEARUSDT', 'AUDIOUSDT', 'HNTUSDT', 'DGBUSDT', 'ZRXUSDT', 'BCHUSDT', 'HOTUSDT', 'ARUSDT', 'FLMUSDT',
-          'SFPUSDT', 'BELUSDT', 'RENUSDT', 'ADAUSDT', 'STORJUSDT', 'BZRXUSDT', 'CHRUSDT', 'WAVESUSDT', 'CHZUSDT', 'XRPUSDT',
+          'SFPUSDT', 'BELUSDT', 'RENUSDT', 'ADAUSDT', 'STORJUSDT', 'CHRUSDT', 'WAVESUSDT', 'CHZUSDT', 'XRPUSDT',
           'SANDUSDT', 'OCEANUSDT', 'ENJUSDT', 'YFIIUSDT', 'GRTUSDT', 'UNIUSDT', 'TLMUSDT', 'XTZUSDT', 'LUNAUSDT', 'EOSUSDT',
           'SKLUSDT', 'GTCUSDT', 'DOTUSDT', '1INCHUSDT', 'UNFIUSDT', 'FTMUSDT', 'RLCUSDT', 'ATOMUSDT', 'BLZUSDT', 'SNXUSDT',
           'SOLUSDT', 'ETCUSDT', 'BNBUSDT', 'CELRUSDT', 'OGNUSDT', 'ETHUSDT', 'NEOUSDT', 'TOMOUSDT', 'CELOUSDT', 'KLAYUSDT',
@@ -51,15 +64,40 @@ EffectiveAccountBalance = -99 ##set later
 OrderSIZE = .1 ## Amount of effective account balance to use per trade
 AccountBalance = 1000
 leverage = 10  ##leverage being used
-test_set = 1  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
-test_set_length = "2 month ago UTC"  ## valid strings 'x days/weeks/months/years ago UTC'
-time_period = 2  ##time_period in same units as test_set_length above
-TIME_INTERVAL = 5  ##Candlestick interval in minutes, valid options:1,   3,   5,  15,   30,  60, 120,240,360,480,720, 1440,4320, 10080, 40320
+test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
+time_period_units = 'day' ## day/week/month/year
+time_period = 2  ##Number of units
+TIME_INTERVAL = '1m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
 load_data = 1 ##load data from a file, download the data using download_Data.py
-use_heikin_ashi = 0 
+save_data = 0 ##set to true to overwrite data thats currently in price_data folder
 use_trailing_stop = 0 ##   (Causing rounding error i think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_distance = .01 ## 1% trailing stop activated by hitting the takeprofitval for a coin
+##################################################################################################################################
+##################################################################################################################################
+if save_data:
+    load_data= 0
 
+#### Trade graph settings ####
+graph_trades_and_save_to_folder = 1 ##If true a graph for each of the trades taken by your strategy will be created and saved to a new folder on the desktop
+trade_graph_folder = 'trade_graphs' ##Name of folder you want to create and save the graphs in on the desktop
+
+## indicators to graph.
+# less is more, the graphs will be messy if too many are used
+period_leading_to_signal = 15 ##How many bars before a signal to use for graph
+period_after_signal = 15 ##How many bars before a signal to use for graph
+use_heikin_ashi = 0
+use_emas = 1
+use_smas = 0
+sma_lengths = [20,50,100] ##length of SMA's should match your strategy
+ema_lengths = [5,20,50] ##lengths of the EMA's should match your strategy
+###These use the default settings if customization is needed you can do that down further in the script, look at sections starting 'if graph_trades_and_save_to_folder' to customize
+use_stochastic = 1
+use_stochastic_rsi = 0
+use_ease_of_movement = 0
+use_rsi = 0
+use_macd = 0
+use_atr = 0
+use_bollinger_bands = 0
 ###################################################################################################################################
 ###################################################################################################################################
 ###################################################################################################################################
@@ -95,7 +133,7 @@ profitgraph=[] #for graphing the profit change over time
 pp = pprint.PrettyPrinter()
 Sleep=0
 tradeNO=0 ##number of trades
-
+fees_paid = 0
 High_1min = []
 Low_1min = []
 Close_1min= []
@@ -109,17 +147,18 @@ fee = .00036
 trailing_stop_value = -99 ##gets set automatically depending on the trailing stop percent, if used above
 #####################################################################################################################
 #####################################################################################################################
+trade_data = {}
 
-period_string, time_CAGR = Helper.get_period_String(test_set_length, time_period)
+time_CAGR = Helper.get_CAGR(time_period_units, time_period)
 
 if load_data:
     print("Loading Price Data")
     i = 0
     while i < len(symbol):
         if test_set:
-            path = f"{DD.path}\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {period_string} ago UTC_test.joblib"
+            path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC_test.joblib"
         else:
-            path = f"{DD.path}\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {period_string} ago UTC.joblib"
+            path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC.joblib"
         try:
             price_data = load(path)
             Date.append(price_data['Date'])
@@ -136,8 +175,18 @@ if load_data:
             i += 1
         except:
             try:
-                print(f"Data doesnt exist in path: {path}, Downloading Data to specified path now...")
-                DD.get_data(TIME_INTERVAL,symbol[i],time_period,test_set,test_set_length)
+                print("File not Found, Checking if file exists with old naming convention and renaming if present...")
+                if test_set:
+                    TIME_INTERVAL_TEMP = Helper.get_TIME_INTERVAL(TIME_INTERVAL)
+                    old_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL_TEMP}_{time_period} {time_period_units} ago UTC_test.joblib"
+                    new_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC_test.joblib"
+                    #print(old_path,new_path)
+                else:
+                    TIME_INTERVAL_TEMP = Helper.get_TIME_INTERVAL(TIME_INTERVAL)
+                    old_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL_TEMP}_{time_period} {time_period_units} ago UTC.joblib"
+                    new_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC.joblib"
+                os.rename(old_path, new_path) ##rename to new convention
+                print("Rename Successful, Loading Data...")
                 price_data = load(path)
                 Date.append(price_data['Date'])
                 Open.append(price_data['Open'])
@@ -150,33 +199,56 @@ if load_data:
                 Close_1min.append(price_data['Close_1min'])
                 Open_1min.append(price_data['Open_1min'])
                 Date_1min.append(price_data['Date_1min'])
-                print("Download Successful, Loading Data now")
                 i += 1
-            except BinanceAPIException as e:
-                if str(e) == 'APIError(code=-1121): Invalid symbol.':
-                    print(f"Invalid Symbol: {symbol[i]}, removing from data set")
-                    symbol.pop(i)
-                else:
-                    print(f"Wrong path specified in download_Data.py,error: {e}")
-                    symbol.pop(i)
-                    print("Fix path issue or else turn off load_data")
-                    print("Contact me if still stuck @ wconor539@gmail.com")
+            except:
+                try:
+                    print(f"Data doesnt exist in path: {path}, Downloading Data to specified path now...")
+                    DD.get_data(TIME_INTERVAL,symbol[i],time_period,test_set,time_period_units)
+                    price_data = load(path)
+                    Date.append(price_data['Date'])
+                    Open.append(price_data['Open'])
+                    Close.append(price_data['Close'])
+                    High.append(price_data['High'])
+                    Low.append(price_data['Low'])
+                    Volume.append(price_data['Volume'])
+                    High_1min.append(price_data['High_1min'])
+                    Low_1min.append(price_data['Low_1min'])
+                    Close_1min.append(price_data['Close_1min'])
+                    Open_1min.append(price_data['Open_1min'])
+                    Date_1min.append(price_data['Date_1min'])
+                    print("Download Successful, Loading Data now")
+                    i += 1
+                except BinanceAPIException as e:
+                    if str(e) == 'APIError(code=-1121): Invalid symbol.':
+                        print(f"Invalid Symbol: {symbol[i]}, removing from data set")
+                        symbol.pop(i)
+                    else:
+                        print(f"Wrong path specified in download_Data.py,error: {e}")
+                        symbol.pop(i)
+                        print("Fix path issue or else turn off load_data")
+                        print("Contact me if still stuck @ wconor539@gmail.com")
 
 
 else:
-    for i in range(len(symbol)):
-        Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp, High_1min_temp, Low_1min_temp, Close_1min_temp,Open_1min_temp, Date_1min_temp = Helper.get_Klines(symbol[i], TIME_INTERVAL,time_period,test_set,test_set_length)
-        Date.append(Date_temp)
-        Open.append(Open_temp)
-        Close.append(Close_temp)
-        High.append(High_temp)
-        Low.append(Low_temp)
-        Volume.append(Volume_temp)
-        High_1min.append(High_1min_temp)
-        Low_1min.append(Low_1min_temp)
-        Close_1min.append(Close_1min_temp)
-        Open_1min.append(Open_1min_temp)
-        Date_1min.append(Date_1min_temp)
+    try:
+        i = 0
+        while i < len(symbol):
+            Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp, High_1min_temp, Low_1min_temp, Close_1min_temp,Open_1min_temp, Date_1min_temp = Helper.get_Klines(TIME_INTERVAL,symbol[i],time_period,test_set,time_period_units,save_data)
+            Date.append(Date_temp)
+            Open.append(Open_temp)
+            Close.append(Close_temp)
+            High.append(High_temp)
+            Low.append(Low_temp)
+            Volume.append(Volume_temp)
+            High_1min.append(High_1min_temp)
+            Low_1min.append(Low_1min_temp)
+            Close_1min.append(Close_1min_temp)
+            Open_1min.append(Open_1min_temp)
+            Date_1min.append(Date_1min_temp)
+            i+=1
+    except BinanceAPIException as e:
+        print(f"Failed to download data for {symbol[i]} removing from data_set, Error: {e}")
+        symbol.pop(i)
 print("Symbols:", symbol, "Start Balance:", AccountBalance,"fee:",fee)
 
 ##variables for CAGR calculation
@@ -211,10 +283,13 @@ OpenStream_H = []
 CloseStream_H = []
 HighStream_H = []
 LowStream_H = []
-if use_heikin_ashi:
-    print("Generating Heikin ashi candles will take a while")
-    Open_H, Close_H, High_H, Low_H = Helper.get_heikin_ashi(Open, Close, High, Low)
-    print("Finished")
+indices = []
+for j in range(period_leading_to_signal + period_after_signal):
+    indices.append(j)
+
+print("Generating Heikin ashi candles will take a while")
+Open_H, Close_H, High_H, Low_H = Helper.get_heikin_ashi(Open, Close, High, Low)
+print("Finished")
 
 for i in range(len(symbol)):
     CloseStream.append([])
@@ -238,7 +313,9 @@ Strategy = []
 Trade_start = []
 winning_trades = []
 losing_trades = []
-print(f"{TIME_INTERVAL} min OHLC Candle Sticks from a period of {time_period} {period_string}")
+print(f"{TIME_INTERVAL} OHLC Candle Sticks from a period of {time_period} {time_period_units} ago")
+original_time_interval = copy(TIME_INTERVAL)
+TIME_INTERVAL = Helper.get_TIME_INTERVAL(TIME_INTERVAL) ##Convert string to an integer for the rest of the script
 for i in range(len(High_1min[0])-1):
     #global trailing_stoploss,Highestprice
     if i%TIME_INTERVAL==0 and i!=0:
@@ -249,24 +326,14 @@ for i in range(len(High_1min[0])-1):
             HighStream[j] = flow.dataStream(HighStream[j], float(High[j][int(i/TIME_INTERVAL)-1]), 1, 300)
             LowStream[j] = flow.dataStream(LowStream[j], float(Low[j][int(i/TIME_INTERVAL)-1]), 1, 300)
             VolumeStream[j] = flow.dataStream(VolumeStream[j], float(Volume[j][int(i/TIME_INTERVAL)-1]), 1, 300)
-            if use_heikin_ashi:
-                OpenStream_H[j] = flow.dataStream(OpenStream_H[j], float(Open_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
-                CloseStream_H[j] = flow.dataStream(CloseStream_H[j], float(Close_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
-                HighStream_H[j] = flow.dataStream(HighStream_H[j], float(High_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
-                LowStream_H[j] = flow.dataStream(LowStream_H[j], float(Low_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
+            OpenStream_H[j] = flow.dataStream(OpenStream_H[j], float(Open_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
+            CloseStream_H[j] = flow.dataStream(CloseStream_H[j], float(Close_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
+            HighStream_H[j] = flow.dataStream(HighStream_H[j], float(High_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
+            LowStream_H[j] = flow.dataStream(LowStream_H[j], float(Low_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
     #print(len(OpenStream))
-    if len(OpenStream[0])>=100:
+    if len(OpenStream[0])>=300:
         prev_Account_Bal=copy(AccountBalance)
         EffectiveAccountBalance = AccountBalance*leverage
-
-        if len(OpenStream[0]) == 100:
-            pass
-            # Strategy = PS.sup_res(CloseStream[0]) ##not a strategy ive made public
-            #Strategy.append(PS.fractal2([1,0,0,1,0,0,0,0,0]))
-            #Strategy.append(PS.hidden_fractal([1,1,0,0,1,0,0,0,0]))
-            #Strategy.append(TS.pump(DateStream[j], CloseStream[j], VolumeStream[j]))
-
-
         if Trade_Stage == 1:
             if positionPrice - Open_1min[Trading_index][i] < -stoplossval and CurrentPos == 0:  # and not Hold_pos:
                 Profit += -stoplossval
@@ -279,8 +346,11 @@ for i in range(len(High_1min[0])-1):
                                 'Profit': -stoplossval * positionSize})
                 profitgraph.append(AccountBalance)
                 CurrentPos = -99
+                fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                 losing_trades.append(Trade_start)
                 Trade_Stage = 0
+                if graph_trades_and_save_to_folder:
+                    trade_data[f'Trade_{tradeNO - 1}']['label'] = 0
                 print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
                 print("Time:", Date_1min[Trading_index][i])
                 # print("Time Max",DateStream[max_pos])
@@ -294,8 +364,7 @@ for i in range(len(High_1min[0])-1):
                     pass
                 Trading_index = -99
 
-            elif Open_1min[Trading_index][
-                i] - positionPrice < -stoplossval and CurrentPos == 1:  # and not Hold_pos:
+            elif Open_1min[Trading_index][i] - positionPrice < -stoplossval and CurrentPos == 1:  # and not Hold_pos:
                 Profit += -stoplossval
                 month_return -= positionSize * stoplossval
                 AccountBalance += positionSize * -stoplossval
@@ -307,8 +376,11 @@ for i in range(len(High_1min[0])-1):
                 # CurrentPos = -99
                 profitgraph.append(AccountBalance)
                 CurrentPos = -99
+                fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                 losing_trades.append(Trade_start)
                 Trade_Stage = 0
+                if graph_trades_and_save_to_folder:
+                    trade_data[f'Trade_{tradeNO - 1}']['label'] = 0
                 print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
                 print("Time:", Date_1min[Trading_index][i])
                 # print("Time Max",DateStream[max_pos])
@@ -322,8 +394,7 @@ for i in range(len(High_1min[0])-1):
                     pass
                 Trading_index = -99
 
-            elif positionPrice - Open_1min[Trading_index][
-                i] > takeprofitval and CurrentPos == 0 and not use_trailing_stop:  # and not Hold_pos:
+            elif positionPrice - Open_1min[Trading_index][i] > takeprofitval and CurrentPos == 0 and not use_trailing_stop:  # and not Hold_pos:
                 Profit += takeprofitval
                 month_return += positionSize * takeprofitval
                 AccountBalance += positionSize * takeprofitval
@@ -334,8 +405,11 @@ for i in range(len(High_1min[0])-1):
                 cashout.append({'x': i, 'y': Open_1min[Trading_index][i], 'type': "win", 'position': 'short',
                                 'Profit': takeprofitval * positionSize})
                 CurrentPos = -99
+                fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                 profitgraph.append(AccountBalance)
                 Trade_Stage = 0
+                if graph_trades_and_save_to_folder:
+                    trade_data[f'Trade_{tradeNO - 1}']['label'] = 1
                 print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
                 print("Time:", Date_1min[Trading_index][i])
                 # print("Time Max",DateStream[max_pos])
@@ -350,8 +424,7 @@ for i in range(len(High_1min[0])-1):
                 winning_trades.append(Trade_start)
                 Trading_index = -99
 
-            elif Open_1min[Trading_index][
-                i] - positionPrice > takeprofitval and CurrentPos == 1 and not use_trailing_stop:  # and not Hold_pos:
+            elif Open_1min[Trading_index][i] - positionPrice > takeprofitval and CurrentPos == 1 and not use_trailing_stop:  # and not Hold_pos:
                 Profit += takeprofitval
                 month_return += positionSize * takeprofitval
                 AccountBalance += positionSize * takeprofitval
@@ -362,12 +435,15 @@ for i in range(len(High_1min[0])-1):
                 cashout.append({'x': i, 'y': Open_1min[Trading_index][i], 'type': "win", 'position': 'long',
                                 'Profit': takeprofitval * positionSize})
                 CurrentPos = -99
+                fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                 profitgraph.append(AccountBalance)
                 Trade_Stage = 0
                 print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
                 print("Time:", Date_1min[Trading_index][i])
                 # print("Time Max",DateStream[max_pos])
                 # print("Time Min", DateStream[min_pos])
+                if graph_trades_and_save_to_folder:
+                    trade_data[f'Trade_{tradeNO - 1}']['label'] = 1
                 try:
                     print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
                           (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
@@ -379,6 +455,7 @@ for i in range(len(High_1min[0])-1):
                 Trading_index = -99
 
             elif Close_pos == 1 and CurrentPos == 1:
+                prev_val = copy(AccountBalance)
                 prev_Profit = copy(Profit)
                 Profit += Open_1min[Trading_index][i] - positionPrice  ##sell at next open candle
                 month_return += positionSize * (Open_1min[Trading_index][i] - positionPrice)
@@ -395,9 +472,15 @@ for i in range(len(High_1min[0])-1):
                 Profit -= Open_1min[Trading_index][i] * fee
                 AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
                 month_return -= positionSize * Open_1min[Trading_index][i] * fee
+                fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                 CurrentPos = -99
                 profitgraph.append(AccountBalance)
                 Trade_Stage = 0
+                if graph_trades_and_save_to_folder:
+                    if prev_val > AccountBalance:
+                        trade_data[f'Trade_{tradeNO - 1}']['label'] = 1
+                    else:
+                        trade_data[f'Trade_{tradeNO - 1}']['label'] = 0
                 print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
                 print("Time:", Date_1min[Trading_index][i])
                 # print("Time Max",DateStream[max_pos])
@@ -416,6 +499,7 @@ for i in range(len(High_1min[0])-1):
                 print("Position Closed")
 
             elif Close_pos == 1 and CurrentPos == 0:
+                prev_val = copy(AccountBalance)
                 prev_Profit = copy(Profit)
                 Profit += positionPrice - Open_1min[Trading_index][i]
                 month_return += positionSize * (positionPrice - Open_1min[Trading_index][i])
@@ -432,10 +516,16 @@ for i in range(len(High_1min[0])-1):
                 Profit -= Open_1min[Trading_index][i] * fee
                 AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
                 month_return -= positionSize * Open_1min[Trading_index][i] * fee
+                fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                 CurrentPos = -99
                 profitgraph.append(AccountBalance)
                 Close_pos = 0
                 Trade_Stage = 0
+                if graph_trades_and_save_to_folder:
+                    if prev_val > AccountBalance:
+                        trade_data[f'Trade_{tradeNO - 1}']['label'] = 1
+                    else:
+                        trade_data[f'Trade_{tradeNO - 1}']['label'] = 0
                 print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
                 print("Time:", Date_1min[Trading_index][i])
                 # print("Time Max",DateStream[max_pos])
@@ -459,6 +549,7 @@ for i in range(len(High_1min[0])-1):
                                 1 + trailing_stop_distance)  ##price at which we will sell if moved up to
                     print("Trailing Stop: ", trailing_stop_value)
                 elif Open_1min[Trading_index][i] > trailing_stop_value and trailing_stop_value != -99:
+                    prev_val = copy(AccountBalance)
                     ##trailing stop has been hit
                     Profit += positionPrice - trailing_stop_value
                     month_return += positionSize * (positionPrice - trailing_stop_value)
@@ -466,6 +557,7 @@ for i in range(len(High_1min[0])-1):
                     print("Trailing Stop Profit", positionSize * (positionPrice - trailing_stop_value))
                     correct += 1
                     Profit -= trailing_stop_value * fee
+                    fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                     AccountBalance -= positionSize * trailing_stop_value * fee
                     month_return -= positionSize * trailing_stop_value * fee
                     cashout.append({'x': i, 'y': trailing_stop_value, 'type': "win", 'position': 'short',
@@ -475,6 +567,11 @@ for i in range(len(High_1min[0])-1):
                     trailing_stop_value = -99
                     winning_trades.append(Trade_start)
                     Trade_Stage = 0
+                    if graph_trades_and_save_to_folder:
+                        if prev_val>AccountBalance:
+                            trade_data[f'Trade_{tradeNO-1}']['label'] = 1
+                        else:
+                            trade_data[f'Trade_{tradeNO - 1}']['label'] = 0
                 elif Open_1min[Trading_index][i] * (
                         1 + trailing_stop_distance) < trailing_stop_value and trailing_stop_value != -99:
                     trailing_stop_value = Open_1min[Trading_index][i] * (
@@ -490,12 +587,14 @@ for i in range(len(High_1min[0])-1):
 
                 elif Open_1min[Trading_index][i] < trailing_stop_value and trailing_stop_value != -99:
                     ##trailing stop has been hit
+                    prev_val = copy(AccountBalance)
                     Profit += trailing_stop_value - positionPrice
                     month_return += positionSize * (trailing_stop_value - positionPrice)
                     AccountBalance += positionSize * (trailing_stop_value - positionPrice)
                     print("Trailing Stop Profit", positionSize * (trailing_stop_value - positionPrice))
                     correct += 1
                     Profit -= trailing_stop_value * fee
+                    fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                     AccountBalance -= positionSize * trailing_stop_value * fee
                     month_return -= positionSize * trailing_stop_value * fee
                     cashout.append({'x': i, 'y': trailing_stop_value, 'type': "win", 'position': 'short',
@@ -505,6 +604,11 @@ for i in range(len(High_1min[0])-1):
                     trailing_stop_value = -99
                     winning_trades.append(Trade_start)
                     Trade_Stage = 0
+                    if graph_trades_and_save_to_folder:
+                        if prev_val>AccountBalance:
+                            trade_data[f'Trade_{tradeNO-1}']['label'] = 1
+                        else:
+                            trade_data[f'Trade_{tradeNO - 1}']['label'] = 0
                 elif Open_1min[Trading_index][i] * (
                         1 - trailing_stop_distance) > trailing_stop_value and trailing_stop_value != -99:
                     trailing_stop_value = Open_1min[Trading_index][i] * (
@@ -518,33 +622,45 @@ for i in range(len(High_1min[0])-1):
                     break_even_flag=0
 
                     ##Public Strats :) :
-                    ## These strats require a call to SetSLTP as they return a Type param:
-                    #prediction[j],Type[j] = TS.StochRSIMACD(prediction[j], CloseStream[j],HighStream[j],LowStream[j])  ###########################################
-                    #prediction[j], signal1, signal2, Type[j] = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction[j])
-                    #prediction[j],Type[j]=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction[j])
-                    #prediction[j], Type[j] = TS.breakout(prediction[j],CloseStream[j],VolumeStream[j],symbol[j])
-                    #prediction[j],Type[j] = TS.stochBB(prediction[j],CloseStream[j])
-                    #prediction[j], Type[j] = TS.goldenCross(prediction[j],CloseStream[j])
-                    #prediction[j] , Type[j] = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
-                    #prediction[j],Close_pos,count,stoplossval[j] = TS.single_candle_swing_pump(prediction[j],CloseStream[j],HighStream[j],LowStream[j],CurrentPos[j],Close_pos,count,stoplossval[j])
-                    #stoplossval[j], takeprofitval[j] = SetSLTP(stoplossval[j], takeprofitval[j], CloseStream[j],HighStream[j], LowStream[j], prediction[j],CurrentPos[j], Type[j],SL=STOP,TP=TAKE)
-                    #print(prediction[j])
-                    #prediction[j],stoplossval[j], takeprofitval[j] = Strategy[j].make_decision(((OrderSIZE*EffectiveAccountBalance)/Open_1min[j][i])*AccountBalance,CloseStream[j][-1],VolumeStream[j][-1])
+                    if CurrentPos==-99:
+                        ## These strats require a call to SetSLTP as they return a Type param:
+                        #prediction,Type = TS.StochRSIMACD(prediction, CloseStream[j],HighStream[j],LowStream[j])  ###########################################
+                        #prediction, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction)
+                        prediction,Type=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction)
+                        #prediction, Type = TS.breakout(prediction,CloseStream[j],VolumeStream[j],symbol[j])
+                        #prediction,Type = TS.stochBB(prediction,CloseStream[j])
+                        #prediction, Type = TS.goldenCross(prediction,CloseStream[j])
+                        #prediction , Type = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
+                        #prediction,Close_pos,count,stoplossval = TS.single_candle_swing_pump(prediction,CloseStream[j],HighStream[j],LowStream[j],
+                        # CurrentPos,Close_pos,count,stoplossval) ##must be unhighlighted below as it returns the Close_pos var
+                        stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, CloseStream[j],HighStream[j], LowStream[j], prediction,CurrentPos, Type)
+                        #print(prediction)
+                        ##These strats don't require a call to SetSLTP:
+                        #prediction,stoplossval,takeprofitval = TS.fibMACD(prediction, CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
 
-                    ##These strats don't require a call to SetSLTP:
-                    #prediction[j],stoplossval[j],takeprofitval[j] = TS.fibMACD(prediction[j], CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
-                    #prediction[j],Highest_lowest,Close_pos = TS.trend_Ride(prediction[j], CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos[j], Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
-                    #prediction[j],Close_pos = TS.RSI_trade(prediction[j],CloseStream[j],CurrentPos[j],Close_pos)
-
-                    ##########################################################################################################################################################################
-                    ##########################################################################################################################################################################
+                    else:
+                        ##Must Call these every candle because they return Close_pos var
+                        #prediction,Close_pos,count,stoplossval = TS.single_candle_swing_pump(prediction,CloseStream[j],HighStream[j],LowStream[j],CurrentPos,Close_pos,count,stoplossval)
+                        #prediction,Highest_lowest,Close_pos = TS.trend_Ride(prediction, CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos, Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
+                        #prediction,Close_pos = TS.RSI_trade(prediction,CloseStream[j],CurrentPos,Close_pos)
+                        pass
+                        ##########################################################################################################################################################################
+                        ##########################################################################################################################################################################
                     ##Non public Strats sorry :( :
-                    # prediction[j],Type[j] = Strategy.Check_for_sup_res(CloseStream[j],OpenStream[j],HighStream[j],LowStream[j]) ##not a strategy ive made public
-                    #prediction[j], stoplossval[j], takeprofitval[j] = Strategy[j].check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction[j]) ##not a strategy ive made public
+                    # prediction, stoplossval, takeprofitval, Close_pos = \
+                    #    TS.heikin_ashi_ema2(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], prediction, stoplossval, takeprofitval, CurrentPos, Close_pos)
+                    # prediction, stoplossval, takeprofitval, Close_pos = \
+                    #    PS.heikin_ashi_ema(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], prediction, stoplossval, takeprofitval, CurrentPos, Close_pos)
+                    # if Close_pos:
+                    #    Close_pos = 0
+                    # prediction, stoplossval[j], takeprofitval[j], Close_pos = \
+                    #    PS.meta_candle_heikin_ashi(CloseStream[j],OpenStream_H[j],HighStream_H[j],LowStream_H[j],CloseStream_H[j],prediction[j],stoplossval[j],takeprofitval[j],CurrentPos[j],Close_pos)
+                    # prediction,Type = Strategy.Check_for_sup_res(CloseStream[j],OpenStream[j],HighStream[j],LowStream[j]) ##not a strategy ive made public
+                    #prediction, stoplossval, takeprofitval = Strategy[j].check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction) ##not a strategy ive made public
                     #if prediction[j]==1:
                     #    prediction[j]=-99
                     ##########################################################################################################################################################################
-            #Close_pos = Strategy[j].Trade_timer(CurrentPos[j], Close_pos)
+                #Close_pos = Strategy[j].Trade_timer(CurrentPos, Close_pos)
 
             ##If the trade won't cover the fee & profit something then don't place it
             #if (prediction[j] == 1 or prediction[j] == 0) and (.00125 * Close_1min[j][-1] > takeprofitval[j]) and (not pair_Trading) and (not Hold_pos):
@@ -558,10 +674,11 @@ for i in range(len(High_1min[0])-1):
                     positionPrice = Open_1min[Trading_index][i]##next open candle #CloseStream[j][len(CloseStream[j]) - 1]
                     positionSize= (OrderSIZE*EffectiveAccountBalance)/positionPrice
                     CurrentPos = 0
-                    tradeNO+=1
+
                     Trade_Stage = 1
                     trades.append({'x':i,'y':positionPrice,'type': "sell",'current_price': positionPrice})
                     Profit -= Open_1min[Trading_index][i] * fee
+                    fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                     AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
                     month_return -= positionSize * Open_1min[Trading_index][i] * fee
                     prediction = -99
@@ -579,6 +696,54 @@ for i in range(len(High_1min[0])-1):
                               takeprofitval)
                     except Exception as e:
                         pass
+
+                    if graph_trades_and_save_to_folder:
+                        trade_data[f'Trade_{tradeNO}'] = {}
+                        trade_data[f'Trade_{tradeNO}']['direction'] = CurrentPos
+                        trade_data[f'Trade_{tradeNO}']['stop_loss'] = positionPrice+stoplossval
+                        trade_data[f'Trade_{tradeNO}']['take_profit'] = positionPrice-takeprofitval
+                        trade_data[f'Trade_{tradeNO}']['entry_price'] = positionPrice
+                        trade_data[f'Trade_{tradeNO}']['entry_index'] = period_leading_to_signal
+                        trade_data[f'Trade_{tradeNO}']['symbol'] = symbol[Trading_index]
+                        trade_data[f'Trade_{tradeNO}']['date'] = Date[Trading_index][i]
+                        trade_data[f'Trade_{tradeNO}']['indices'] = indices
+                        if use_heikin_ashi:
+                            trade_data[f'Trade_{tradeNO}']['close'] = Close_H[Trading_index][i-period_leading_to_signal:i+period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['open'] = Open_H[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['low'] = Low_H[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['high'] = High_H[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                        else:
+                            trade_data[f'Trade_{tradeNO}']['close'] = Close[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['open'] = Open[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['low'] = Low[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['high'] = High[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                        trade_data[f'Trade_{tradeNO}']['volume'] = Volume[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+
+                        if use_emas:
+                            for x in ema_lengths:
+                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA'] = {}
+                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA']['axis'] = 0 ##0 for on the same graph as the candles
+                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA']['y'] = np.array(ema_indicator(pd.Series(Close[Trading_index][i-300:i+period_after_signal]),x))[-period_leading_to_signal-period_after_signal:]
+                        if use_smas:
+                            for x in sma_lengths:
+                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA'] = {}
+                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA']['axis'] = 0  ##0 for on the same graph as the candles
+                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA']['y'] = np.array(sma_indicator(pd.Series(Close[Trading_index][i-300:i+period_after_signal]),x))[-period_leading_to_signal-period_after_signal:]
+                        num_indicators = 2
+                        if use_stochastic:
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH']={}
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal'] = {}
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH']['axis'] = num_indicators
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH']['y'] = np.array(stoch(pd.Series(High[Trading_index][i - 300:i + period_after_signal]),pd.Series(Low[Trading_index][i - 300:i + period_after_signal]),
+                                                                        pd.Series(Close[Trading_index][i - 300:i + period_after_signal])))[-period_leading_to_signal - period_after_signal:]
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal']['axis'] = num_indicators
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal']['y'] = np.array(stoch_signal(pd.Series(High[Trading_index][i - 300:i + period_after_signal]),pd.Series(Low[Trading_index][i - 300:i + period_after_signal]),
+                                                                                pd.Series(Close[Trading_index][i - 300:i + period_after_signal])))[-period_leading_to_signal - period_after_signal:]
+                            num_indicators+=1
+
+                        trade_data[f'Trade_{tradeNO}']['num_indicators'] = num_indicators
+                    tradeNO += 1
+
                     break
 
 
@@ -587,10 +752,11 @@ for i in range(len(High_1min[0])-1):
                     positionPrice = Open_1min[Trading_index][i] ##next open candle
                     positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice
                     CurrentPos = 1
-                    tradeNO += 1
+
                     Trade_Stage = 1
                     trades.append({'x':i,'y':positionPrice, 'type': "buy",'current_price': positionPrice})
                     Profit -= Open_1min[Trading_index][i] * fee
+                    fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                     AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
                     month_return -= positionSize * Open_1min[Trading_index][i] * fee
                     prediction = -99
@@ -608,6 +774,52 @@ for i in range(len(High_1min[0])-1):
                               takeprofitval)
                     except Exception as e:
                         pass
+
+                    if graph_trades_and_save_to_folder:
+                        trade_data[f'Trade_{tradeNO}'] = {}
+                        trade_data[f'Trade_{tradeNO}']['direction'] = CurrentPos
+                        trade_data[f'Trade_{tradeNO}']['stop_loss'] = positionPrice-stoplossval
+                        trade_data[f'Trade_{tradeNO}']['take_profit'] = positionPrice+takeprofitval
+                        trade_data[f'Trade_{tradeNO}']['entry_price'] = positionPrice
+                        trade_data[f'Trade_{tradeNO}']['entry_index'] = period_leading_to_signal
+                        trade_data[f'Trade_{tradeNO}']['symbol'] = symbol[Trading_index]
+                        trade_data[f'Trade_{tradeNO}']['date'] = Date[Trading_index][i]
+                        trade_data[f'Trade_{tradeNO}']['indices'] = indices
+                        if use_heikin_ashi:
+                            trade_data[f'Trade_{tradeNO}']['close'] = Close_H[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['open'] = Open_H[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['low'] = Low_H[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['high'] = High_H[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                        else:
+                            trade_data[f'Trade_{tradeNO}']['close'] = Close[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['open'] = Open[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['low'] = Low[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                            trade_data[f'Trade_{tradeNO}']['high'] = High[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                        trade_data[f'Trade_{tradeNO}']['volume'] = Volume[Trading_index][i - period_leading_to_signal:i + period_after_signal]
+                        if use_emas:
+                            for x in ema_lengths:
+                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA'] = {}
+                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA']['axis'] = 0  ##0 for on the same graph as the candles
+                                trade_data[f'Trade_{tradeNO}'][f'{x}EMA']['y'] = np.array(ema_indicator(pd.Series(Close[Trading_index][i - 300:i + period_after_signal]), x))[-period_leading_to_signal - period_after_signal:]
+                        if use_smas:
+                            for x in sma_lengths:
+                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA'] = {}
+                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA']['axis'] = 0  ##0 for on the same graph as the candles
+                                trade_data[f'Trade_{tradeNO}'][f'{x}SMA']['y'] = np.array(sma_indicator(pd.Series(Close[Trading_index][i - 300:i + period_after_signal]), x))[-period_leading_to_signal - period_after_signal:]
+                        num_indicators = 2
+                        if use_stochastic:
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH'] = {}
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal'] = {}
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH']['axis'] = num_indicators
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH']['y'] = np.array(stoch(pd.Series(High[Trading_index][i - 300:i + period_after_signal]),pd.Series(Low[Trading_index][i - 300:i + period_after_signal]),
+                                      pd.Series(Close[Trading_index][i - 300:i + period_after_signal])))[-period_leading_to_signal - period_after_signal:]
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal']['axis'] = num_indicators
+                            trade_data[f'Trade_{tradeNO}'][f'STOCH_signal']['y'] = np.array(stoch_signal(pd.Series(High[Trading_index][i - 300:i + period_after_signal]),pd.Series(Low[Trading_index][i - 300:i + period_after_signal]),
+                                             pd.Series(Close[Trading_index][i - 300:i + period_after_signal])))[-period_leading_to_signal - period_after_signal:]
+
+                            num_indicators += 1
+                        trade_data[f'Trade_{tradeNO}']['num_indicators'] = num_indicators
+                    tradeNO += 1
                     break
 
         if i%1440==0 and i!=0:
@@ -616,10 +828,10 @@ for i in range(len(High_1min[0])-1):
             #day_start_equity=AccountBalance
         elif i==len(High_1min[0])-1:
             Daily_return.append(AccountBalance)#(day_return/day_start_equity)
-        if i%43800==0 and i!=0 and ((time_period == 1 and test_set_length[2] == 'y') or (time_period == 12 and test_set_length[3] == 'm') or (time_period==52 and test_set_length[3] == 'w')):
+        if i%43800==0 and i!=0 and ((time_period == 1 and time_period_units == 'year') or (time_period == 12 and time_period_units == 'month') or (time_period==52 and time_period_units == 'week')):
             monthly_return.append(month_return)
             month_return=0
-        elif i==len(High_1min[0])-1 and ((time_period == 1 and test_set_length[2] == 'y') or (time_period == 12 and test_set_length[3] == 'm') or (time_period==52 and test_set_length[3] == 'w')):
+        elif i==len(High_1min[0])-1 and ((time_period == 1 and time_period_units == 'year') or (time_period == 12 and time_period_units == 'month') or (time_period==52 and time_period_units == 'week')):
             monthly_return.append(month_return)
             month_return = 0
 
@@ -641,19 +853,20 @@ calmar_ratio = CAGR/max_dd
 
 
 
-print(f"{TIME_INTERVAL} min OHLC Candle Sticks from a period of {time_period} {period_string}")
+print("\nSettings:")
+print('leverage:',leverage)
+print('order_Size:',OrderSIZE)
+print('fee:',fee)
+print("\nSymbol(s):", symbol, "fee:", fee)
+print(f"{original_time_interval} OHLC Candle Sticks from a period of {time_period} {time_period_units} ago")
 print("Account Balance:", AccountBalance)
 print("% Gain on Account:", ((AccountBalance - originalBalance) * 100) / originalBalance)
 print("Total Returns:",AccountBalance-start_equity,"\n")
-month=0
+
 if len(monthly_return)>0:
     print("Monthly Returns")
-for x in ["month 1","month 2","month 3","month 4","month 5","month 6","month 7","month 8","month 9","month 10","month 11","month 12"]:
-    try:
-        print(f"{x}: {monthly_return[month]}")
-        month+=1
-    except:
-        pass
+    for i in range(len(monthly_return)):
+        print(f"Month {i+1}: {monthly_return[i]}")
 
 print(f"Annualized Volatility: {round(vol,4)}%")
 print(f"CAGR: {round(CAGR,4)}%")
@@ -661,14 +874,7 @@ print("Sharpe Ratio:",round(Sharpe_ratio,4))
 print("Sortino Ratio:",round(sortino_ratio,4))
 print("Calmar Ratio:",round(calmar_ratio,4))
 print(f"Max Drawdown: {round(max_dd,4)}%")
-#ax1 = plt.subplot2grid((6, 1), (0, 0), rowspan=5, colspan=1)
-#ax2 = plt.subplot2grid((6, 1), (5, 0), rowspan=1, colspan=1)
-'''for trade in trades:
-    #trade_date = mpl_dates.date2num([pd.to_datetime(trade['Date'])])[0]
-    if trade['type'] == 'buy':
-        ax1.scatter(trade['x'],trade['y']-.08, c='green', label='green', s=120, edgecolors='none',marker="^")
-    else:
-        ax1.scatter(trade['x'],trade['y']+.08, c='red', label='red', s=120, edgecolors='none', marker="v")'''
+
 longwins=0
 longlosses=0
 shortwins=0
@@ -676,12 +882,6 @@ shortlosses=0
 longCash = 0
 shortCash = 0
 for trade in cashout:
-    #trade_date = mpl_dates.date2num([pd.to_datetime(trade['Date'])])[0]
-    '''if trade['type'] == 'win':
-        ax1.scatter(trade['x'],trade['y']-.08, c='green', label='green', s=80, edgecolors='none',marker=".") ##green dot for successful trade
-    else:
-        ax1.scatter(trade['x'],trade['y']+.08, c='red', label='red', s=80, edgecolors='none', marker=".") ##red dot for unsuccessful trade'''
-
     if trade['position']=='long' and trade['type'] == 'win':
         longwins+=1
     elif trade['position']=='long' and trade['type'] == 'loss':
@@ -695,47 +895,37 @@ for trade in cashout:
         longCash+=float(trade['Profit'])
     else:
         shortCash+=float(trade['Profit'])
-'''for trade in signals:
-    #trade_date = mpl_dates.date2num([pd.to_datetime(trade['Date'])])[0]
-    if trade['type'] == 'signal1-0':
-        ax1.scatter(trade['x'],trade['y']-.08, c='red', label='green', s=80, edgecolors='none',marker="|")
-    elif trade['type'] == 'signal1-1':
-        ax1.scatter(trade['x'],trade['y']+.08, c='green', label='red', s=80, edgecolors='none', marker="|")
-    elif trade['type'] == 'signal2-1':
-        ax1.scatter(trade['x'], trade['y'] + .08, c='green', label='red', s=80, edgecolors='none', marker="1")
-    elif trade['type'] == 'signal2-0':
-        ax1.scatter(trade['x'], trade['y'] + .08, c='red', label='red', s=80, edgecolors='none', marker="1")'''
 
-#ax1.plot(Close,label="Price",color="blue")
 print("Trades Made: ",len(trades))
 print("Successful Trades:",correct)
 print("Accuracy: ",(correct/len(trades))*100)
+print("Win/Loss Ratio: ",{correct/(tradeNO-correct)})
+print("Profit before fees: ",shortCash+longCash)
+print("Trading fees paid: ",fees_paid)
 try:
     print("# Shorts:", shortwins + shortlosses)
-    print("Short W/L:",shortwins/shortlosses)
+    print("Short W/L ratio:",shortwins/shortlosses)
     print("Profit from Shorts:",shortCash)
 except Exception as E:
     pass
 try:
     print("# Longs:",longwins+longlosses)
-    print("Long W/L:", longwins / longlosses)
+    print("Long W/L ratio:", longwins / longlosses)
     print("Profit from Longs:", longCash)
 except Exception as E:
     pass
 print("Winning Trades: ",winning_trades,"\n","Losing Trades: ",losing_trades)
 
-
-#xs = [x[0] for x in profitgraph]
-#ys = [x[1] for x in profitgraph]
-#x, y = zip(*profitgraph)
-#ax2.plot(profitgraphx, profitgraphy)
 plt.plot(profitgraph)
-#ax2.plot(profitgraph)
-#plt.plot(Close)
-
-plt.title(f"{symbol}: {TIME_INTERVAL}min from a period of {time_period} {period_string}")
+plt.title(f"{symbol}: {original_time_interval} from a period of {time_period} {time_period_units} ago")
 plt.ylabel('Dollars')
 plt.xlabel('# Trades')
-#plt.legend(loc=2)
 plt.show()
-#time.sleep(60) ##don't close for 1 min
+
+if graph_trades_and_save_to_folder:
+    try:
+        os.makedirs(f'{DD.path}{trade_graph_folder}\\winning trades')
+        os.makedirs(f'{DD.path}{trade_graph_folder}\\losing trades')
+    except:
+        pass
+    create_trade_graphs.plot(trade_data,trade_graph_folder)
