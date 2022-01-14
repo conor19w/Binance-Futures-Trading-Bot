@@ -78,7 +78,7 @@ if save_data:
     load_data= 0
 
 #### Trade graph settings ####
-graph_trades_and_save_to_folder = 0 ##If true a graph for each of the trades taken by your strategy will be created and saved to a new folder on the desktop
+graph_trades_and_save_to_folder = 1 ##If true a graph for each of the trades taken by your strategy will be created and saved to a new folder on the desktop
 trade_graph_folder = 'trade_graphs' ##Name of folder you want to create and save the graphs in on the desktop
 
 ## indicators to graph.
@@ -86,18 +86,18 @@ trade_graph_folder = 'trade_graphs' ##Name of folder you want to create and save
 period_leading_to_signal = 15 ##How many bars before a signal to use for graph
 period_after_signal = 15 ##How many bars before a signal to use for graph
 use_heikin_ashi = 0
-use_emas = 0
+use_emas = 1
 use_smas = 0
 sma_lengths = [20,50,100] ##length of SMA's should match your strategy
 ema_lengths = [5,20,50] ##lengths of the EMA's should match your strategy
 ###These use the default settings if customization is needed you can do that down further in the script, look at sections starting 'if graph_trades_and_save_to_folder' to customize
-use_stochastic = 0
-use_stochastic_rsi = 0 ##coming soon
-use_ease_of_movement = 0 ##coming soon
-use_rsi = 0 ##coming soon
-use_macd = 0 ##coming soon
-use_atr = 0 ##coming soon
-use_bollinger_bands = 0 ##coming soon
+use_stochastic = 1
+use_stochastic_rsi = 0
+use_ease_of_movement = 0
+use_rsi = 0
+use_macd = 0
+use_atr = 0
+use_bollinger_bands = 0
 ###################################################################################################################################
 ###################################################################################################################################
 ###################################################################################################################################
@@ -318,20 +318,32 @@ original_time_interval = copy(TIME_INTERVAL)
 TIME_INTERVAL = Helper.get_TIME_INTERVAL(TIME_INTERVAL) ##Convert string to an integer for the rest of the script
 for i in range(len(High_1min[0])-1):
     #global trailing_stoploss,Highestprice
-    if i%TIME_INTERVAL==0 and i!=0:
+    if (i%TIME_INTERVAL==0 and i!=0) or TIME_INTERVAL==1:
         for j in range(len(High_1min)):
-            DateStream[j] = flow.dataStream(DateStream[j], Date[j][int(i/TIME_INTERVAL)-1], 1, 300)
-            OpenStream[j] = flow.dataStream(OpenStream[j], float(Open[j][int(i/TIME_INTERVAL)-1]), 1, 300)
-            CloseStream[j] = flow.dataStream(CloseStream[j], float(Close[j][int(i/TIME_INTERVAL)-1]), 1, 300)
-            HighStream[j] = flow.dataStream(HighStream[j], float(High[j][int(i/TIME_INTERVAL)-1]), 1, 300)
-            LowStream[j] = flow.dataStream(LowStream[j], float(Low[j][int(i/TIME_INTERVAL)-1]), 1, 300)
-            VolumeStream[j] = flow.dataStream(VolumeStream[j], float(Volume[j][int(i/TIME_INTERVAL)-1]), 1, 300)
-            OpenStream_H[j] = flow.dataStream(OpenStream_H[j], float(Open_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
-            CloseStream_H[j] = flow.dataStream(CloseStream_H[j], float(Close_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
-            HighStream_H[j] = flow.dataStream(HighStream_H[j], float(High_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
-            LowStream_H[j] = flow.dataStream(LowStream_H[j], float(Low_H[j][int(i / TIME_INTERVAL) - 1]), 1, 300)
+            DateStream[j].append(Date[j][int(i/TIME_INTERVAL)-1])
+            OpenStream[j].append(float(Open[j][int(i/TIME_INTERVAL)-1]))
+            CloseStream[j].append(float(Close[j][int(i/TIME_INTERVAL)-1]))
+            HighStream[j].append(float(High[j][int(i/TIME_INTERVAL)-1]))
+            LowStream[j].append(float(Low[j][int(i/TIME_INTERVAL)-1]))
+            VolumeStream[j].append(float(Volume[j][int(i/TIME_INTERVAL)-1]))
+            OpenStream_H[j].append(float(Open_H[j][int(i / TIME_INTERVAL)-1]))
+            CloseStream_H[j].append(float(Close_H[j][int(i / TIME_INTERVAL)-1]))
+            HighStream_H[j].append(float(High_H[j][int(i / TIME_INTERVAL)-1]))
+            LowStream_H[j].append(float(Low_H[j][int(i / TIME_INTERVAL)-1]))
     #print(len(OpenStream))
     if len(OpenStream[0])>=300:
+        for j in range(len(High_1min)):
+            DateStream[j].pop(0)
+            OpenStream[j].pop(0)
+            CloseStream[j].pop(0)
+            HighStream[j].pop(0)
+            LowStream[j].pop(0)
+            VolumeStream[j].pop(0)
+            OpenStream_H[j].pop(0)
+            CloseStream_H[j].pop(0)
+            HighStream_H[j].pop(0)
+            LowStream_H[j].pop(0)
+
         prev_Account_Bal=copy(AccountBalance)
         EffectiveAccountBalance = AccountBalance*leverage
         if Trade_Stage == 1:
