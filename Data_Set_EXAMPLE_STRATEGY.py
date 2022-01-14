@@ -76,6 +76,11 @@ class Data_set:
 
         ######################### Strategy ###############################
         ###Can use indicators from ta python & check out TradingStrats.py for some strategy ideas
+        ######################################################################################
+        ~~~~~~~~~~~~~~~~~~~~~~~ tripleEMA Strategy from TradingStrats.py ~~~~~~~~~~~~~~~~~~~~~
+        ######################################################################################
+        
+        
         ##Convert Close to self.Close to reference each coins close
         EMA3 = np.array(ema_indicator(pd.Series(self.Close), window=5))
         EMA6 = np.array(ema_indicator(pd.Series(self.Close), window=20))
