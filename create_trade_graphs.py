@@ -48,12 +48,12 @@ def plot(trade_data,trade_graph_folder):
         #subfigs = fig.subfigures(2+len(trade_data[f'Trade_{i}']),1)
 
         if direction == 1:
-            axs[0].plot(entry_index, low[open.index(entry_price)]*.998, '^', markersize=15, color='g')
+            axs[0].plot(entry_index, low[entry_index]*.998, '^', markersize=15, color='g')
             axs[0].axhline(y=take_profit, color='g', linestyle='-',label='Take Profit')
             axs[0].axhline(y=entry_price, color='y', linestyle='-',label='PNL')
             axs[0].axhline(y=stop_loss, color='r', linestyle='-',label='Stop Loss')
         else:
-            axs[0].plot(entry_index, high[open.index(entry_price)]*1.002, 'v', markersize=15, color='r')
+            axs[0].plot(entry_index, high[entry_index]*1.002, 'v', markersize=15, color='r')
             axs[0].axhline(y=take_profit, color='g', linestyle='-', label='Take Profit')
             axs[0].axhline(y=entry_price, color='y', linestyle='-', label='PNL')
             axs[0].axhline(y=stop_loss, color='r', linestyle='-', label='Stop Loss')
