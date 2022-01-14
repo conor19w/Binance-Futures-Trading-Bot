@@ -32,6 +32,20 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Whitelist your IP address to further secure your account, and so that your API keys don't expire after 1 month.
 * Fill in your api keys into api_secret and api_key in [API_keys.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/API_keys.py).
 ---
+### Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
+---
+__Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
+---
+__There is no default strategy Currently, but one can be implemented in the data_set.py file in the make_Decision() function__
+* In __Bot.py__ on __line 341__ are the settings.
+* Choose the Interval you want to trade and the buffer of candlesticks your strategy will need.
+* leverage and order_size should be changed acording to your preference
+* symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
+* Trailing stop: set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy.  
+__Strategies are implemented in Data_Set.py as a function named Make_decision() in the Data_set class__
+* Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to work properly
+* You might draw inspiration for a strategy from one In __TradingStrats.py__
+---
 ### YouTube Channels with Strategy Ideas:
 [__Trade Pro__](https://www.youtube.com/channel/UCrXjzUN6EtlyhaaAerbPfkQ) | [__Strategy Testing__](https://www.youtube.com/c/TradingStrategyTesting) | [__Trading Journal__](https://www.youtube.com/c/TradingJournal1) | [__Critical Trading__](https://www.youtube.com/c/CriticalTrading) | [__The Moving Average__](https://www.youtube.com/channel/UCYFQzaZyTUzY-Tiytyv3HhA)  
 ---
@@ -62,19 +76,6 @@ __replacing your_name with the user that you are logged into.__
 * Switch __load_data__ on in __Backtester.py__ on __line 71__, now when you run the script it will load from the folder & if the specified candlestick data isn't present in the folder then it will be downloaded and saved for future use.  
 * To overwrite existing data you can set the save_data flag = 1 & your data will be overwritten with new data.
 * Otherwise you can just turn load_data off and pull data from the server everytime you want to run a backtest.
-
-### Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
----
-__Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
----
-* In __Bot.py__ on __line 341__ are the settings.
-* Choose the Interval you want to trade and the buffer of candlesticks your strategy will need.
-* leverage and order_size should be changed acording to your preference
-* symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
-* Trailing stop: set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy.  
-__Strategies are implemented in Data_Set.py as a function named Make_decision() in the Data_set class__
-* Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to work properly
-* You might draw inspiration for a strategy from one In __TradingStrats.py__
 ---
 
 ### __Back Test top performers:__
