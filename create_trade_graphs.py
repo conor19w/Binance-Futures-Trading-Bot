@@ -59,7 +59,7 @@ def plot(trade_data,trade_graph_folder):
             axs[0].axhline(y=stop_loss, color='r', linestyle='-', label='Stop Loss')
 
         # define width of candlestick elements
-        width = .25
+        width = .4
         width2 = .05
 
 
