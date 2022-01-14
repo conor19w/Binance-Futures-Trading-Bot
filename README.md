@@ -50,9 +50,9 @@ Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 * Heikin Ashi Candles are available under: CloseStream_H, OpenStream_H, LowStream_H, HighStream_H which can be referenced or passed to Strategies.
 ## __New:__ Graph your trades by Altering the Trade Graph settings at the top of the script:  
-* Ensure your path in __download_data.py__ is correct as specified.
-* A folder will be made on your desktop named with the trade_graph_folder paramameter you provide.
-* Setting should be easy to follow just change the flags and the indicators will appear in the graphs.
+* Ensure your __path__ in __download_data.py__ is correct as specified.
+* A folder will be made on your desktop named after the trade_graph_folder paramameter you provide.
+* Settings should be easy to follow just change the flags and the indicators will be added to the graphs.
 ![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/losing%20trades/ALICEUSDT_16.png) 
 ---
 #### Using Downloaded data for backtesting
