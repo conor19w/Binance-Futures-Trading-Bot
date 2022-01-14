@@ -1,7 +1,6 @@
 # Binance-Futures-Trading-Bot [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 ---
 ## To-Do list: (suggest something and I'll add it) 😃
-* Add option to overwrite saved price data so you don't have to manually delete the old data.
 * Maybe Provide a standard bot strategy for Bot...
 * GUI if people were interested (could take a while I've no experience here)
 * Speed up Data Set aligner in Backtester with multiprocessing
@@ -10,9 +9,9 @@
 * [Heikin Ashi](https://www.youtube.com/watch?v=g3XV1hjCv_8) something like this
 ---
 ## Latest Changes (if any):
+* Added a feature in the backtester that graphs all the trades made and Indicators at the time of the trade and saves them to folders labelled winning and losing trades, to help with analysis of strategies. (14/01/22) See below in the graph trades section.
+* Updated Backtester to make it more user friendly & changed naming convention for saved data. (14/01/22)
 * At the end of a backtest you can see the date & time that every trade was taken. So you can debug strategies by checking on tradingview/binance. (07/01/22)
-* Added some backtest results. (27/12/21)
-* Mainly Bug fixes lately no new features.
 ---
 ## Technical Analysis driven Crypto Trading bot on Binance Futures 📈 ₿ 🚀 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 [__Join My Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
@@ -40,25 +39,31 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 ---
 * Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. symbol = ['BTCUSDT' , 'ETHUSDT'] , this would run your strategy on BTC and ETH.
 Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
-* The data is split into an in-sample set and a test set, the flag __test_set__ decides which set we are running the strategy on, both sets are in same units as test_set_length but we adjust __time_period__ variable to change the in-sample data set length. The reason for splitting the data like this is to optimize parameters on the in-sample set and then once optimized run the strategy on the test-set to see if you have overfit your model by cherry picking values for parameters that suit the in-sample data.
+* The data is split into an in-sample set and a test set, the flag __test_set__ decides which set we are running the strategy on.
+* The reason for splitting the data like this is to optimize parameters on the in-sample set and then once optimized run the strategy on the test-set to see if you have overfit your model by cherry picking values for parameters that suit the in-sample data.
 * The __time_period__ variable is the length of time in the past from today excluding the test-set, to run the strategy on. This is in the same units as the test_set_length.
 * The __TIME_INTERVAL__ variable is the interval for the candlesticks we want to trade on.
-* Settings are found at the top of the script, __line 50__.
+* Settings are found at the top of the script, __line 63__.
 * Trailing Stop: turn the __use_trailing_stop__ flag on, specify the __trailing_stop_distance__ in decimal, now when a takeprofit margin target is hit the trailing stop will be placed and automatically & adjusted based off new Lows or Highs in price and the __trailing_stop_distance__ you've specified.
-* Next we want to choose our TA strategy, this is done after __line 520__ , uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
+* Next we want to choose our TA strategy, this is done after __line 626__ , uncomment a strategy or call a new strategy you have written yourself here, the 'prediction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
 * Some of the pre-coded strategies return a 'Type' variable, if a strategy returns the 'Type' variable you must call the SetSLTP() function from __TradingStrats.py__ in order to set the corresponding Stop loss value, and Take profit value, this function is found in TradingStrats.py
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
-* use_heikin_ashi is a flag __line 59__ that will create the heikin ashi candles for use, Called CloseStream_H, OpenStream_H, LowStream_H, HighStream_H which can be referenced or passed to Strategies.
+* Heikin Ashi Candles are available under: CloseStream_H, OpenStream_H, LowStream_H, HighStream_H which can be referenced or passed to Strategies.
+## __New:__ Graph your trades by Altering the Trade Graph settings at the top of the script:  
+* Ensure your path in __download_data.py__ is correct as specified.
+* A folder will be made on your desktop named with the trade_graph_folder paramameter you provide.
+* Setting should be easy to follow just change the flags and the indicators will appear in the graphs.
+![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/losing%20trades/ALICEUSDT_16.png) 
 ---
 #### Using Downloaded data for backtesting
 ---
 * Reason to do this is to speed up backtesting 
 * Create a folder on the desktop called __price_data__.
-*  In __download_Data.py__ change the __path__ to f"C:\\Users\\your_name\\Desktop\\price_data  
+*  In __download_Data.py__ change the __path__ to f"C:\\Users\\your_name\\Desktop\\  
 __replacing your_name with the user that you are logged into.__
-* Switch __load_data__ on in __Backtester.py__ on __line 120__, now when you run the script it will load from the folder & if the specified candlestick data isn't present in the folder then it will be downloaded and saved for future use.  
-__NOTE: this data is static so if you want up to date data in future you will have to manually delete the data from the folder on your desktop and then run the script again.
-Otherwise you can just turn load_data off and pull data from the server everytime you want to run a backtest.__
+* Switch __load_data__ on in __Backtester.py__ on __line 71__, now when you run the script it will load from the folder & if the specified candlestick data isn't present in the folder then it will be downloaded and saved for future use.  
+* To overwrite existing data you can set the save_data flag = 1 & your data will be overwritten with new data.
+* Otherwise you can just turn load_data off and pull data from the server everytime you want to run a backtest.
 
 ### Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
 ---
