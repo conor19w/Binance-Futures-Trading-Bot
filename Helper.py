@@ -3,31 +3,36 @@ from binance.exceptions import BinanceAPIException
 from binance.enums import *
 from datetime import timezone,datetime,date,timedelta
 import API_keys
+from joblib import load,dump
+from download_Data import path
 client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
-def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
+
+def get_TIME_INTERVAL(TIME_INTERVAL):
+    ##Convert String to minutes
+    if TIME_INTERVAL[1]=='m':
+        TIME_INTERVAL = int(TIME_INTERVAL[0])
+    elif TIME_INTERVAL[2]=='m':
+        TIME_INTERVAL = int(TIME_INTERVAL[0])*10+int(TIME_INTERVAL[1])
+    elif TIME_INTERVAL[1]=='h':
+        TIME_INTERVAL = int(TIME_INTERVAL[0])*60
+    elif TIME_INTERVAL[2]=='h':
+        TIME_INTERVAL = int(TIME_INTERVAL[0])*10*60 + int(TIME_INTERVAL[1])*60
+    elif TIME_INTERVAL[1]=='d':
+        TIME_INTERVAL = int(TIME_INTERVAL[0]) * 1440
+    elif TIME_INTERVAL[1]=='w':
+        TIME_INTERVAL = int(TIME_INTERVAL[0]) * 1440*7
+    elif TIME_INTERVAL[1]=='M':
+        TIME_INTERVAL = int(TIME_INTERVAL[0]) * 1440*7*4
+    return TIME_INTERVAL
+def get_Klines(TIME_INTERVAL,symbol,time_period,test_set,time_period_units,save_data):
     print(f"Downloading CandleStick Data for {symbol}...")
-    start_string = ""
-    ##Parse test_set_length to work out the time period we are taking data from, being sure to leave the test_set alone
-    if test_set_length[2]=='d':
-        start_string = f"{time_period+int(test_set_length[0])} days ago UTC"
-    elif test_set_length[3]=='d':
-        start_string = f"{time_period + int(test_set_length[0])*10+int(test_set_length[1])} days ago UTC"
-    elif test_set_length[4]=='d':
-        start_string = f"{time_period + int(test_set_length[0])*100+int(test_set_length[1])*10 + int(test_set_length[0])} days ago UTC"
-    elif test_set_length[2]=='w':
-        start_string = f"{time_period+int(test_set_length[0])} weeks ago UTC"
-    elif test_set_length[3]=='w':
-        start_string = f"{time_period + int(test_set_length[0])*10+int(test_set_length[1])} weeks ago UTC"
-    elif test_set_length[2]=='m':
-        start_string = f"{time_period+int(test_set_length[0])} months ago UTC"
-    elif test_set_length[3]=='m':
-        start_string = f"{time_period + int(test_set_length[0])*10+int(test_set_length[1])} months ago UTC"
-    elif test_set_length[2]=='y':
-        start_string = f"{time_period + int(test_set_length[0])} years ago UTC"
+    LENGTH = f"{time_period * 2} {time_period_units} ago UTC"  ##default to make the test set the same size as the non-test set
+    time_period = f'{time_period} {time_period_units} ago UTC'
+
     Date = []
     Open = []
     Close = []
-    High =[]
+    High = []
     Low = []
     Volume = []
     High_1min = []
@@ -36,281 +41,106 @@ def get_Klines(symbol,TIME_INTERVAL,time_period,test_set,test_set_length):
     Open_1min = []
     Date_1min = []
     ##klines for candlestick patterns and TA
-    if TIME_INTERVAL==1 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==3 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3MINUTE,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==5 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==15 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==30 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==60 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==120 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_2HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==240 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_4HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==360 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_6HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==480 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_8HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==720 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_12HOUR,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==1440 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==4320 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3DAY,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==10080 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1WEEK,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==40320 and not test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MONTH,start_str=start_string,end_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==1 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==3 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3MINUTE,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==5 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==15 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==30 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==60 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==120 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_2HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==240 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_4HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==360 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_6HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==480 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_8HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==720 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_12HOUR,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==1440 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))) )
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==4320 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3DAY,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==10080 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1WEEK,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    elif TIME_INTERVAL==40320 and test_set:
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MONTH,start_str=test_set_length):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
     if not test_set:
-        ##klines used for stoploss and takeprofit
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string,end_str=test_set_length):
-            # print(kline)
-            Date_1min.append(datetime.utcfromtimestamp((round(kline[0]/1000))))
-            Open_1min.append(float(kline[1]))
-            High_1min.append(float(kline[2]))
-            Low_1min.append(float(kline[3]))
-            Close_1min.append(float(kline[4]))
-    elif test_set:
-        ##klines used for stoploss and takeprofit
-        for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE, start_str=test_set_length):
-            # print(kline)
-            Date_1min.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-            Open_1min.append(float(kline[1]))
-            High_1min.append(float(kline[2]))
-            Low_1min.append(float(kline[3]))
-            Close_1min.append(float(kline[4]))
+        for kline in client.futures_historical_klines(symbol, TIME_INTERVAL, start_str=time_period):
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
 
-    for j in range(len(Date_1min)):
-        if Date_1min[j] == Date[0]:
-            High_1min = High_1min[j:]
-            Low_1min = Low_1min[j:]
-            Date_1min = Date_1min[j:]
-            Close_1min = Close_1min[j:]
-            Open_1min = Open_1min[j:]
+        if TIME_INTERVAL != '1m':
+            for kline in client.futures_historical_klines(symbol, '1m', start_str=time_period):
+                # print(kline)
+                Date_1min.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
+                Open_1min.append(float(kline[1]))
+                High_1min.append(float(kline[2]))
+                Low_1min.append(float(kline[3]))
+                Close_1min.append(float(kline[4]))
+        else:
+            Date_1min = Date
+            Open_1min = Open
+            High_1min = High
+            Low_1min = Low
+            Close_1min = Close
+    else:
+        for kline in client.futures_historical_klines(symbol, TIME_INTERVAL, start_str=LENGTH, end_str=time_period):
+            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+        if TIME_INTERVAL != '1m':
+            for kline in client.futures_historical_klines(symbol, '1m', start_str=LENGTH, end_str=time_period):
+                # print(kline)
+                Date_1min.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
+                Open_1min.append(float(kline[1]))
+                High_1min.append(float(kline[2]))
+                Low_1min.append(float(kline[3]))
+                Close_1min.append(float(kline[4]))
+        else:
+            Date_1min = Date
+            Open_1min = Open
+            High_1min = High
+            Low_1min = Low
+            Close_1min = Close
+
+    ##Align minute data with higher timeframe
+    for i in range(len(Date)):
+        found_flag = 0
+        for j in range(len(Date_1min)):
+            if Date_1min[j] == Date[i]:
+                High_1min = High_1min[j:]
+                Low_1min = Low_1min[j:]
+                Date_1min = Date_1min[j:]
+                Close_1min = Close_1min[j:]
+                Open_1min = Open_1min[j:]
+                High = High[i:]
+                Low = Low[i:]
+                Date = Date[i:]
+                Close = Close[i:]
+                Open = Open[i:]
+                Volume = Volume[i:]
+                found_flag = 1
+                break
+        if found_flag:
             break
-    for j in range(len(Date_1min)):
-        if Date_1min[j] == Date[-1]:
-            High_1min = High_1min[:j]
-            Low_1min = Low_1min[:j]
-            Date_1min = Date_1min[:j]
-            Close_1min = Close_1min[:j]
-            Open_1min = Open_1min[:j]
+    for i in range(-1, -len(Date), -1):
+        found_flag = 0
+        for j in range(-1, -len(Date_1min), -1):
+            if Date_1min[j] == Date[i]:
+                High_1min = High_1min[:j]
+                Low_1min = Low_1min[:j]
+                Date_1min = Date_1min[:j]
+                Close_1min = Close_1min[:j]
+                Open_1min = Open_1min[:j]
+                High = High[:i]
+                Low = Low[:i]
+                Date = Date[:i]
+                Close = Close[:i]
+                Open = Open[:i]
+                Volume = Volume[:i]
+                found_flag = 1
+                break
+        if found_flag:
             break
+
+
+    if save_data:
+        price_data = {'Date': Date, 'Open': Open, 'Close': Close, 'High': High, 'Low': Low,
+                      'Volume': Volume, 'High_1min': High_1min, 'Low_1min': Low_1min, 'Close_1min': Close_1min,
+                      'Open_1min': Open_1min, 'Date_1min': Date_1min}
+        try:
+            print("Saving Price data")
+            if test_set:
+                dump(price_data,f"{path}\\price_data\\{symbol}_{TIME_INTERVAL}_{time_period}_test.joblib")  ## address of where you will keep the data,
+            else:
+                dump(price_data,f"{path}\\price_data\\{symbol}_{TIME_INTERVAL}_{time_period}.joblib")  ## address of where you will keep the data,
+        except:
+            print("Failed to save data")
+
     return Date,Open,Close,High,Low,Volume,High_1min,Low_1min,Close_1min,Open_1min,Date_1min
 
 def get_coin_attrib(symbol):
@@ -442,7 +272,7 @@ def get_coin_attrib(symbol):
         Order_precision = 1
 
     elif symbol == "RENUSDT":
-        Coin_precision = 5
+        Coin_precision = 4
         Order_precision = 0
 
     elif symbol == "COTIUSDT":
@@ -546,8 +376,8 @@ def get_coin_attrib(symbol):
         Order_precision = 1
 
     elif symbol =='BELUSDT':
-        Coin_precision = 0
-        Order_precision = 4
+        Coin_precision = 4
+        Order_precision = 0
 
     elif symbol =='CHRUSDT':
         Coin_precision = 4
@@ -1030,23 +860,18 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
 
     return Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume#,locations_to_pop
 
-def get_period_String(test_set_length,time_period):
-    period_string = ''
+def get_CAGR(time_period_units,time_period):
     time_CAGR = -99
-    if test_set_length[2] == 'd' or test_set_length[3] == 'd' or test_set_length[4] == 'd':
+    if time_period_units == 'day':
         time_CAGR = time_period / 365
-        period_string = 'day'
-    elif test_set_length[2] == 'w' or test_set_length[3] == 'w':
+    elif time_period_units == 'week':
         time_CAGR = time_period / 52
-        period_string = 'week'
-    elif test_set_length[2] == 'm' or test_set_length[3] == 'm':
+    elif time_period_units == 'month':
         time_CAGR = time_period/ 12
-        period_string = 'month'
-    elif test_set_length[2] == 'y':
+    elif time_period_units == 'year':
         time_CAGR = time_period
-        period_string = 'year'
 
-    return period_string,time_CAGR
+    return time_CAGR
 
 def get_heikin_ashi(Open, Close, High, Low):
     Open_heikin = []
