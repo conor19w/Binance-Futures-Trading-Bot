@@ -83,7 +83,7 @@ def create_dict(Current_dict,Trading_index,Volume,High,Low,Close,period_leading_
     if use_obv:
         Current_dict[f'OBV'] = {}
         Current_dict[f'OBV']['axis'] = num_indicators
-        Current_dict[f'OBV']['y'] = np.array(on_balance_volume(Close))[-period_leading_to_signal - period_after_signal:]
+        Current_dict[f'OBV']['y'] = np.array(on_balance_volume(Close,Volume))[-period_leading_to_signal - period_after_signal:]
         num_indicators += 1
     if use_fi:
         Current_dict[f'Force_index'] = {}
