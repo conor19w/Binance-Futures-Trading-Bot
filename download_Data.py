@@ -11,7 +11,7 @@ def get_data(TIME_INTERVAL,symbol,time_period,test_set,time_period_units,path=''
     if path=='':
         path = f"C:\\Users\\conor\\Desktop\\"
 
-    path+='price_data\\'
+    path+='price_data'
 
     LENGTH = f"{time_period*2} {time_period_units} ago UTC" ##default to make the test set the same size as the non-test set
     time_period = f'{time_period} {time_period_units} ago UTC'
