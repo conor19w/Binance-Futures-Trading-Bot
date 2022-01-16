@@ -159,9 +159,9 @@ if load_data:
     i = 0
     while i < len(symbol):
         if test_set:
-            path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC_test.joblib"
+            path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC_test.joblib"
         else:
-            path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC.joblib"
+            path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC.joblib"
         try:
             price_data = load(path)
             Date.append(price_data['Date'])
@@ -181,13 +181,13 @@ if load_data:
                 print("File not Found, Checking if file exists with old naming convention and renaming if present...")
                 if test_set:
                     TIME_INTERVAL_TEMP = Helper.get_TIME_INTERVAL(TIME_INTERVAL)
-                    old_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL_TEMP}_{time_period} {time_period_units} ago UTC_test.joblib"
-                    new_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC_test.joblib"
+                    old_path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL_TEMP}_{time_period} {time_period_units} ago UTC_test.joblib"
+                    new_path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC_test.joblib"
                     #print(old_path,new_path)
                 else:
                     TIME_INTERVAL_TEMP = Helper.get_TIME_INTERVAL(TIME_INTERVAL)
-                    old_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL_TEMP}_{time_period} {time_period_units} ago UTC.joblib"
-                    new_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC.joblib"
+                    old_path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL_TEMP}_{time_period} {time_period_units} ago UTC.joblib"
+                    new_path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC.joblib"
                 os.rename(old_path, new_path) ##rename to new convention
                 print("Rename Successful, Loading Data...")
                 price_data = load(path)
