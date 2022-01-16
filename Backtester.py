@@ -206,7 +206,7 @@ if load_data:
             except:
                 try:
                     print(f"Data doesnt exist in path: {path}, Downloading Data to specified path now...")
-                    DD.get_data(TIME_INTERVAL,symbol[i],time_period,test_set,time_period_units)
+                    DD.get_data(TIME_INTERVAL,symbol[i],time_period,test_set,time_period_units,DD.path)
                     price_data = load(path)
                     Date.append(price_data['Date'])
                     Open.append(price_data['Open'])
