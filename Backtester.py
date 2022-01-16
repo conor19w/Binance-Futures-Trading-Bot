@@ -898,12 +898,6 @@ except Exception as E:
     pass
 print("Winning Trades: ",winning_trades,"\n","Losing Trades: ",losing_trades)
 
-plt.plot(profitgraph)
-plt.title(f"{symbol}: {original_time_interval} from a period of {time_period} {time_period_units} ago")
-plt.ylabel('Dollars')
-plt.xlabel('# Trades')
-plt.show()
-
 if graph_trades_and_save_to_folder:
     try:
         os.makedirs(f'{DD.path}{trade_graph_folder}\\winning trades')
@@ -911,3 +905,11 @@ if graph_trades_and_save_to_folder:
     except:
         pass
     create_trade_graphs.plot(trade_data,trade_graph_folder)
+          
+plt.plot(profitgraph)
+plt.title(f"{symbol}: {original_time_interval} from a period of {time_period} {time_period_units} ago")
+plt.ylabel('Dollars')
+plt.xlabel('# Trades')
+plt.show()
+
+
