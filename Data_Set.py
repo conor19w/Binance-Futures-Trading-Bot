@@ -7,8 +7,9 @@ from ta.volume import ease_of_movement,on_balance_volume,force_index,money_flow_
 from ta.momentum import tsi
 import numpy as np
 import pandas as pd
+
 class Data_set:
-    def __init__(self,symbol,Open,Close,High,Low,Volume,Date,OP,CP,index):
+    def __init__(self,symbol,Open,Close,High,Low,Volume,Date,OP,CP,index,use_heikin_ashi):
         self.symbol = symbol
         self.Open = Open
         self.Close = Close
@@ -21,6 +22,12 @@ class Data_set:
         self.index = index
         self.add_hist_complete = 0
         self.new_data = 0
+        self.use_heikin_ashi = use_heikin_ashi
+        self.Open_H = []
+        self.Close_H = []
+        self.High_H = []
+        self.Low_H = []
+
 
     def add_hist(self,Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp):
         while 0<len(self.Date):
@@ -44,6 +51,18 @@ class Data_set:
         self.High = High_temp
         self.Low = Low_temp
         self.Volume = Volume_temp
+        if self.use_heikin_ashi:
+            ##Create Heikin Ashi bars
+            for i in range(len(self.Close)):
+                self.Close_H.append((self.Open[i] + self.Close[i] + self.Low[i] + self.High[i]) / 4)
+                if i == 0:
+                    self.Open_H.append((self.Close_H[i] + self.Open[i]) / 2)
+                    self.High_H.append(self.High[i])
+                    self.Low_H.append(self.Low[i])
+                else:
+                    self.Open_H.append((self.Open_H[i-1] + self.Close_H[i-1]) / 2)
+                    self.High_H.append(max(self.High[i], self.Open_H[i], self.Close_H[i]))
+                    self.Low_H.append(min(self.Low[i], self.Open_H[i], self.Close_H[i]))
         self.add_hist_complete = 1
 
     def handle_socket_message(self,msg):
@@ -63,6 +82,15 @@ class Data_set:
                 self.High.pop(0)
                 self.Low.pop(0)
                 self.Date.pop(0)
+                if self.use_heikin_ashi:
+                    self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
+                    self.Open_H.append((self.Open_H[-2] + self.Close_H[-2]) / 2)
+                    self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
+                    self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
+                    self.Open_H.pop(0)
+                    self.Close_H.pop(0)
+                    self.Low_H.pop(0)
+                    self.High_H.pop(0)
                 self.new_data = 1
 
     def Make_decision(self):
@@ -77,8 +105,6 @@ class Data_set:
         ###Can use indicators from ta python & check out TradingStrats.py for some strategy ideas
 
 
+
         return Trade_Direction,stoplossval,takeprofitval
-
-
-
 
