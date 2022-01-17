@@ -720,7 +720,7 @@ for i in range(len(High_1min[0])-1):
                         trade_data[f'Trade_{tradeNO}']['entry_price'] = positionPrice
                         trade_data[f'Trade_{tradeNO}']['entry_index'] = period_leading_to_signal
                         trade_data[f'Trade_{tradeNO}']['symbol'] = symbol[Trading_index]
-                        trade_data[f'Trade_{tradeNO}']['date'] = Date[Trading_index][i]
+                        trade_data[f'Trade_{tradeNO}']['date'] = Date_1min[Trading_index][i]
                         trade_data[f'Trade_{tradeNO}']['indices'] = indices
                         if use_heikin_ashi:
                             trade_data[f'Trade_{tradeNO}']['close'] = Close_H[Trading_index][i-period_leading_to_signal:i+period_after_signal]
