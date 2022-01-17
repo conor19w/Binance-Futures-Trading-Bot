@@ -345,6 +345,7 @@ if __name__ == '__main__':
     order_Size = .03  ##percent of Effective account to risk ie. (leverage X Account Balance) X order_size
     use_trailing_stop = 0 ##trailing stoploss
     trailing_stop_percent = .01 ## 1% trailing stop
+    use_heikin_ashi = 0
 
     pp = pprint.PrettyPrinter() ##for printing json text cleanly (inspect binance API call returns)
     client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret)  ##Binance keys needed to get historical data/ Trade on an account
@@ -405,7 +406,7 @@ if __name__ == '__main__':
             ##Class for keeping Data_sets'''
         if flag == 1:
             ##Class for keeping Data_sets and executing Strategy
-            Data.append(Data_set(symbol[i], [], [], [], [], [], [], Order_precision_temp, Coin_precision_temp, i))
+            Data.append(Data_set(symbol[i], [], [], [], [], [], [], Order_precision_temp, Coin_precision_temp, i,use_heikin_ashi))
             streams.append(twm.start_kline_futures_socket(callback=Data[i].handle_socket_message, symbol=Data[i].symbol,
                                                           interval=Interval))
             i += 1
@@ -433,4 +434,5 @@ if __name__ == '__main__':
 
     P1 = Process(target=Check_for_signals,args=(pipe2,leverage,order_Size,client,use_trailing_stop,trailing_stop_percent)) ##Process that handles order execution
     P1.start()
+
     twm.join() ##keep websockets running
