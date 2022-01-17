@@ -9,7 +9,7 @@
 * [Heikin Ashi](https://www.youtube.com/watch?v=g3XV1hjCv_8) something like this
 ---
 ## Latest Changes (if any):
-* Added support for Heikin Ashi candles in Bot.py, there is now a switch in settings use_heikin_ashi. If switched on you may reference self.Open_H, self.Close_H etc from make_Decision() in Data_set.py. (17/01/22)
+* Added support for Heikin Ashi candles in Bot.py, there is now a switch in settings use_heikin_ashi. If switched on you may reference self.Open_H, self.Close_H etc. from make_Decision() in Data_set.py. (17/01/22)
 * Added a feature in the backtester that graphs all the trades made and Indicators at the time of the trade and saves them to folders labelled winning and losing trades, to help with analysis of strategies. (14/01/22) See below in the graph trades section.
 * Updated Backtester to make it more user friendly & changed naming convention for saved data. (14/01/22)
 * At the end of a backtest you can see the date & time that every trade was taken. So you can debug strategies by checking on tradingview/binance. (07/01/22)
