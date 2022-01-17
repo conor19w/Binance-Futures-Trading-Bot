@@ -4,7 +4,7 @@
 * Maybe Provide a standard bot strategy for Bot...
 * GUI if people were interested (could take a while I've no experience here)
 * Speed up Data Set aligner in Backtester with multiprocessing
-* Fix trailing Stop, think its causing some rounding errors.
+* Fix trailing Stop in Back Tester, think its causing some rounding errors.
 ### Strategy suggestions:
 * [Heikin Ashi](https://www.youtube.com/watch?v=g3XV1hjCv_8) something like this
 ---
