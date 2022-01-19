@@ -94,8 +94,6 @@ class Data_set:
                 self.new_data = 1
 
     def Make_decision(self):
-        ##implement your strategy here:
-
         ##Must return these:
         Trade_Direction = -99 ## Short (0), Long (1)
         stoplossval = -99   ##the margin of increase/decrease that would stop us out/ be our take profit, NOT the price target.
@@ -103,8 +101,7 @@ class Data_set:
 
         ######################### Strategy ###############################
         ###Can use indicators from ta python & check out TradingStrats.py for some strategy ideas
-
+        ##implement your strategy here:
 
 
         return Trade_Direction,stoplossval,takeprofitval
-
