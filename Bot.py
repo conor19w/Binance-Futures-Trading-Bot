@@ -24,7 +24,8 @@ def reset_vars():
     position_Size = 0
     Trading_index = -99
     Trade_Direction = -99
-    wait_count = 0
+    wait_count = 0  
+    retry_attempt = 0
     takeprofitval = -99
     stoplossval = -99
 
@@ -36,13 +37,13 @@ def reset_vars():
     start = datetime.now().time()  ##for timer
     yesterdate = date.today()  ##for timer
 
-    return entry_price,orderId,stop_ID,Take_ID,comp_ID,Start_Account_Balance,position_Size,Trading_index,Trade_Direction,wait_count,takeprofitval,stoplossval,in_a_trade,attempting_a_trade,order_placed,flag,start,yesterdate
+    return entry_price,orderId,stop_ID,Take_ID,comp_ID,Start_Account_Balance,position_Size,Trading_index,Trade_Direction,wait_count,takeprofitval,stoplossval,in_a_trade,attempting_a_trade,order_placed,flag,start,yesterdate,retry_attempt
 
 def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trailing_stop,trailing_stop_percent):
     Data = []
-    entry_price, orderId, stop_ID, Take_ID, comp_ID, Start_Account_Balance, position_Size,\
-    Trading_index, Trade_Direction, wait_count, takeprofitval, stoplossval, in_a_trade,\
-    attempting_a_trade, order_placed, flag, start, yesterdate = reset_vars()
+    entry_price, orderId, stop_ID, Take_ID, comp_ID, Start_Account_Balance, position_Size, \
+    Trading_index, Trade_Direction, wait_count, takeprofitval, stoplossval, in_a_trade, \
+    attempting_a_trade, order_placed, flag, start, yesterdate, retry_attempt = reset_vars()
     while True:
         try:
             try:
@@ -85,9 +86,9 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                         # (1) Copy the 15th order // (2) Do some kind of weighted Sum // (3) Use the Average of the bids/asks
                         ##I went for (1) but the others are easy to implement (call pp.pprint(order_book) to see its structure)
                         if Trade_Direction == 1:
-                            entry_price = float(bids[15][0])
+                            entry_price = float(bids[6][0])
                         elif Trade_Direction == 0:
-                            entry_price = float(asks[15][0])
+                            entry_price = float(asks[6][0])
                         
                         
                         if Data[Trading_index].OP != 0:
@@ -155,7 +156,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
 
                                 entry_price, orderId, stop_ID, Take_ID, comp_ID, Start_Account_Balance, position_Size, \
                                 Trading_index, Trade_Direction, wait_count, takeprofitval, stoplossval, in_a_trade, \
-                                attempting_a_trade, order_placed, flag, start, yesterdate = reset_vars()
+                                attempting_a_trade, order_placed, flag, start, yesterdate, retry_attempt = reset_vars()
 
                                 y = client_trade.futures_account_balance()
                                 for x in y:
@@ -288,24 +289,37 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
 
                                 except BinanceAPIException as e:
                                     print(f"StopLoss/TakeProfit not placed on {Data[Trading_index].symbol}, error: {e}")
-
+               
                         ##Order placed cancel if takes too long
-                        if not in_a_trade:  ################################################################ deadlock
+                        if not in_a_trade and order_placed: 
+                            if wait_count >= 3 and retry_attempt < 4:
+                                if client.futures_get_all_orders(symbol=Data[Trading_index].symbol,orderId=orderId)[0]['status'] != 'FILLED':
+                                    print(f"{Data[0].Date[-1]}: Order wasn't placed so retrying")
+                                    client.futures_cancel_all_open_orders(symbol=Data[Trading_index].symbol)
+                                    order_placed = 0
+                                    retry_attempt += 1
+                                    wait_count = 0
+                                    y = client.futures_account_balance()
+                                    for x in y:
+                                        if x['asset'] == 'USDT':
+                                            print(f"{Data[0].Date[-1]}: Order Didn't Place\n"
+                                                  f"Account Balance: {x['balance']}")
+                                            break
+                            elif wait_count >= 3 and retry_attempt >= 4:
+                                print(f"{Data[0].Date[-1]}: Cancelling Order, Tried 4 times to place order.")
+                                if client.futures_get_all_orders(symbol=Data[Trading_index].symbol,orderId=orderId)[0]['status'] != 'FILLED':
+                                    client.futures_cancel_all_open_orders(symbol=Data[Trading_index].symbol)
+                                    entry_price, orderId, stop_ID, Take_ID, comp_ID, Start_Account_Balance, position_Size, \
+                                    Trading_index, Trade_Direction, wait_count, takeprofitval, stoplossval, in_a_trade, \
+                                    attempting_a_trade, order_placed, flag, start, yesterdate, retry_attempt = reset_vars()
+                                    wait_count -= 1  ##offset the addition below
+                                    y = client.futures_account_balance()
+                                    for x in y:
+                                        if x['asset'] == 'USDT':
+                                            print(f"{Data[0].Date[-1]}: Order Didn't Place\n"
+                                                  f"Account Balance: {x['balance']}")
+                                            break
                             wait_count += 1
-                            if wait_count >= 3:
-                                print("Order wasn't placed in 45 seconds so cancelling")
-                                client_trade.futures_cancel_all_open_orders(symbol=Data[Trading_index].symbol)
-
-                                entry_price, orderId, stop_ID, Take_ID, comp_ID, Start_Account_Balance, position_Size, \
-                                Trading_index, Trade_Direction, wait_count, takeprofitval, stoplossval, in_a_trade, \
-                                attempting_a_trade, order_placed, flag, start, yesterdate = reset_vars()
-
-                                y = client_trade.futures_account_balance()
-                                for x in y:
-                                    if x['asset'] == 'USDT':
-                                        print(f"{Data[0].Date[-1]}: Trade Timer Up\n"
-                                              f"Account Balance: {x['balance']}")
-                                        break
 
             except BinanceAPIException as e:
                 pp.pprint(e)
