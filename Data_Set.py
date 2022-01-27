@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 class Data_set:
-    def __init__(self,symbol,Open,Close,High,Low,Volume,Date,OP,CP,index,use_heikin_ashi):
+    def __init__(self,symbol,Open,Close,High,Low,Volume,Date,OP,CP,index,use_heikin_ashi,tick):
         self.symbol = symbol
         self.Open = Open
         self.Close = Close
@@ -27,7 +27,7 @@ class Data_set:
         self.Close_H = []
         self.High_H = []
         self.Low_H = []
-
+        self.tick_size = tick
 
     def add_hist(self,Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp):
         while 0<len(self.Date):
