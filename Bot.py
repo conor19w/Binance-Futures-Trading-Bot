@@ -24,7 +24,7 @@ def reset_vars():
     position_Size = 0
     Trading_index = -99
     Trade_Direction = -99
-    wait_count = 0  
+    wait_count = 0
     retry_attempt = 0
     takeprofitval = -99
     stoplossval = -99
@@ -177,7 +177,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                 symbol=Data[Trading_index].symbol,
                                                 side=SIDE_SELL,
                                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                stopPrice=round(entry_price - stoplossval,Data[Trading_index].CP),
+                                                stopPrice=round(round((entry_price - stoplossval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size,Data[Trading_index].CP),
                                                 reduceOnly='true',
                                                 quantity=position_Size)
                                             stop_ID = order2['orderId']
@@ -186,7 +186,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_SELL,
                                                     type=FUTURE_ORDER_TYPE_LIMIT,
-                                                    price=round(entry_price + takeprofitval, Data[Trading_index].CP),
+                                                    price=round(round((entry_price + takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size, Data[Trading_index].CP),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size)
                                                 Take_ID = order3['orderId']
@@ -195,7 +195,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_SELL,
                                                     type='TRAILING_STOP_MARKET',
-                                                    stopPrice=round(entry_price + takeprofitval, Data[Trading_index].CP),
+                                                    stopPrice=round(round((entry_price + takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size, Data[Trading_index].CP),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size,
                                                     callbackRate = trailing_stop_percent)
@@ -205,7 +205,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                 symbol=Data[Trading_index].symbol,
                                                 side=SIDE_SELL,
                                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                stopPrice=round(entry_price - stoplossval),
+                                                stopPrice=round(round((entry_price - stoplossval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size),
                                                 reduceOnly='true',
                                                 quantity=position_Size)
                                             stop_ID = order2['orderId']
@@ -214,7 +214,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_SELL,
                                                     type=FUTURE_ORDER_TYPE_LIMIT,
-                                                    price=round(entry_price + takeprofitval),
+                                                    price=round(round((entry_price + takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size)
                                                 Take_ID = order3['orderId']
@@ -223,7 +223,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_SELL,
                                                     type='TRAILING_STOP_MARKET',
-                                                    stopPrice=round(entry_price + takeprofitval),
+                                                    stopPrice=round(round((entry_price + takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size,
                                                     callbackRate = trailing_stop_percent)
@@ -234,7 +234,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                 symbol=Data[Trading_index].symbol,
                                                 side=SIDE_BUY,
                                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                stopPrice=round(entry_price + stoplossval, Data[Trading_index].CP),
+                                                stopPrice=round(round((entry_price + stoplossval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size, Data[Trading_index].CP),
                                                 reduceOnly='true',
                                                 quantity=position_Size)
                                             stop_ID = order2['orderId']
@@ -243,7 +243,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_BUY,
                                                     type=FUTURE_ORDER_TYPE_LIMIT,
-                                                    price=round(entry_price - takeprofitval, Data[Trading_index].CP),
+                                                    price=round(round((entry_price - takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size, Data[Trading_index].CP),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size)
                                                 Take_ID = order3['orderId']
@@ -252,7 +252,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_BUY,
                                                     type='TRAILING_STOP_MARKET',
-                                                    stopPrice=round(entry_price - takeprofitval, Data[Trading_index].CP),
+                                                    stopPrice=round(round((entry_price - takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size, Data[Trading_index].CP),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size,
                                                     callbackRate = trailing_stop_percent)
@@ -262,7 +262,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                 symbol=Data[Trading_index].symbol,
                                                 side=SIDE_BUY,
                                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                                                stopPrice=round(entry_price + stoplossval),
+                                                stopPrice=round(round((entry_price + stoplossval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size),
                                                 reduceOnly='true',
                                                 quantity=position_Size)
                                             stop_ID = order2['orderId']
@@ -271,7 +271,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_BUY,
                                                     type=FUTURE_ORDER_TYPE_LIMIT,
-                                                    price=round(entry_price - takeprofitval),
+                                                    price=round(round((entry_price - takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size)
                                                 Take_ID = order3['orderId']
@@ -280,7 +280,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_BUY,
                                                     type='TRAILING_STOP_MARKET',
-                                                    stopPrice=round(entry_price - takeprofitval),
+                                                    stopPrice=round(round((entry_price - takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size,
                                                     callbackRate = trailing_stop_percent)
@@ -289,9 +289,9 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
 
                                 except BinanceAPIException as e:
                                     print(f"StopLoss/TakeProfit not placed on {Data[Trading_index].symbol}, error: {e}")
-               
+
                         ##Order placed cancel if takes too long
-                        if not in_a_trade and order_placed: 
+                        if not in_a_trade and order_placed:
                             if wait_count >= 3 and retry_attempt < 4:
                                 if client.futures_get_all_orders(symbol=Data[Trading_index].symbol,orderId=orderId)[0]['status'] != 'FILLED':
                                     print(f"{Data[0].Date[-1]}: Order wasn't placed so retrying")
@@ -420,7 +420,7 @@ if __name__ == '__main__':
             ##Class for keeping Data_sets'''
         if flag == 1:
             ##Class for keeping Data_sets and executing Strategy
-            Data.append(Data_set(symbol[i], [], [], [], [], [], [], Order_precision_temp, Coin_precision_temp, i,use_heikin_ashi))
+            Data.append(Data_set(symbol[i], [], [], [], [], [], [], Order_precision_temp, Coin_precision_temp, i,use_heikin_ashi,tick_temp))
             streams.append(twm.start_kline_futures_socket(callback=Data[i].handle_socket_message, symbol=Data[i].symbol,
                                                           interval=Interval))
             i += 1
