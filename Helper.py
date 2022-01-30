@@ -143,6 +143,156 @@ def get_Klines(TIME_INTERVAL,symbol,time_period,test_set,time_period_units,save_
 
     return Date,Open,Close,High,Low,Volume,High_1min,Low_1min,Close_1min,Open_1min,Date_1min
 
+def get_historical(symbol,start_string,Interval):
+    Open = []
+    High = []
+    Low = []
+    Close = []
+    Volume = []
+    Date = []
+    try:
+        for kline in client.futures_historical_klines(symbol, Interval,start_str=start_string):
+            Date.append(datetime.utcfromtimestamp(round(kline[0]/1000)))
+            Open.append(float(kline[1]))
+            Close.append(float(kline[4]))
+            High.append(float(kline[2]))
+            Low.append(float(kline[3]))
+            Volume.append(float(kline[7]))
+    except BinanceAPIException as e:
+        print(e)
+    return Date,Open,Close,High,Low,Volume
+
+def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume,symbol):
+    start_date = [Date[0][0],0]
+    end_date = [Date[0][-1],0]
+    for i in range(len(Date)):
+        if Date[i][0] < start_date[0]:
+            start_date = [Date[i][0],i] ##Date,index of start date
+        if Date[i][-1] > end_date[0]:
+            end_date = [Date[i][-1],i] ##Date, index of end date
+    for i in range(len(Date_1min)):
+        len_infront = 0
+        len_behind = 0
+        for j in range(len(Date_1min[start_date[1]])):
+            if Date_1min[start_date[1]][j]!=Date_1min[i][0]:
+                len_infront+=1
+            else:
+                break
+        for j in range(len(Date_1min[end_date[1]])-1,-1,-1):
+            if Date_1min[end_date[1]][j]!=Date_1min[i][-1]:
+                len_behind+=1
+            else:
+                break
+        for j in range(len_infront):
+            Date_1min[i].insert(0,"Data Set hasn't started yet")
+            High_1min[i].insert(0,High_1min[i][0])
+            Low_1min[i].insert(0,Low_1min[i][0])
+            Close_1min[i].insert(0,Close_1min[i][0])
+            Open_1min[i].insert(0,Open_1min[i][0])
+        for j in range(len_behind):
+            Date_1min[i].append("Data Set Ended")
+            High_1min[i].append(High_1min[i][-1])
+            Low_1min[i].append(Low_1min[i][-1])
+            Close_1min[i].append(Close_1min[i][-1])
+            Open_1min[i].append(Open_1min[i][-1])
+    for i in range(len(Date)):
+        len_infront = 0
+        len_behind = 0
+        for j in range(len(Date[start_date[1]])):
+            if Date[start_date[1]][j] != Date[i][0]:
+                len_infront += 1
+            else:
+                break
+        for j in range(len(Date[end_date[1]]) - 1, -1, -1):
+            if Date[end_date[1]][j] != Date[i][-1]:
+                len_behind += 1
+            else:
+                break
+        for j in range(len_infront):
+            Date[i].insert(0, "Data Set hasn't started yet")
+            High[i].insert(0, High[i][0])
+            Low[i].insert(0, Low[i][0])
+            Close[i].insert(0, Close[i][0])
+            Open[i].insert(0, Open[i][0])
+            Volume[i].insert(0,Volume[i][0])
+        for j in range(len_behind):
+            Date[i].append("Data Set Ended")
+            High[i].append(High[i][-1])
+            Low[i].append(Low[i][-1])
+            Close[i].append(Close[i][-1])
+            Open[i].append(Open[i][-1])
+            Volume[i].insert(0,Volume[i][-1])
+
+    return Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume#,locations_to_pop
+
+def get_CAGR(time_period_units,time_period):
+    time_CAGR = -99
+    if time_period_units == 'day':
+        time_CAGR = time_period / 365
+    elif time_period_units == 'week':
+        time_CAGR = time_period / 52
+    elif time_period_units == 'month':
+        time_CAGR = time_period/ 12
+    elif time_period_units == 'year':
+        time_CAGR = time_period
+
+    return time_CAGR
+
+def align_Datasets_easy(Date,Close,Open):
+    start_date = [Date[0][0],0]
+    end_date = [Date[0][-1],0]
+    for i in range(len(Date)):
+        if Date[i][0] < start_date[0]:
+            start_date = [Date[i][0],i] ##Date,index of start date
+        if Date[i][-1] > end_date[0]:
+            end_date = [Date[i][-1],i] ##Date, index of end date
+    for i in range(len(Date)):
+        len_infront = 0
+        len_behind = 0
+        for j in range(len(Date[start_date[1]])):
+            if Date[start_date[1]][j] != Date[i][0]:
+                len_infront += 1
+            else:
+                break
+        for j in range(len(Date[end_date[1]]) - 1, -1, -1):
+            if Date[end_date[1]][j] != Date[i][-1]:
+                len_behind += 1
+            else:
+                break
+        for j in range(len_infront):
+            Date[i].insert(0, "Data Set hasn't started yet")
+            Close[i].insert(0, Close[i][0])
+            Open[i].insert(0,Open[i][0])
+        for j in range(len_behind):
+            Date[i].append("Data Set Ended")
+            Close[i].append(Close[i][-1])
+            Open[i].append(Open[i][-1])
+
+    return Date,Close,Open
+
+def get_heikin_ashi(Open, Close, High, Low):
+    Open_heikin = []
+    Close_heikin = []
+    High_heikin = []
+    Low_heikin = []
+    for i in range(len(Close)):
+        Open_heikin.append([])
+        Close_heikin.append([])
+        High_heikin.append([])
+        Low_heikin.append([])
+        for j in range(len(Close[i])):
+            Close_heikin[i].append((Open[i][j] + Close[i][j] + Low[i][j] + High[i][j]) / 4)
+            if j==0:
+                Open_heikin[i].append((Close_heikin[i][j]+Open[i][j])/2)
+                High_heikin[i].append(High[i][j])
+                Low_heikin[i].append(Low[i][j])
+            else:
+                Open_heikin[i].append((Open_heikin[i][j-1]+Close_heikin[i][j-1])/2)
+                High_heikin[i].append(max(High[i][j],Open_heikin[i][j],Close_heikin[i][j]))
+                Low_heikin[i].append(min(Low[i][j],Open_heikin[i][j],Close_heikin[i][j]))
+    return Open_heikin, Close_heikin, High_heikin, Low_heikin
+
+
 def get_coin_attrib(symbol):
     Coin_precision = -99
     Order_precision = -99
@@ -672,225 +822,3 @@ def get_coin_attrib(symbol):
         Order_precision = 3
 
     return Coin_precision,Order_precision
-
-def get_historical(symbol,start_string,Interval):
-    Open = []
-    High = []
-    Low = []
-    Close = []
-    Volume = []
-    Date = []
-    try:
-        if Interval == '1m':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1MINUTE,start_str=start_string):
-                Date.append(datetime.utcfromtimestamp(round(kline[0]/1000)))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '3m':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3MINUTE,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '5m':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_5MINUTE,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '15m':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_15MINUTE,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '30m':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '1h':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '2h':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_2HOUR,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '4h':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_4HOUR,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '6h':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_6HOUR,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '8h':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_8HOUR,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '12h':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_12HOUR,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '1d':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '3d':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_3DAY,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-        elif Interval == '1w':
-            for kline in client.futures_historical_klines(symbol, Client.KLINE_INTERVAL_1WEEK,start_str=start_string):
-                Date.append(int(kline[0]))
-                Open.append(float(kline[1]))
-                Close.append(float(kline[4]))
-                High.append(float(kline[2]))
-                Low.append(float(kline[3]))
-                Volume.append(float(kline[7]))
-    except BinanceAPIException as e:
-        print(e)
-    return Date,Open,Close,High,Low,Volume
-
-def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume,symbol):
-    start_date = [Date[0][0],0]
-    end_date = [Date[0][-1],0]
-    for i in range(len(Date)):
-        if Date[i][0] < start_date[0]:
-            start_date = [Date[i][0],i] ##Date,index of start date
-        if Date[i][-1] > end_date[0]:
-            end_date = [Date[i][-1],i] ##Date, index of end date
-    for i in range(len(Date_1min)):
-        len_infront = 0
-        len_behind = 0
-        for j in range(len(Date_1min[start_date[1]])):
-            if Date_1min[start_date[1]][j]!=Date_1min[i][0]:
-                len_infront+=1
-            else:
-                break
-        for j in range(len(Date_1min[end_date[1]])-1,-1,-1):
-            if Date_1min[end_date[1]][j]!=Date_1min[i][-1]:
-                len_behind+=1
-            else:
-                break
-        for j in range(len_infront):
-            Date_1min[i].insert(0,"Data Set hasn't started yet")
-            High_1min[i].insert(0,High_1min[i][0])
-            Low_1min[i].insert(0,Low_1min[i][0])
-            Close_1min[i].insert(0,Close_1min[i][0])
-            Open_1min[i].insert(0,Open_1min[i][0])
-        for j in range(len_behind):
-            Date_1min[i].append("Data Set Ended")
-            High_1min[i].append(High_1min[i][-1])
-            Low_1min[i].append(Low_1min[i][-1])
-            Close_1min[i].append(Close_1min[i][-1])
-            Open_1min[i].append(Open_1min[i][-1])
-    for i in range(len(Date)):
-        len_infront = 0
-        len_behind = 0
-        for j in range(len(Date[start_date[1]])):
-            if Date[start_date[1]][j] != Date[i][0]:
-                len_infront += 1
-            else:
-                break
-        for j in range(len(Date[end_date[1]]) - 1, -1, -1):
-            if Date[end_date[1]][j] != Date[i][-1]:
-                len_behind += 1
-            else:
-                break
-        for j in range(len_infront):
-            Date[i].insert(0, "Data Set hasn't started yet")
-            High[i].insert(0, High[i][0])
-            Low[i].insert(0, Low[i][0])
-            Close[i].insert(0, Close[i][0])
-            Open[i].insert(0, Open[i][0])
-            Volume[i].insert(0,Volume[i][0])
-        for j in range(len_behind):
-            Date[i].append("Data Set Ended")
-            High[i].append(High[i][-1])
-            Low[i].append(Low[i][-1])
-            Close[i].append(Close[i][-1])
-            Open[i].append(Open[i][-1])
-            Volume[i].insert(0,Volume[i][-1])
-
-    return Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume#,locations_to_pop
-
-def get_CAGR(time_period_units,time_period):
-    time_CAGR = -99
-    if time_period_units == 'day':
-        time_CAGR = time_period / 365
-    elif time_period_units == 'week':
-        time_CAGR = time_period / 52
-    elif time_period_units == 'month':
-        time_CAGR = time_period/ 12
-    elif time_period_units == 'year':
-        time_CAGR = time_period
-
-    return time_CAGR
-
-def get_heikin_ashi(Open, Close, High, Low):
-    Open_heikin = []
-    Close_heikin = []
-    High_heikin = []
-    Low_heikin = []
-    for i in range(len(Close)):
-        Open_heikin.append([])
-        Close_heikin.append([])
-        High_heikin.append([])
-        Low_heikin.append([])
-        for j in range(len(Close[i])):
-            Close_heikin[i].append((Open[i][j] + Close[i][j] + Low[i][j] + High[i][j]) / 4)
-            if j==0:
-                Open_heikin[i].append((Close_heikin[i][j]+Open[i][j])/2)
-                High_heikin[i].append(High[i][j])
-                Low_heikin[i].append(Low[i][j])
-            else:
-                Open_heikin[i].append((Open_heikin[i][j-1]+Close_heikin[i][j-1])/2)
-                High_heikin[i].append(max(High[i][j],Open_heikin[i][j],Close_heikin[i][j]))
-                Low_heikin[i].append(min(Low[i][j],Open_heikin[i][j],Close_heikin[i][j]))
-    return Open_heikin, Close_heikin, High_heikin, Low_heikin
