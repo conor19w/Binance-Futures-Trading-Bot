@@ -11,18 +11,18 @@ def get_TIME_INTERVAL(TIME_INTERVAL):
     ##Convert String to minutes
     if TIME_INTERVAL[1]=='m':
         TIME_INTERVAL = int(TIME_INTERVAL[0])
-    elif TIME_INTERVAL[2]=='m':
-        TIME_INTERVAL = int(TIME_INTERVAL[0])*10+int(TIME_INTERVAL[1])
     elif TIME_INTERVAL[1]=='h':
         TIME_INTERVAL = int(TIME_INTERVAL[0])*60
-    elif TIME_INTERVAL[2]=='h':
-        TIME_INTERVAL = int(TIME_INTERVAL[0])*10*60 + int(TIME_INTERVAL[1])*60
     elif TIME_INTERVAL[1]=='d':
         TIME_INTERVAL = int(TIME_INTERVAL[0]) * 1440
     elif TIME_INTERVAL[1]=='w':
         TIME_INTERVAL = int(TIME_INTERVAL[0]) * 1440*7
     elif TIME_INTERVAL[1]=='M':
         TIME_INTERVAL = int(TIME_INTERVAL[0]) * 1440*7*4
+    elif TIME_INTERVAL[2]=='m':
+        TIME_INTERVAL = int(TIME_INTERVAL[0])*10+int(TIME_INTERVAL[1])
+    elif TIME_INTERVAL[2]=='h':
+        TIME_INTERVAL = int(TIME_INTERVAL[0])*10*60 + int(TIME_INTERVAL[1])*60
     return TIME_INTERVAL
 def get_Klines(TIME_INTERVAL,symbol,time_period,test_set,time_period_units,save_data):
     print(f"Downloading CandleStick Data for {symbol}...")
