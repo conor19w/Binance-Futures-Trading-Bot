@@ -643,7 +643,7 @@ for i in range(len(High_1min[0])-1):
                         #prediction, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction)
                         prediction,Type=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction)
                         
-                        #prediction, Type = TS.breakout(prediction,CloseStream[j],VolumeStream[j],symbol[j])
+                        #prediction, Type = TS.breakout(prediction,CloseStream[j],VolumeStream[j])
                         #prediction,Type = TS.stochBB(prediction,CloseStream[j])
                         #prediction, Type = TS.goldenCross(prediction,CloseStream[j])
                         #prediction , Type = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
