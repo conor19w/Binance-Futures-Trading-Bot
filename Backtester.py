@@ -62,7 +62,7 @@ time_period = 2  ##Number of units
 TIME_INTERVAL = '1m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
 load_data = 1 ##load data from a file, download the data using download_Data.py
 save_data = 0 ##set to true to overwrite data thats currently in price_data folder
-use_trailing_stop = 0 ##   (Causing rounding error i think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
+use_trailing_stop = 0 ## DO NOT USE  (Causing rounding error i think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_distance = .01 ## 1% trailing stop activated by hitting the takeprofitval for a coin
 ##################################################################################################################################
 ##################################################################################################################################
