@@ -8,6 +8,9 @@ from ta.momentum import tsi
 import numpy as np
 import pandas as pd
 
+import TradingStrats
+
+
 class Data_set:
     def __init__(self,symbol,Open,Close,High,Low,Volume,Date,OP,CP,index,use_heikin_ashi,tick):
         self.symbol = symbol
@@ -104,4 +107,34 @@ class Data_set:
         ##implement your strategy here:
 
 
+
+
+
+        
+        ## Strategies Available from the backtester:
+        ## These strats require a call to SetSLTP as they return a Type param:
+        # Trade_Direction,Type = TS.StochRSIMACD(Trade_Direction, self.Close,self.High,self.Low)  ###########################################
+        # Trade_Direction, Type = TS.tripleEMA(self.Close, self.Open, Trade_Direction)
+        # Trade_Direction, Type = TS.breakout(Trade_Direction,self.Close,self.Volume)
+        # Trade_Direction,Type = TS.stochBB(Trade_Direction,self.Close)
+        # Trade_Direction, Type = TS.goldenCross(Trade_Direction,self.Close)
+        # Trade_Direction , Type = TS.candle_wick(Trade_Direction,self.Close,self.Open,self.High,self.Low)
+        
+        
+        
+        ###################################################################################################################
+        ## Must call function below if using any of the strats above this
+        ###################################################################################################################
+        #stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, self.Close, self.High, self.Low,Trade_Direction, -99, Type)
+
+
+        ####################################################################################################################
+        ##These strats don't require a call to SetSLTP:
+        # Trade_Direction,stoplossval,takeprofitval = TS.fibMACD(Trade_Direction, self.Close, self.Open,self.High,self.Low)
+
+        ##These Strats require you turn on the use_heikin_ashi flag in Bot.py
+        # Trade_Direction, stoplossval, takeprofitval, Close_pos = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stoplossval, takeprofitval, -99, 0)
+        # Trade_Direction,stoplossval,takeprofitval,Close_pos = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stoplossval,takeprofitval, -99, 0)
+        # Trade_Direction, stoplossval, takeprofitval, Close_pos = PS.meta_candle_heikin_ashi(self.Close, self.Open_H, self.High_H, self.Low_H,self.Close_H, Trade_Direction, stoplossval, takeprofitval, -99,0)
+        # Trade_Direction,stoplossval,takeprofitval,Close_pos = TradingStrats.heikin_ashi_ema2(self.Close,self.Open_H,self.High_H,self.Low_H,self.Close_H,Trade_Direction,stoplossval,takeprofitval,-99,0)
         return Trade_Direction,stoplossval,takeprofitval
