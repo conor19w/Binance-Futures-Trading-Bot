@@ -10,10 +10,11 @@
 * [Heikin Ashi](https://www.youtube.com/watch?v=g3XV1hjCv_8) something like this
 ---
 ## Latest Changes (if any):
-* Added support for Heikin Ashi candles in Bot.py, there is now a switch in settings use_heikin_ashi. If switched on you may reference self.Open_H, self.Close_H etc. from make_Decision() in Data_set.py. (17/01/22)
-* Added a feature in the backtester that graphs all the trades made and Indicators at the time of the trade and saves them to folders labelled winning and losing trades, to help with analysis of strategies. (14/01/22) See below in the graph trades section.
-* Updated Backtester to make it more user friendly & changed naming convention for saved data. (14/01/22)
-* At the end of a backtest you can see the date & time that every trade was taken. So you can debug strategies by checking on tradingview/binance. (07/01/22)
+* Added support in the live Bot environment for some of the strategies in Trading_strats.py , To make use of a strategy in Bot.py just uncomment it inside Make_Decision() inside Data_set.py (11/02/2022).
+* Added support for Heikin Ashi candles in Bot.py, there is now a switch in settings use_heikin_ashi. If switched on you may reference self.Open_H, self.Close_H etc. from make_Decision() in Data_set.py (17/01/22).
+* Added a feature in the backtester that graphs all the trades made and Indicators at the time of the trade and saves them to folders labelled winning and losing trades, to help with analysis of strategies (14/01/22) See below in the graph trades section.
+* Updated Backtester to make it more user friendly & changed naming convention for saved data (14/01/22).
+* At the end of a backtest you can see the date & time that every trade was taken. So you can debug strategies by checking on tradingview/binance (07/01/22).
 ---
 ## Technical Analysis driven Crypto Trading bot on Binance Futures 📈 ₿ 🚀 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 [__Join My Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
@@ -38,15 +39,18 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 ---
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
-__There is no default strategy Currently, but one can be implemented in the data_set.py file in the make_Decision() function__
+__There is no set strategy, You can selet one by uncommenting one in make_Decision() inside data_set.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
 * In __Bot.py__ on __line 341__ are the settings.
 * Choose the Interval you want to trade and the buffer of candlesticks your strategy will need.
 * leverage and order_size should be changed acording to your preference
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
-* Trailing stop: set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy.  
+* __Trailing stop (NOT WORKING PROPERLY CURRENTLY): set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy__.  
+---
+#### Creating Custom Strategies:
 __Strategies are implemented in Data_Set.py as a function named Make_decision() in the Data_set class__
 * Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to work properly
 * You might draw inspiration for a strategy from one In __TradingStrats.py__
+* I reccommend using the backtester first.
 ---
 ### YouTube Channels with Strategy Ideas:
 [__Trade Pro__](https://www.youtube.com/channel/UCrXjzUN6EtlyhaaAerbPfkQ) | [__Strategy Testing__](https://www.youtube.com/c/TradingStrategyTesting) | [__Trading Journal__](https://www.youtube.com/c/TradingJournal1) | [__Critical Trading__](https://www.youtube.com/c/CriticalTrading) | [__The Moving Average__](https://www.youtube.com/channel/UCYFQzaZyTUzY-Tiytyv3HhA)  
