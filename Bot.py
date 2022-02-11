@@ -357,7 +357,7 @@ if __name__ == '__main__':
     Interval = '1m'  ##Time interval over which we want to trade, valid Intervals: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M
     leverage = 10  ##leverage we want to use on the account, *Check valid leverages for coins*
     order_Size = .03  ##percent of Effective account to risk ie. (leverage X Account Balance) X order_size
-    use_trailing_stop = 0 ##trailing stoploss
+    use_trailing_stop = 0 ##THIS IS NOT WORKING CURRENTLY trailing stoploss
     trailing_stop_percent = .01 ## 1% trailing stop
     use_heikin_ashi = 0
 
