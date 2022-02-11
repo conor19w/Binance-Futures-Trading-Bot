@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from ta.momentum import stochrsi_d,stochrsi_k,stoch,stoch_signal,rsi,awesome_oscillator
-from ta.trend import ema_indicator,macd_signal,macd,sma_indicator,adx,sma_indicator,cci
+from ta.trend import ema_indicator,macd_signal,macd,sma_indicator,adx,sma_indicator,cci,ichimoku_a,ichimoku_b,ichimoku_base_line,ichimoku_conversion_line
 from ta.volatility import average_true_range,bollinger_pband,bollinger_hband,bollinger_lband,bollinger_mavg,bollinger_wband
 from ta.volume import ease_of_movement,on_balance_volume,force_index,money_flow_index
 from ta.momentum import tsi
@@ -668,7 +668,7 @@ def stochBB(prediction,CloseStream):
     return prediction,6
 
 
-def breakout(prediction,CloseStream,VolumeStream,symbol):
+def breakout(prediction,CloseStream,VolumeStream):
     invert=0 ## switch shorts and longs, basically fakeout instead of breakout
     #if symbol=='BTCUSDT' or symbol=='ETHUSDT':
     #    invert=0
@@ -970,3 +970,5 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,predicti
             stoplossval = SL * ATR[-1]
             takeprofitval = TP * ATR[-1]
     return stoplossval,takeprofitval
+
+#def ichimoku():
