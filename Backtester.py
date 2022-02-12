@@ -5,7 +5,7 @@ import asyncio
 import time
 from joblib import load, dump
 import websockets
-#import Data_flow as flow
+import Data_flow as flow
 import sys, os
 from binance.client import Client
 import matplotlib.pyplot as plt
@@ -25,7 +25,7 @@ import API_keys
 import download_Data as DD
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
-#import personal_strats as PS
+import personal_strats as PS
 
 from copy import copy
 import time
@@ -34,7 +34,7 @@ cashout = deque(maxlen=100000) ##keep track of Winning trades/ Losing trades
 signals= deque(maxlen=100000) ##when a siganl occured , NOT IN USE
 
 
-symbol = ['RAYUSDT', 'NEARUSDT', 'AUDIOUSDT', 'HNTUSDT', 'DGBUSDT', 'ZRXUSDT', 'BCHUSDT', 'HOTUSDT', 'ARUSDT', 'FLMUSDT',
+'''symbol = ['RAYUSDT', 'NEARUSDT', 'AUDIOUSDT', 'HNTUSDT', 'DGBUSDT', 'ZRXUSDT', 'BCHUSDT', 'HOTUSDT', 'ARUSDT', 'FLMUSDT',
           'SFPUSDT', 'BELUSDT', 'RENUSDT', 'ADAUSDT', 'STORJUSDT', 'CHRUSDT', 'WAVESUSDT', 'CHZUSDT', 'XRPUSDT',
           'SANDUSDT', 'OCEANUSDT', 'ENJUSDT', 'YFIIUSDT', 'GRTUSDT', 'UNIUSDT', 'TLMUSDT', 'XTZUSDT', 'LUNAUSDT', 'EOSUSDT',
           'SKLUSDT', 'GTCUSDT', 'DOTUSDT', '1INCHUSDT', 'UNFIUSDT', 'FTMUSDT', 'RLCUSDT', 'ATOMUSDT', 'BLZUSDT', 'SNXUSDT',
@@ -46,8 +46,8 @@ symbol = ['RAYUSDT', 'NEARUSDT', 'AUDIOUSDT', 'HNTUSDT', 'DGBUSDT', 'ZRXUSDT', '
           'ALPHAUSDT', 'SXPUSDT', 'HBARUSDT', 'RVNUSDT', 'CTSIUSDT', 'KAVAUSDT', 'C98USDT', 'THETAUSDT', 'MASKUSDT', 'AAVEUSDT',
           'YFIUSDT', 'AXSUSDT', 'ZILUSDT', 'XEMUSDT', 'COMPUSDT', 'RUNEUSDT', 'AVAXUSDT', 'KNCUSDT', 'LPTUSDT', 'LRCUSDT',
           'MTLUSDT', 'VETUSDT', 'DASHUSDT', 'KEEPUSDT', 'LTCUSDT', 'DYDXUSDT', 'LINAUSDT', 'XLMUSDT', 'LINKUSDT', 'QTUMUSDT',
-          'KSMUSDT', 'FILUSDT', 'STMXUSDT', 'BALUSDT', 'GALAUSDT', 'BATUSDT', 'AKROUSDT', 'XMRUSDT', 'COTIUSDT']
-
+          'KSMUSDT', 'FILUSDT', 'STMXUSDT', 'BALUSDT', 'GALAUSDT', 'BATUSDT', 'AKROUSDT', 'XMRUSDT', 'COTIUSDT']'''
+symbol = ['PEOPLEUSDT','ROSEUSDT','LINKUSDT','HNTUSDT','LUNAUSDT','DOGEUSDT']
 ###################################################################################################################################
 #######################################             SETTINGS            ###########################################################
 ###################################################################################################################################
@@ -56,13 +56,13 @@ EffectiveAccountBalance = -99 ##set later
 OrderSIZE = .1 ## Amount of effective account balance to use per trade
 AccountBalance = 1000
 leverage = 10  ##leverage being used
-test_set = 0  ##If OFF we are only paper trading on in-sample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
-time_period_units = 'day' ## day/week/month/year
-time_period = 2  ##Number of units
-TIME_INTERVAL = '1m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
+test_set = 0  ##If OFF we are only paper trading on in-s ample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
+time_period_units = 'month' ## day/week/month/year
+time_period = 3  ##Number of units
+TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
 load_data = 1 ##load data from a file, download the data using download_Data.py
 save_data = 0 ##set to true to overwrite data thats currently in price_data folder
-use_trailing_stop = 0 ## DO NOT USE  (Causing rounding error i think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
+use_trailing_stop = 0 ##   (Causing rounding error i think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_distance = .01 ## 1% trailing stop activated by hitting the takeprofitval for a coin
 ##################################################################################################################################
 ##################################################################################################################################
@@ -79,28 +79,28 @@ trade_graph_folder = 'trade_graphs' ##Name of folder you want to create and save
 
 period_leading_to_signal = 20 ##How many bars before a signal to use for graph
 period_after_signal = 20 ##How many bars before a signal to use for graph
-use_heikin_ashi = 0
+use_heikin_ashi = 1
 use_emas = 1
-use_smas = 0
+use_smas = 1
 sma_lengths = [20,50,100] ##length of SMA's should match your strategy
 ema_lengths = [5,20,50] ##lengths of the EMA's should match your strategy
 ###These use the default settings if customization is needed you can do that down further in the script, look at sections starting 'if graph_trades_and_save_to_folder' to customize
-use_stochastic = 0
-use_stochastic_rsi = 0
-use_ease_of_movement = 0
-use_rsi = 0
-use_macd = 0
-use_atr = 0
-use_bollinger_bands = 0
+use_stochastic = 1
+use_stochastic_rsi = 1
+use_ease_of_movement = 1
+use_rsi = 1
+use_macd = 1
+use_atr = 1
+use_bollinger_bands = 1
 use_awesome=1 ##awesome oscillator
-use_adx=0
-use_cci=0
-use_obv=0 ##on balance volume
-use_fi=0 ##force index
-use_mfi=0 ##money flow index
-use_tsi=0 ##True strength index
-use_acc_dist = 0 ##Accumulation Distribution
-use_vwap = 0##Volume weighted average price
+use_adx=1
+use_cci=1
+use_obv=1 ##on balance volume
+use_fi=1 ##force index
+use_mfi=1 ##money flow index
+use_tsi=1 ##True strength index
+use_acc_dist = 1 ##Accumulation Distribution
+use_vwap = 1 ##Volume weighted average price
 ###################################################################################################################################
 ###################################################################################################################################
 ###################################################################################################################################
@@ -114,7 +114,7 @@ CurrentPos = -99
 positionSize = -99
 positionPrice = -99
 PrevPos = -99
-prediction = -99
+Trade_Direction = -99
 Trading_index = -99 ##index of coin we are trading
 Trade_Stage = 0 ##flag to say in a trade
 Close_pos = 0
@@ -159,9 +159,9 @@ if load_data:
     i = 0
     while i < len(symbol):
         if test_set:
-            path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC_test.joblib"
+            path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC_test.joblib"
         else:
-            path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC.joblib"
+            path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC.joblib"
         try:
             price_data = load(path)
             Date.append(price_data['Date'])
@@ -181,13 +181,13 @@ if load_data:
                 print("File not Found, Checking if file exists with old naming convention and renaming if present...")
                 if test_set:
                     TIME_INTERVAL_TEMP = Helper.get_TIME_INTERVAL(TIME_INTERVAL)
-                    old_path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL_TEMP}_{time_period} {time_period_units} ago UTC_test.joblib"
-                    new_path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC_test.joblib"
+                    old_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL_TEMP}_{time_period} {time_period_units} ago UTC_test.joblib"
+                    new_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC_test.joblib"
                     #print(old_path,new_path)
                 else:
                     TIME_INTERVAL_TEMP = Helper.get_TIME_INTERVAL(TIME_INTERVAL)
-                    old_path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL_TEMP}_{time_period} {time_period_units} ago UTC.joblib"
-                    new_path = f"{DD.path}price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC.joblib"
+                    old_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL_TEMP}_{time_period} {time_period_units} ago UTC.joblib"
+                    new_path = f"{DD.path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{time_period} {time_period_units} ago UTC.joblib"
                 os.rename(old_path, new_path) ##rename to new convention
                 print("Rename Successful, Loading Data...")
                 price_data = load(path)
@@ -638,53 +638,56 @@ for i in range(len(High_1min[0])-1):
 
                     ##Public Strats :) :
                     if CurrentPos==-99:
+                        #Trade_Direction,stoplossval,takeprofitval,Close_pos = PS.heikin_ashi_ema3(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval,
+                        # takeprofitval, CurrentPos, Close_pos)
                         ## These strats require a call to SetSLTP as they return a Type param:
-                        #prediction,Type = TS.StochRSIMACD(prediction, CloseStream[j],HighStream[j],LowStream[j])  ###########################################
-                        #prediction, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,prediction)
-                        prediction,Type=TS.tripleEMA(CloseStream[j],OpenStream[j],prediction)
+                        #Trade_Direction,Type = TS.StochRSIMACD(Trade_Direction, CloseStream[j],HighStream[j],LowStream[j])  ###########################################
+                        #Trade_Direction, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,Trade_Direction)
+                        Trade_Direction,Type=TS.tripleEMA(CloseStream[j],OpenStream[j],Trade_Direction)
                         
-                        #prediction, Type = TS.breakout(prediction,CloseStream[j],VolumeStream[j])
-                        #prediction,Type = TS.stochBB(prediction,CloseStream[j])
-                        #prediction, Type = TS.goldenCross(prediction,CloseStream[j])
-                        #prediction , Type = TS.candle_wick(prediction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
-                        #prediction,Close_pos,count,stoplossval = TS.single_candle_swing_pump(prediction,CloseStream[j],HighStream[j],LowStream[j],
+                        #Trade_Direction, Type = TS.breakout(Trade_Direction,CloseStream[j],VolumeStream[j])
+                        #Trade_Direction,Type = TS.stochBB(Trade_Direction,CloseStream[j])
+                        #Trade_Direction, Type = TS.goldenCross(Trade_Direction,CloseStream[j])
+                        #Trade_Direction , Type = TS.candle_wick(Trade_Direction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
+                        #Trade_Direction,Close_pos,count,stoplossval = TS.single_candle_swing_pump(Trade_Direction,CloseStream[j],HighStream[j],LowStream[j],
                         # CurrentPos,Close_pos,count,stoplossval) ##must be unhighlighted below as it returns the Close_pos var
-                        stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, CloseStream[j],HighStream[j], LowStream[j], prediction,CurrentPos, Type)
-                        #print(prediction)
+                        #stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, CloseStream[j],HighStream[j], LowStream[j], Trade_Direction,CurrentPos, Type)
+                        #print(Trade_Direction)
                         ##These strats don't require a call to SetSLTP:
-                        #prediction,stoplossval,takeprofitval = TS.fibMACD(prediction, CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
-                        #prediction, stoplossval, takeprofitval, Close_pos = TS.heikin_ashi_ema2(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], prediction, stoplossval, takeprofitval, CurrentPos, Close_pos)
-                        #prediction,stoplossval,takeprofitval,Close_pos = TS.heikin_ashi_ema(CloseStream[j], OpenStream_H[j], CloseStream_H[j], prediction, stoplossval,takeprofitval, CurrentPos, Close_pos)
+                        #Trade_Direction,stoplossval,takeprofitval = TS.fibMACD(Trade_Direction, CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
+                        #Trade_Direction, stoplossval, takeprofitval, Close_pos = TS.heikin_ashi_ema2(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval, takeprofitval, CurrentPos, Close_pos)
+                        #Trade_Direction,stoplossval,takeprofitval,Close_pos = TS.heikin_ashi_ema(CloseStream[j], OpenStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval,takeprofitval, CurrentPos, Close_pos)
+                        #Trade_Direction, stoplossval, takeprofitval, Close_pos = PS.meta_candle_heikin_ashi(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j],CloseStream_H[j], Trade_Direction, stoplossval, takeprofitval, CurrentPos,Close_pos)
                     else:
                         ##Must Call these every candle because they return Close_pos var
-                        #prediction,Close_pos,count,stoplossval = TS.single_candle_swing_pump(prediction,CloseStream[j],HighStream[j],LowStream[j],CurrentPos,Close_pos,count,stoplossval)
-                        #prediction,Highest_lowest,Close_pos = TS.trend_Ride(prediction, CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos, Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
-                        #prediction,Close_pos = TS.RSI_trade(prediction,CloseStream[j],CurrentPos,Close_pos)
+                        #Trade_Direction,Close_pos,count,stoplossval = TS.single_candle_swing_pump(Trade_Direction,CloseStream[j],HighStream[j],LowStream[j],CurrentPos,Close_pos,count,stoplossval)
+                        #Trade_Direction,Highest_lowest,Close_pos = TS.trend_Ride(Trade_Direction, CloseStream[j], HighStream[j][-1], LowStream[j][-1], percent, CurrentPos, Highest_lowest) ##This strategy holds a position until the price dips/rises a certain percentage
+                        #Trade_Direction,Close_pos = TS.RSI_trade(Trade_Direction,CloseStream[j],CurrentPos,Close_pos)
                         pass
                         ##########################################################################################################################################################################
                         ##########################################################################################################################################################################
                     ##Non public Strats sorry :( :
-                    # prediction, stoplossval, takeprofitval, Close_pos = \
-                    #    PS.heikin_ashi_ema(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], prediction, stoplossval, takeprofitval, CurrentPos, Close_pos)
+                    # Trade_Direction, stoplossval, takeprofitval, Close_pos = \
+                    #    PS.heikin_ashi_ema(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval, takeprofitval, CurrentPos, Close_pos)
                     # if Close_pos:
                     #    Close_pos = 0
-                    # prediction, stoplossval[j], takeprofitval[j], Close_pos = \
-                    #    PS.meta_candle_heikin_ashi(CloseStream[j],OpenStream_H[j],HighStream_H[j],LowStream_H[j],CloseStream_H[j],prediction[j],stoplossval[j],takeprofitval[j],CurrentPos[j],Close_pos)
-                    # prediction,Type = Strategy.Check_for_sup_res(CloseStream[j],OpenStream[j],HighStream[j],LowStream[j]) ##not a strategy ive made public
-                    #prediction, stoplossval, takeprofitval = Strategy[j].check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],prediction) ##not a strategy ive made public
-                    #if prediction[j]==1:
-                    #    prediction[j]=-99
+                    #  \
+
+                    #Trade_Direction,Type = Strategy.Check_for_sup_res(CloseStream[j],OpenStream[j],HighStream[j],LowStream[j]) ##not a strategy ive made public
+                    #Trade_Direction, stoplossval, takeprofitval = Strategy[j].check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],Trade_Direction) ##not a strategy ive made public
+                    #if Trade_Direction[j]==1:
+                    #    Trade_Direction[j]=-99
                     ##########################################################################################################################################################################
                 #Close_pos = Strategy[j].Trade_timer(CurrentPos, Close_pos)
 
             ##If the trade won't cover the fee & profit something then don't place it
-            #if (prediction[j] == 1 or prediction[j] == 0) and (.00125 * Close_1min[j][-1] > takeprofitval[j]) and (not pair_Trading) and (not Hold_pos):
-            #    prediction[j] = -99
+            #if (Trade_Direction[j] == 1 or Trade_Direction[j] == 0) and (.00125 * Close_1min[j][-1] > takeprofitval[j]) and (not pair_Trading) and (not Hold_pos):
+            #    Trade_Direction[j] = -99
             #################################################################
             #################################################################
 
 
-                if CurrentPos == -99 and prediction == 0:
+                if CurrentPos == -99 and Trade_Direction == 0:
                     Trading_index = j
                     positionPrice = Open_1min[Trading_index][i]##next open candle #CloseStream[j][len(CloseStream[j]) - 1]
                     positionSize= (OrderSIZE*EffectiveAccountBalance)/positionPrice
@@ -696,7 +699,7 @@ for i in range(len(High_1min[0])-1):
                     fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                     AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
                     month_return -= positionSize * Open_1min[Trading_index][i] * fee
-                    prediction = -99
+                    Trade_Direction = -99
 
                     Trade_start = [symbol[Trading_index], Date_1min[Trading_index][i],CurrentPos]  ##we enter trade on next candle
 
@@ -745,7 +748,7 @@ for i in range(len(High_1min[0])-1):
                     break
 
 
-                elif CurrentPos == -99 and prediction == 1:
+                elif CurrentPos == -99 and Trade_Direction == 1:
                     Trading_index = j
                     positionPrice = Open_1min[Trading_index][i] ##next open candle
                     positionSize = (OrderSIZE * EffectiveAccountBalance) / positionPrice
@@ -757,7 +760,7 @@ for i in range(len(High_1min[0])-1):
                     fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                     AccountBalance -= positionSize * Open_1min[Trading_index][i] * fee
                     month_return -= positionSize * Open_1min[Trading_index][i] * fee
-                    prediction = -99
+                    Trade_Direction = -99
 
                     Trade_start = [symbol[Trading_index], Date_1min[Trading_index][i],CurrentPos]  ##we enter trade on next candle
 
@@ -905,11 +908,9 @@ if graph_trades_and_save_to_folder:
     except:
         pass
     create_trade_graphs.plot(trade_data,trade_graph_folder)
-          
+
 plt.plot(profitgraph)
 plt.title(f"{symbol}: {original_time_interval} from a period of {time_period} {time_period_units} ago")
 plt.ylabel('Dollars')
 plt.xlabel('# Trades')
 plt.show()
-
-
