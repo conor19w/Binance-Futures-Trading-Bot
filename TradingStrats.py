@@ -6,9 +6,9 @@ from ta.volatility import average_true_range,bollinger_pband,bollinger_hband,bol
 from ta.volume import ease_of_movement,on_balance_volume,force_index,money_flow_index
 from ta.momentum import tsi
 import math
-import statsmodels.api as sm
-from sklearn import tree
-from statsmodels.tsa.stattools import adfuller,coint
+#import statsmodels.api as sm
+#from sklearn import tree
+#from statsmodels.tsa.stattools import adfuller,coint
 from math import log10, floor
 from copy import copy
 import time
