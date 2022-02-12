@@ -741,12 +741,8 @@ def trend_Ride(prediction,Close,High,Low,percent,current_Pos,Highest_lowest):
         Highest_lowest = Low
     return prediction,Highest_lowest,close_pos
 
-def pairTrading(prediction,Close1,Close2,log=0,TPSL=0,percent_TP=0,percent_SL=0):
+'''def pairTrading(prediction,Close1,Close2,log=0,TPSL=0,percent_TP=0,percent_SL=0):
     new_Close = []
-    '''Close1_TP = 0
-    Close2_TP = 0
-    Close1_SL = 0
-    Close2_SL = 0'''
     #multiplier = Close1[0]/Close2[0]
     if not log:
         multiplier = (sm.OLS(Close1, Close2).fit()).params[0]
@@ -768,29 +764,9 @@ def pairTrading(prediction,Close1,Close2,log=0,TPSL=0,percent_TP=0,percent_SL=0)
     #print(BB[-1])
     if BB[-1]>1:
         prediction = [0,1]  # [1,0]
-        '''if TPSL:
-            ##work out distance to the mean and allocate the change to get there to each series:
-            #print(new_Close[-1],SMA20[-1])
-            #change_in_decimal = math.fabs((new_Close[-1] - SMA20[-1])/new_Close[-1])
-            #Close1_TP = Close1[-1] * change_in_decimal/3
-            #Close2_TP = Close2[-1] * change_in_decimal/3
-            Close1_TP = Close1[-1]*percent_TP
-            Close2_TP = Close2[-1]*percent_TP
-            Close1_SL = Close1[-1] * percent_SL
-            Close2_SL = Close2[-1] * percent_SL'''
+        
     elif BB[-1]<0:
         prediction = [1,0] # [0,1]
-        '''if TPSL:
-            ##work out distance to the mean and allocate the change to get there to each series:
-            #print(new_Close[-1],SMA20[-1])
-            #change_in_decimal = math.fabs((new_Close[-1] - SMA20[-1])/new_Close[-1])
-            #Close1_TP = Close1[-1] * change_in_decimal/3
-            #Close2_TP = Close2[-1] * change_in_decimal/3
-            #print(change_in_decimal)
-            Close1_TP = Close1[-1] * percent_TP
-            Close2_TP = Close2[-1] * percent_TP
-            Close1_SL = Close1[-1] * percent_SL
-            Close2_SL = Close2[-1] * percent_SL'''
     return prediction,[9,9] #,Close1_TP,Close2_TP,Close1_SL,Close2_SL
 
 
@@ -816,7 +792,7 @@ def pairTrading_Crossover(prediction, Close1, Close2, CurrentPos, percent_SL=0):
         if (new_Close[-1]>SMA20[-1] and (new_Close[-2]<SMA20[-2] or new_Close[-3]<SMA20[-3])) or (new_Close[-1]<SMA20[-1] and (new_Close[-2]>SMA20[-2] or new_Close[-3]>SMA20[-3])):
             ##Price has crossed up or down over the Moving average so close the position
             Close_pos=1
-    return prediction,Close1_SL,Close2_SL,Close_pos
+    return prediction,Close1_SL,Close2_SL,Close_pos'''
 
 
 ##Function used to decide stoploss values and takeprofit values based off a type variable returned by specific strategies above
