@@ -904,3 +904,4 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
             stoplossval = SL * ATR[-1]
             takeprofitval = TP * ATR[-1]
     return stoplossval,takeprofitval
+
