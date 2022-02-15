@@ -64,7 +64,6 @@ Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * Settings are found at the top of the script, __line 52__.
 * Trailing Stop: turn the __use_trailing_stop__ flag on, specify the __trailing_stop_distance__ in decimal, now when a takeprofit margin target is hit the trailing stop will be placed and automatically & adjusted based off new Lows or Highs in price and the __trailing_stop_distance__ you've specified.
 * Next we want to choose our TA strategy, this is done after __line 640__ , uncomment a strategy or call a new strategy you have written yourself here, the 'Trade_Direction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
-* Some of the pre-coded strategies return a 'Type' variable, if a strategy returns the 'Type' variable you must call the SetSLTP() function from __TradingStrats.py__ in order to set the corresponding Stop loss value, and Take profit value, this function is found in TradingStrats.py
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 * Heikin Ashi Candles are available under: CloseStream_H, OpenStream_H, LowStream_H, HighStream_H which can be referenced or passed to Strategies.
 ## __New:__ Graph your trades by Altering the Trade Graph settings at the top of the script:  
