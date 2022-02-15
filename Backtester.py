@@ -651,7 +651,6 @@ for i in range(len(High_1min[0])-1):
                         #Trade_Direction,stoplossval,takeprofitval = TS.fibMACD(Trade_Direction, CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
                         #Trade_Direction, stoplossval, takeprofitval, Close_pos = TS.heikin_ashi_ema2(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval, takeprofitval, CurrentPos, Close_pos)
                         #Trade_Direction,stoplossval,takeprofitval,Close_pos = TS.heikin_ashi_ema(CloseStream[j], OpenStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval,takeprofitval, CurrentPos, Close_pos)
-                        #Trade_Direction, stoplossval, takeprofitval, Close_pos = PS.meta_candle_heikin_ashi(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j],CloseStream_H[j], Trade_Direction, stoplossval, takeprofitval, CurrentPos,Close_pos)
 
                         ##must be unhighlighted below in the else clause also as it returns the Close_pos var
                         # Trade_Direction,Close_pos,count,stoplossval = TS.single_candle_swing_pump(Trade_Direction,CloseStream[j],HighStream[j],LowStream[j],CurrentPos,Close_pos,count,stoplossval)
