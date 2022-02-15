@@ -8,7 +8,7 @@ from ta.momentum import tsi
 import numpy as np
 import pandas as pd
 
-import TradingStrats
+import TradingStrats as TS
 
 
 class Data_set:
