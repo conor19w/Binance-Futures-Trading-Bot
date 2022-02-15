@@ -3,7 +3,6 @@
 ## To-Do list: (suggest something and I'll add it) 😃
 * Fix an issue with graphing trades, for now don't use.
 * Fix trailing Stop in Back Tester, think its causing some rounding errors.
-* Maybe Provide a standard bot strategy for Bot...
 * GUI if people were interested (could take a while I've no experience here)
 * Speed up Data Set aligner in Backtester with multiprocessing
 ### Strategy suggestions:
