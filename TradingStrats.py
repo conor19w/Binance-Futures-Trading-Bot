@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 from ta.momentum import stochrsi_d,stochrsi_k,stoch,stoch_signal,rsi,awesome_oscillator
@@ -40,6 +39,7 @@ def single_candle_swing_pump(Trade_Direction,Close,High,Low,CurrentPos,ClosePos,
         ClosePos = -99 ##not in a position so closePos is intitialized
 
     return Trade_Direction,ClosePos,count,stoploss
+
 def RSI_trade(Trade_Direction,Close,CurrentPos,ClosePos):
     RSI = np.array(rsi(pd.Series(Close)))
     if RSI[-1]<30 and CurrentPos == -99: ## Oversold
@@ -63,7 +63,8 @@ def candle_wick(Trade_Direction,Close,Open,High,Low):
     elif Close[-5]>Close[-4]>Close[-3] and Close[-2]>Open[-2] and (High[-2]-Close[-2] + Open[-2]-Low[-2])> 15*(Close[-2]-Open[-2]) and Close[-1]>Close[-2]:
         ##3 red candles followed by a green candle with a huge wick
         Trade_Direction = 1
-    return Trade_Direction,9
+    stoplossval, takeprofitval = SetSLTP(-99, -99, Close, High, Low,Trade_Direction, Type=9)
+    return Trade_Direction,stoplossval,takeprofitval
 
 def fibMACD(Trade_Direction,Close,Open,High,Low):
     stoplossval = 0
@@ -278,62 +279,24 @@ def fibMACD(Trade_Direction,Close,Open,High,Low):
 
 
 
-def goldenCross(Trade_Direction,CloseStream):
-    EMA100 = np.array(ema_indicator(pd.Series(CloseStream), window=100))
-    EMA50 = np.array(ema_indicator(pd.Series(CloseStream), window=50))
-    EMA20 = np.array(ema_indicator(pd.Series(CloseStream), window=20))
-    RSI = np.array(rsi(pd.Series(CloseStream)))
-    if CloseStream[-1]>EMA100[-1] and RSI[-1]>50:
+def goldenCross(Trade_Direction,Close, High, Low):
+    EMA100 = np.array(ema_indicator(pd.Series(Close), window=100))
+    EMA50 = np.array(ema_indicator(pd.Series(Close), window=50))
+    EMA20 = np.array(ema_indicator(pd.Series(Close), window=20))
+    RSI = np.array(rsi(pd.Series(Close)))
+    if Close[-1]>EMA100[-1] and RSI[-1]>50:
         ##looking for long entries
         if (EMA20[-2]<EMA50[-2] and EMA20[-1]>EMA50[-1]) or (EMA20[-3]<EMA50[-3] and EMA20[-1]>EMA50[-1]) or (EMA20[-4]<EMA50[-4] and EMA20[-1]>EMA50[-1]):
             ##Cross up occured
             Trade_Direction=1 ##buy
-    elif CloseStream[-1]<EMA100[-1] and RSI[-1]<50:
+    elif Close[-1]<EMA100[-1] and RSI[-1]<50:
         ##looking for short entries
         if (EMA20[-2]>EMA50[-2] and EMA20[-1]<EMA50[-1]) or (EMA20[-3]>EMA50[-3] and EMA20[-1]<EMA50[-1]) or (EMA20[-4]>EMA50[-4] and EMA20[-1]<EMA50[-1]):
             ##Cross up occured
             Trade_Direction=0 ##Sell
+    stoplossval, takeprofitval = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, Type=6)
+    return Trade_Direction,stoplossval,takeprofitval
 
-    return Trade_Direction,6
-
-def StochRSI_RSIMACD(Trade_Direction,CloseStream,signal1,signal2):
-    #Trade_Direction=-99
-    EMA200 = np.array(ema_indicator(pd.Series(CloseStream),window=200))
-    fastd = np.array(stochrsi_d(pd.Series(CloseStream)))
-    fastk = np.array(stochrsi_k(pd.Series(CloseStream)))
-    RSI = np.array(rsi(pd.Series(CloseStream)))
-    MACD = np.array(macd(pd.Series(CloseStream)))
-    macdsignal= np.array(macd_signal(pd.Series(CloseStream)))
-    ##buy signal
-    if fastk[-1] <=20 and fastd[-1] <=20:
-        signal1 = 1
-    elif fastk[-1] >=80 and fastd[-1] >=80:
-        signal1 = 0
-
-    if signal1 ==1:
-        if RSI[-1]>50:
-            if macdsignal[-1]<MACD[-1]:
-                signal2=1
-    elif signal1 == 0:
-        if RSI[-1]<50:
-            if macdsignal[-1] > MACD[-1]:
-                signal2=0
-
-    if signal1 == signal2 == 0:
-        if fastk[-1] >= 20 and fastd[-1] >= 20:
-            Trade_Direction=0
-        else:
-            signal1=-99
-            signal2 = -99
-
-    elif signal1 == signal2 == 1 and CloseStream[-1]>EMA200[-1] and CloseStream[-2]>EMA200[-2] and CloseStream[-3]>EMA200[-3] and CloseStream[-4]>EMA200[-4] and CloseStream[-5]>EMA200[-5]:
-        if fastk[-1] <=80 and fastd[-1] <=80:
-            Trade_Direction=1
-        else:
-            signal1=-99
-            signal2 = -99
-
-    return Trade_Direction,signal1,signal2,3
 
 def StochRSIMACD(Trade_Direction,CloseStream,HighStream,LowStream):
     Close = pd.Series(CloseStream)
@@ -354,16 +317,16 @@ def StochRSIMACD(Trade_Direction,CloseStream,HighStream,LowStream):
         (fastd[-3]>80 and fastk[-3]>80 and RSI[-1]<50 and MACD[-1]<macdsignal[-1] and MACD[-2]>macdsignal[-2] and fastd[-1]>20 and fastk[-1]>20) or
         (fastd[-4]>80 and fastk[-4]>80 and RSI[-1]<50 and MACD[-1]<macdsignal[-1] and MACD[-3]>macdsignal[-3] and fastd[-1]>20 and fastk[-1]>20)):
         Trade_Direction = 0
+    stoplossval, takeprofitval = SetSLTP(-99, -99, CloseStream, HighStream, LowStream, Trade_Direction, Type=2)
+    return Trade_Direction,stoplossval, takeprofitval
 
-    return Trade_Direction,2
-
 ##############################################################################################################################
 ##############################################################################################################################
 ##############################################################################################################################
-def tripleEMA(CloseStream,OpenStream,Trade_Direction):
-    EMA3 = np.array(ema_indicator(pd.Series(CloseStream), window=5))
-    EMA6 = np.array(ema_indicator(pd.Series(CloseStream), window=20))
-    EMA9 = np.array(ema_indicator(pd.Series(CloseStream), window=50))
+def tripleEMA(Close,High,Low,Trade_Direction):
+    EMA3 = np.array(ema_indicator(pd.Series(Close), window=5))
+    EMA6 = np.array(ema_indicator(pd.Series(Close), window=20))
+    EMA9 = np.array(ema_indicator(pd.Series(Close), window=50))
 
     if  EMA3[-5]>EMA6[-5] and EMA3[-5]>EMA9[-5] \
             and EMA3[-4]>EMA6[-4] and EMA3[-4]>EMA9[-4] \
@@ -377,7 +340,8 @@ def tripleEMA(CloseStream,OpenStream,Trade_Direction):
             and EMA3[-2]<EMA6[-2] and EMA3[-2]<EMA9[-2] \
             and EMA3[-1]>EMA6[-1] and EMA3[-1]>EMA9[-1] :
         Trade_Direction=1
-    return Trade_Direction,3
+    stoplossval, takeprofitval = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, Type=2)
+    return Trade_Direction,stoplossval, takeprofitval
 
 
 
@@ -533,8 +497,7 @@ def heikin_ashi_ema(CloseStream,OpenStream_H,CloseStream_H,Trade_Direction,stopl
 
 
 
-def tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,Trade_Direction):
-    #newOrder = 0
+def tripleEMAStochasticRSIATR(CloseStream,HighStream, LowStream,Trade_Direction):
     Close = np.array(CloseStream)
     EMA50 = np.array(ema_indicator(pd.Series(CloseStream),window=50))
     EMA14 = np.array(ema_indicator(pd.Series(CloseStream),window=14))
@@ -543,17 +506,12 @@ def tripleEMAStochasticRSIATR(CloseStream,signal1,signal2,Trade_Direction):
     fastk = np.array(stochrsi_k(pd.Series(CloseStream)))
     ##buy signal
     if (Close[-1]>EMA8[-1]>EMA14[-1]>EMA50[-1]) and ((fastk[-1]>fastd[-1]) and (fastk[-2]<fastd[-2])): #and (fastk[-1]<80 and fastd[-1]<80):
-        signal1=1
-    elif (Close[-1]<EMA8[-1]<EMA14[-1]<EMA50[-1]) and ((fastk[-1]<fastd[-1]) and (fastk[-2]>fastd[-2])) : #and (fastk[-1]>20 and fastd[-1]>20):
-        signal1=0
-    else:
-        signal1=-99
-
-    if signal1 == 0:
-        Trade_Direction=0
-    elif signal1 == 1:
         Trade_Direction=1
-    return  Trade_Direction, signal1, signal2, 1
+    elif (Close[-1]<EMA8[-1]<EMA14[-1]<EMA50[-1]) and ((fastk[-1]<fastd[-1]) and (fastk[-2]>fastd[-2])) : #and (fastk[-1]>20 and fastd[-1]>20):
+        Trade_Direction=0
+
+    stoplossval, takeprofitval = SetSLTP(-99, -99, CloseStream, HighStream, LowStream, Trade_Direction, Type=1)
+    return  Trade_Direction, stoplossval, takeprofitval
 
 ##############################################################################################################################
 ##############################################################################################################################
@@ -644,13 +602,13 @@ def RSIStochEMA(Trade_Direction,CloseStream,HighStream,LowStream,signal1,current
     if currentPos!=-99:
         signal1=-99
         Trade_Direction=-99
-
-    return Trade_Direction, signal1, 4
+    stoplossval, takeprofitval = SetSLTP(-99, -99, CloseStream, HighStream, LowStream, Trade_Direction, Type=4)
+    return Trade_Direction, signal1, stoplossval, takeprofitval
 
 
 ##############################################################################################################
 
-def stochBB(Trade_Direction,CloseStream):
+def stochBB(Trade_Direction,CloseStream,HighStream,LowStream):
     fastd = np.array(stochrsi_d(pd.Series(CloseStream)))
     fastk = np.array(stochrsi_k(pd.Series(CloseStream)))
 
@@ -665,11 +623,11 @@ def stochBB(Trade_Direction,CloseStream):
         Trade_Direction=1
     elif fastk[-1]>.8 and fastd[-1]>.8 and (fastk[-1]<fastd[-1] and fastk[-2]>fastd[-2])  and (percent_B1>1 or percent_B2>1 or percent_B3>1):# or percent_B3>1):# or percent_B2>1):
         Trade_Direction=0
+    stoplossval, takeprofitval = SetSLTP(-99, -99, CloseStream, HighStream, LowStream, Trade_Direction, Type=6)
+    return Trade_Direction,stoplossval, takeprofitval
 
-    return Trade_Direction,6
 
-
-def breakout(Trade_Direction,CloseStream,VolumeStream):
+def breakout(Trade_Direction,CloseStream,VolumeStream,HighStream, LowStream):
     invert=0 ## switch shorts and longs, basically fakeout instead of breakout
     #if symbol=='BTCUSDT' or symbol=='ETHUSDT':
     #    invert=0
@@ -688,14 +646,11 @@ def breakout(Trade_Direction,CloseStream,VolumeStream):
             Trade_Direction = 1
         elif Close.iloc[-1]<min_Close.iloc[-1] and VolumeStream[-1]>max_Vol.iloc[-1]:
             Trade_Direction = 0
-    return_type=9
-    '''if symbol=='DOGEUSDT':
-        return_type=9
-    elif symbol=='SOLUSDT':
-        return_type = 8'''
-    return Trade_Direction,return_type
 
-def fakeout(Trade_Direction,CloseStream,VolumeStream,symbol):
+    stoplossval, takeprofitval = SetSLTP(-99, -99, CloseStream, HighStream, LowStream, Trade_Direction, Type=9)
+    return Trade_Direction,stoplossval, takeprofitval
+
+def fakeout(Trade_Direction,CloseStream,VolumeStream,HighStream, LowStream):
     invert = 1
     #if symbol == 'BTCUSDT' or symbol == 'ETHUSDT':
     #    invert = 0
@@ -714,8 +669,8 @@ def fakeout(Trade_Direction,CloseStream,VolumeStream,symbol):
             Trade_Direction = 1
         elif Close.iloc[-1] < min_Close.iloc[-1] and VolumeStream[-1] < max_Vol.iloc[-1]:
             Trade_Direction = 0
-
-    return Trade_Direction, 9
+    stoplossval, takeprofitval = SetSLTP(-99, -99, CloseStream, HighStream, LowStream, Trade_Direction, Type=9)
+    return Trade_Direction, stoplossval, takeprofitval
 
 '''def sma_crossover(Trade_Direction,CloseStream,HighStream,LowStream):
     fastk = np.array(stoch_signal(pd.Series(HighStream), pd.Series(LowStream), pd.Series(CloseStream)))
@@ -799,14 +754,14 @@ def pairTrading_Crossover(Trade_Direction, Close1, Close2, CurrentPos, percent_S
 
 
 ##Function used to decide stoploss values and takeprofit values based off a type variable returned by specific strategies above
-def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Direction,CurrentPos,Type,SL=1,TP=1):
+def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Direction,Type,SL=1,TP=1):
     ##Average True Range with multipliers
     if Type==1:
         ATR = np.array(average_true_range(pd.Series(HighStream), pd.Series(LowStream), pd.Series(CloseStream)))
-        if Trade_Direction == 0 and CurrentPos == -99:
+        if Trade_Direction == 0:
             stoplossval = 1.5 * ATR[-1]
             takeprofitval = 8 * ATR[-1]
-        elif Trade_Direction == 1 and CurrentPos == -99:
+        elif Trade_Direction == 1:
             stoplossval = 1.5 * ATR[-1]
             takeprofitval = 8 * ATR[-1]
 
@@ -822,14 +777,14 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
             if CloseStream[j] < Lowswing and lowflag == 0:
                 Lowswing = CloseStream[j]
 
-        if Trade_Direction == 0 and CurrentPos == -99:
+        if Trade_Direction == 0:
             stoplossval = (highswing - CloseStream[-1])
             #if stoplossval>.15*CloseStream[-1]:
             #    stoplossval=.15*CloseStream[-1]
             if stoplossval < 0:
                 stoplossval *= -1
             takeprofitval = stoplossval * 2
-        elif Trade_Direction == 1 and CurrentPos == -99:
+        elif Trade_Direction == 1:
             stoplossval = (CloseStream[-1] - Lowswing)
             #if stoplossval>.15*CloseStream[-1]:
             #    stoplossval=.15*CloseStream[-1]
@@ -851,13 +806,13 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
                 Lowswing = CloseStream[j]
                 lowflag = 1
 
-        if Trade_Direction == 0 and CurrentPos == -99:
+        if Trade_Direction == 0:
             stoplossval = (highswing - CloseStream[-1])*1.003
             if stoplossval < 0:
                 stoplossval *= -1
             takeprofitval = (highswing - CloseStream[-1]) * 1.25
 
-        elif Trade_Direction == 1 and CurrentPos == -99:
+        elif Trade_Direction == 1:
             stoplossval = (CloseStream[-1] - Lowswing)*1.003
             if stoplossval < 0:
                 stoplossval *= -1
@@ -878,13 +833,13 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
                 Lowswing = CloseStream[j]
                 lowflag = 1
 
-        if Trade_Direction == 0 and CurrentPos == -99:
+        if Trade_Direction == 0:
             stoplossval = (highswing - CloseStream[-1])*.5
             if stoplossval < 0:
                 stoplossval *= -1
             takeprofitval = stoplossval * 2
 
-        elif Trade_Direction == 1 and CurrentPos == -99:
+        elif Trade_Direction == 1:
             stoplossval = (CloseStream[-1] - Lowswing)*.5
             if stoplossval < 0:
                 stoplossval *= -1
@@ -905,14 +860,14 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
                 Lowswing = LowStream[j]
                 lowflag = 1
 
-        if Trade_Direction == 0 and CurrentPos == -99:
+        if Trade_Direction == 0:
             temp = (highswing - CloseStream[-1])
             stoplossval = 1.25 * ATR[-1]
             if temp < 0:
                 temp *= -1
             takeprofitval = temp * 2
 
-        elif Trade_Direction == 1 and CurrentPos == -99:
+        elif Trade_Direction == 1:
             temp = (CloseStream[-1] - Lowswing)
             stoplossval = 1.25 * ATR[-1]
             if temp < 0:
@@ -921,10 +876,10 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
 
     elif Type==6:
         ATR = np.array(average_true_range(pd.Series(HighStream), pd.Series(LowStream), pd.Series(CloseStream)))
-        if Trade_Direction == 0 and CurrentPos == -99:
+        if Trade_Direction == 0:
             stoplossval = .5 * ATR[-1]
             takeprofitval = 3 * ATR[-1]
-        elif Trade_Direction == 1 and CurrentPos == -99:
+        elif Trade_Direction == 1:
             stoplossval = .5 * ATR[-1]
             takeprofitval = 3 * ATR[-1]
 
@@ -934,18 +889,18 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
 
     elif Type==8:
         ATR = np.array(average_true_range(pd.Series(HighStream[:-1]), pd.Series(LowStream[:-1]), pd.Series(CloseStream[:-1]),window=25))
-        if Trade_Direction == 0 and CurrentPos == -99:
+        if Trade_Direction == 0:
             stoplossval = 2 * ATR[-1]
             takeprofitval = 2.5 * ATR[-1]
-        elif Trade_Direction == 1 and CurrentPos == -99:
+        elif Trade_Direction == 1:
             stoplossval = 2 * ATR[-1]
             takeprofitval = 2.5 * ATR[-1]
     elif Type==9:
         ATR = np.array(average_true_range(pd.Series(HighStream[:-1]), pd.Series(LowStream[:-1]), pd.Series(CloseStream[:-1]),window=20))
-        if Trade_Direction == 0 and CurrentPos == -99:
+        if Trade_Direction == 0:
             stoplossval = SL * ATR[-1]
             takeprofitval = TP * ATR[-1]
-        elif Trade_Direction == 1 and CurrentPos == -99:
+        elif Trade_Direction == 1:
             stoplossval = SL * ATR[-1]
             takeprofitval = TP * ATR[-1]
     return stoplossval,takeprofitval
