@@ -135,6 +135,5 @@ class Data_set:
         ##These Strats require you turn on the use_heikin_ashi flag in Bot.py
         # Trade_Direction, stoplossval, takeprofitval, Close_pos = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stoplossval, takeprofitval, -99, 0)
         # Trade_Direction,stoplossval,takeprofitval,Close_pos = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stoplossval,takeprofitval, -99, 0)
-        # Trade_Direction, stoplossval, takeprofitval, Close_pos = PS.meta_candle_heikin_ashi(self.Close, self.Open_H, self.High_H, self.Low_H,self.Close_H, Trade_Direction, stoplossval, takeprofitval, -99,0)
-        # Trade_Direction,stoplossval,takeprofitval,Close_pos = TradingStrats.heikin_ashi_ema2(self.Close,self.Open_H,self.High_H,self.Low_H,self.Close_H,Trade_Direction,stoplossval,takeprofitval,-99,0)
+        # Trade_Direction,stoplossval,takeprofitval,Close_pos = TS.heikin_ashi_ema2(self.Close,self.Open_H,self.High_H,self.Low_H,self.Close_H,Trade_Direction,stoplossval,takeprofitval,-99,0)
         return Trade_Direction,stoplossval,takeprofitval
