@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 import TradingStrats as TS
-
+ 
 
 class Data_set:
     def __init__(self,symbol,Open,Close,High,Low,Volume,Date,OP,CP,index,use_heikin_ashi,tick):
