@@ -25,7 +25,7 @@ import API_keys
 import download_Data as DD
 Coin_precision = -99  ##Precision Coin is measured up to
 Order_precision = -99 ##Precision Orders are measured up to
-import personal_strats as PS
+
 
 from copy import copy
 import time
@@ -47,18 +47,20 @@ signals= deque(maxlen=100000) ##when a siganl occured , NOT IN USE
           'YFIUSDT', 'AXSUSDT', 'ZILUSDT', 'XEMUSDT', 'COMPUSDT', 'RUNEUSDT', 'AVAXUSDT', 'KNCUSDT', 'LPTUSDT', 'LRCUSDT',
           'MTLUSDT', 'VETUSDT', 'DASHUSDT', 'KEEPUSDT', 'LTCUSDT', 'DYDXUSDT', 'LINAUSDT', 'XLMUSDT', 'LINKUSDT', 'QTUMUSDT',
           'KSMUSDT', 'FILUSDT', 'STMXUSDT', 'BALUSDT', 'GALAUSDT', 'BATUSDT', 'AKROUSDT', 'XMRUSDT', 'COTIUSDT']'''
-symbol = ['PEOPLEUSDT','ROSEUSDT','LINKUSDT','HNTUSDT','LUNAUSDT','DOGEUSDT']
+#symbol = ['PEOPLEUSDT','ROSEUSDT','LINKUSDT','HNTUSDT','LUNAUSDT','DOGEUSDT']
+
+symbol = ['ETHUSDT']
 ###################################################################################################################################
 #######################################             SETTINGS            ###########################################################
 ###################################################################################################################################
 
 EffectiveAccountBalance = -99 ##set later
-OrderSIZE = .1 ## Amount of effective account balance to use per trade
+OrderSIZE = .02 ## Amount of effective account balance to use per trade
 AccountBalance = 1000
 leverage = 10  ##leverage being used
 test_set = 0  ##If OFF we are only paper trading on in-s ample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
 time_period_units = 'month' ## day/week/month/year
-time_period = 3  ##Number of units
+time_period = 1  ##Number of units
 TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
 load_data = 1 ##load data from a file, download the data using download_Data.py
 save_data = 0 ##set to true to overwrite data thats currently in price_data folder
@@ -638,26 +640,21 @@ for i in range(len(High_1min[0])-1):
 
                     ##Public Strats :) :
                     if CurrentPos==-99:
-                        #Trade_Direction,stoplossval,takeprofitval,Close_pos = PS.heikin_ashi_ema3(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval,
-                        # takeprofitval, CurrentPos, Close_pos)
-                        ## These strats require a call to SetSLTP as they return a Type param:
-                        #Trade_Direction,Type = TS.StochRSIMACD(Trade_Direction, CloseStream[j],HighStream[j],LowStream[j])  ###########################################
-                        #Trade_Direction, signal1, signal2, Type = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,Trade_Direction)
-                        Trade_Direction,Type=TS.tripleEMA(CloseStream[j],OpenStream[j],Trade_Direction)
-                        
-                        #Trade_Direction, Type = TS.breakout(Trade_Direction,CloseStream[j],VolumeStream[j])
-                        #Trade_Direction,Type = TS.stochBB(Trade_Direction,CloseStream[j])
-                        #Trade_Direction, Type = TS.goldenCross(Trade_Direction,CloseStream[j])
-                        #Trade_Direction , Type = TS.candle_wick(Trade_Direction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j])
-                        #Trade_Direction,Close_pos,count,stoplossval = TS.single_candle_swing_pump(Trade_Direction,CloseStream[j],HighStream[j],LowStream[j],
-                        # CurrentPos,Close_pos,count,stoplossval) ##must be unhighlighted below as it returns the Close_pos var
-                        #stoplossval, takeprofitval = SetSLTP(stoplossval, takeprofitval, CloseStream[j],HighStream[j], LowStream[j], Trade_Direction,CurrentPos, Type)
-                        #print(Trade_Direction)
-                        ##These strats don't require a call to SetSLTP:
+
+                        #Trade_Direction,stoplossval, takeprofitval = TS.StochRSIMACD(Trade_Direction, CloseStream[j],HighStream[j],LowStream[j])  ###########################################
+                        #Trade_Direction,stoplossval, takeprofitval = TS.tripleEMAStochasticRSIATR(CloseStream[j],signal1,signal2,Trade_Direction)
+                        Trade_Direction,stoplossval, takeprofitval=TS.tripleEMA(CloseStream[j],HighStream[j],LowStream[j],Trade_Direction)
+                        #Trade_Direction, stoplossval, takeprofitval = TS.breakout(Trade_Direction,CloseStream[j],VolumeStream[j],HighStream[j], LowStream[j])
+                        #Trade_Direction,stoplossval,takeprofitval = TS.stochBB(Trade_Direction,CloseStream[j], HighStream[j], LowStream[j],HighStream[j], LowStream[j])
+                        #Trade_Direction, stoplossval, takeprofitval = TS.goldenCross(Trade_Direction,CloseStream[j], HighStream[j], LowStream[j]) **
+                        #Trade_Direction , stoplossval, takeprofitval = TS.candle_wick(Trade_Direction,CloseStream[j],OpenStream[j],HighStream[j],LowStream[j]) **
                         #Trade_Direction,stoplossval,takeprofitval = TS.fibMACD(Trade_Direction, CloseStream[j], OpenStream[j],HighStream[j],LowStream[j])
                         #Trade_Direction, stoplossval, takeprofitval, Close_pos = TS.heikin_ashi_ema2(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval, takeprofitval, CurrentPos, Close_pos)
                         #Trade_Direction,stoplossval,takeprofitval,Close_pos = TS.heikin_ashi_ema(CloseStream[j], OpenStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval,takeprofitval, CurrentPos, Close_pos)
                         #Trade_Direction, stoplossval, takeprofitval, Close_pos = PS.meta_candle_heikin_ashi(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j],CloseStream_H[j], Trade_Direction, stoplossval, takeprofitval, CurrentPos,Close_pos)
+
+                        ##must be unhighlighted below in the else clause also as it returns the Close_pos var
+                        # Trade_Direction,Close_pos,count,stoplossval = TS.single_candle_swing_pump(Trade_Direction,CloseStream[j],HighStream[j],LowStream[j],CurrentPos,Close_pos,count,stoplossval)
                     else:
                         ##Must Call these every candle because they return Close_pos var
                         #Trade_Direction,Close_pos,count,stoplossval = TS.single_candle_swing_pump(Trade_Direction,CloseStream[j],HighStream[j],LowStream[j],CurrentPos,Close_pos,count,stoplossval)
@@ -666,18 +663,6 @@ for i in range(len(High_1min[0])-1):
                         pass
                         ##########################################################################################################################################################################
                         ##########################################################################################################################################################################
-                    ##Non public Strats sorry :( :
-                    # Trade_Direction, stoplossval, takeprofitval, Close_pos = \
-                    #    PS.heikin_ashi_ema(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval, takeprofitval, CurrentPos, Close_pos)
-                    # if Close_pos:
-                    #    Close_pos = 0
-                    #  \
-
-                    #Trade_Direction,Type = Strategy.Check_for_sup_res(CloseStream[j],OpenStream[j],HighStream[j],LowStream[j]) ##not a strategy ive made public
-                    #Trade_Direction, stoplossval, takeprofitval = Strategy[j].check_for_pullback(CloseStream[j], LowStream[j], HighStream[j], OpenStream[j],VolumeStream[j],Trade_Direction) ##not a strategy ive made public
-                    #if Trade_Direction[j]==1:
-                    #    Trade_Direction[j]=-99
-                    ##########################################################################################################################################################################
                 #Close_pos = Strategy[j].Trade_timer(CurrentPos, Close_pos)
 
             ##If the trade won't cover the fee & profit something then don't place it
