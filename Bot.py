@@ -12,7 +12,7 @@ from threading import Thread
 from copy import copy
 from multiprocessing import Pool,Process,Value,Pipe
 
-from Data_Set import Data_set
+from Christian_Strats import Data_set
 
 def reset_vars():
     entry_price = -99  ##where we entered our original trade
@@ -39,7 +39,7 @@ def reset_vars():
 
     return entry_price,orderId,stop_ID,Take_ID,comp_ID,Start_Account_Balance,position_Size,Trading_index,Trade_Direction,wait_count,takeprofitval,stoplossval,in_a_trade,attempting_a_trade,order_placed,flag,start,yesterdate,retry_attempt
 
-def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trailing_stop,trailing_stop_percent):
+def Check_for_signals(pipe:Pipe,leverage,order_Size,client:Client,use_trailing_stop,trailing_stop_percent):
     pp = pprint.PrettyPrinter()  ##for printing json text cleanly (inspect binance API call returns)
     Data = []
     entry_price, orderId, stop_ID, Take_ID, comp_ID, Start_Account_Balance, position_Size, \
@@ -74,12 +74,12 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                 if attempting_a_trade and not order_placed:
                     try:
                         print(f"{Data[0].Date[-1]}: Attempting to place order on {Data[Trading_index].symbol}")
-                        y = client_trade.futures_account_balance()
+                        y = client.futures_account_balance()
                         for x in y:
                             if x['asset'] == 'USDT':
                                 Start_Account_Balance = float(x['balance'])
                                 break
-                        order_book = client_trade.futures_order_book(symbol=Data[Trading_index].symbol)
+                        order_book = client.futures_order_book(symbol=Data[Trading_index].symbol)
                         bids = order_book['bids']
                         asks = order_book['asks']
                         ##Using Order Book to pick entry price for orders:
@@ -99,7 +99,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
 
                         if Trade_Direction == 1:
                             if Data[Trading_index].CP!=0:
-                                order1 = client_trade.futures_create_order(
+                                order1 = client.futures_create_order(
                                     symbol=Data[Trading_index].symbol,
                                     side=SIDE_BUY,
                                     type=FUTURE_ORDER_TYPE_LIMIT,
@@ -108,7 +108,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                     quantity=position_Size)
                                 orderId = order1['orderId']
                             else:
-                                order1 = client_trade.futures_create_order(
+                                order1 = client.futures_create_order(
                                     symbol=Data[Trading_index].symbol,
                                     side=SIDE_BUY,
                                     type=FUTURE_ORDER_TYPE_LIMIT,
@@ -119,7 +119,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
 
                         elif Trade_Direction == 0:
                             if Data[Trading_index].CP!=0:
-                                order1 = client_trade.futures_create_order(
+                                order1 = client.futures_create_order(
                                     symbol=Data[Trading_index].symbol,
                                     side=SIDE_SELL,
                                     type=FUTURE_ORDER_TYPE_LIMIT,
@@ -128,7 +128,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                     quantity=position_Size)
                                 orderId = order1['orderId']
                             else:
-                                order1 = client_trade.futures_create_order(
+                                order1 = client.futures_create_order(
                                     symbol=Data[Trading_index].symbol,
                                     side=SIDE_SELL,
                                     type=FUTURE_ORDER_TYPE_LIMIT,
@@ -150,16 +150,16 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                         yesterdate = date.today()
 
                         if in_a_trade:
-                            y = client_trade.futures_position_information(symbol=Data[Trading_index].symbol)[0]
+                            y = client.futures_position_information(symbol=Data[Trading_index].symbol)[0]
                             position_Amount = float(y['positionAmt'])
                             if position_Amount == 0:
-                                client_trade.futures_cancel_all_open_orders(symbol=Data[Trading_index].symbol)
+                                client.futures_cancel_all_open_orders(symbol=Data[Trading_index].symbol)
 
                                 entry_price, orderId, stop_ID, Take_ID, comp_ID, Start_Account_Balance, position_Size, \
                                 Trading_index, Trade_Direction, wait_count, takeprofitval, stoplossval, in_a_trade, \
                                 attempting_a_trade, order_placed, flag, start, yesterdate, retry_attempt = reset_vars()
 
-                                y = client_trade.futures_account_balance()
+                                y = client.futures_account_balance()
                                 for x in y:
                                     if x['asset'] == 'USDT':
                                         print(f"{Data[0].Date[-1]}: Trade Finished\n"
@@ -168,13 +168,13 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
 
                         ##Check if order placed
                         if not in_a_trade and order_placed:
-                            if client_trade.futures_get_all_orders(symbol=Data[Trading_index].symbol,orderId=orderId)[0]['status'] == 'FILLED':
+                            if client.futures_get_all_orders(symbol=Data[Trading_index].symbol,orderId=orderId)[0]['status'] == 'FILLED':
                                 print(f"Initial Order Successful on {Data[Trading_index].symbol}")
                                 try:
                                     ##place stoploss and takeprofits
                                     if Trade_Direction == 1:
                                         if Data[Trading_index].CP != 0:
-                                            order2 = client_trade.futures_create_order(
+                                            order2 = client.futures_create_order(
                                                 symbol=Data[Trading_index].symbol,
                                                 side=SIDE_SELL,
                                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
@@ -183,7 +183,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                 quantity=position_Size)
                                             stop_ID = order2['orderId']
                                             if not use_trailing_stop:
-                                                order3 = client_trade.futures_create_order(
+                                                order3 = client.futures_create_order(
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_SELL,
                                                     type=FUTURE_ORDER_TYPE_LIMIT,
@@ -192,7 +192,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     quantity=position_Size)
                                                 Take_ID = order3['orderId']
                                             else:
-                                                order3 = client_trade.futures_create_order(
+                                                order3 = client.futures_create_order(
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_SELL,
                                                     type='TRAILING_STOP_MARKET',
@@ -202,7 +202,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     callbackRate = trailing_stop_percent)
                                                 Take_ID = order3['orderId']
                                         else:
-                                            order2 = client_trade.futures_create_order(
+                                            order2 = client.futures_create_order(
                                                 symbol=Data[Trading_index].symbol,
                                                 side=SIDE_SELL,
                                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
@@ -211,7 +211,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                 quantity=position_Size)
                                             stop_ID = order2['orderId']
                                             if not use_trailing_stop:
-                                                order3 = client_trade.futures_create_order(
+                                                order3 = client.futures_create_order(
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_SELL,
                                                     type=FUTURE_ORDER_TYPE_LIMIT,
@@ -220,7 +220,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     quantity=position_Size)
                                                 Take_ID = order3['orderId']
                                             else:
-                                                order3 = client_trade.futures_create_order(
+                                                order3 = client.futures_create_order(
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_SELL,
                                                     type='TRAILING_STOP_MARKET',
@@ -231,7 +231,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                 Take_ID = order3['orderId']
                                     elif Trade_Direction == 0:
                                         if Data[Trading_index].CP != 0:
-                                            order2 = client_trade.futures_create_order(
+                                            order2 = client.futures_create_order(
                                                 symbol=Data[Trading_index].symbol,
                                                 side=SIDE_BUY,
                                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
@@ -240,7 +240,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                 quantity=position_Size)
                                             stop_ID = order2['orderId']
                                             if not use_trailing_stop:
-                                                order3 = client_trade.futures_create_order(
+                                                order3 = client.futures_create_order(
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_BUY,
                                                     type=FUTURE_ORDER_TYPE_LIMIT,
@@ -249,7 +249,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     quantity=position_Size)
                                                 Take_ID = order3['orderId']
                                             else:
-                                                order3 = client_trade.futures_create_order(
+                                                order3 = client.futures_create_order(
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_BUY,
                                                     type='TRAILING_STOP_MARKET',
@@ -259,7 +259,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     callbackRate = trailing_stop_percent)
                                                 Take_ID = order3['orderId']
                                         else:
-                                            order2 = client_trade.futures_create_order(
+                                            order2 = client.futures_create_order(
                                                 symbol=Data[Trading_index].symbol,
                                                 side=SIDE_BUY,
                                                 type=FUTURE_ORDER_TYPE_STOP_MARKET,
@@ -268,7 +268,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                 quantity=position_Size)
                                             stop_ID = order2['orderId']
                                             if not use_trailing_stop:
-                                                order3 = client_trade.futures_create_order(
+                                                order3 = client.futures_create_order(
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_BUY,
                                                     type=FUTURE_ORDER_TYPE_LIMIT,
@@ -277,7 +277,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client_trade:Client,use_trai
                                                     quantity=position_Size)
                                                 Take_ID = order3['orderId']
                                             else:
-                                                order3 = client_trade.futures_create_order(
+                                                order3 = client.futures_create_order(
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_BUY,
                                                     type='TRAILING_STOP_MARKET',
@@ -358,7 +358,7 @@ if __name__ == '__main__':
     Interval = '1m'  ##Time interval over which we want to trade, valid Intervals: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M
     leverage = 10  ##leverage we want to use on the account, *Check valid leverages for coins*
     order_Size = .03  ##percent of Effective account to risk ie. (leverage X Account Balance) X order_size
-    use_trailing_stop = 0 ##THIS IS NOT WORKING CURRENTLY trailing stoploss
+    use_trailing_stop = 0 ##trailing stoploss
     trailing_stop_percent = .01 ## 1% trailing stop
     use_heikin_ashi = 0
 
@@ -377,13 +377,17 @@ if __name__ == '__main__':
     twm.start() ##start manager
     streams = [] ##store streams allowing the option to start and stop streams if needed
     symbol = []
-    x = client.futures_ticker()  # [0]
+    ### Run on all symbols:
+    '''x = client.futures_ticker()  # [0]
     ##get all symbols
     for y in x:
         symbol.append(y['symbol'])
     symbol = [x for x in symbol if 'USDT' in x] ##filter for usdt futures
-    symbol = [x for x in symbol if not '_' in x] ##remove invalid symbols
-    print(len(symbol))
+    symbol = [x for x in symbol if not '_' in x] ##remove invalid symbols'''
+
+    #### Run on select symbols:
+    symbol = ['ROSEUSDT','PEOPLEUSDT','LUNAUSDT']
+
     print("Setting Leverage...")
     i = 0
     while i < len(symbol):
@@ -409,7 +413,7 @@ if __name__ == '__main__':
         min_price_temp = -99
         flag = 0
         for x in coin_info:
-            if x[0] == symbol[i] and symbol[i] != 'BTSUSDT':
+            if x[0] == symbol[i]:
                 # symbol_temp = x[0]
                 Coin_precision_temp = int(x[1])
                 Order_precision_temp = int(x[2])
