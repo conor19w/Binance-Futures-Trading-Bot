@@ -12,7 +12,7 @@ from threading import Thread
 from copy import copy
 from multiprocessing import Pool,Process,Value,Pipe
 
-from Christian_Strats import Data_set
+from Data_Set import Data_set
 
 def reset_vars():
     entry_price = -99  ##where we entered our original trade
