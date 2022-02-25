@@ -45,6 +45,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client:Client,use_trailing_s
     entry_price, orderId, stop_ID, Take_ID, comp_ID, Start_Account_Balance, position_Size, \
     Trading_index, Trade_Direction, wait_count, takeprofitval, stoplossval, in_a_trade, \
     attempting_a_trade, order_placed, flag, start, yesterdate, retry_attempt = reset_vars()
+    print("Searching for Trade Entries...")
     while True:
         try:
             try:
