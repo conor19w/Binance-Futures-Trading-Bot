@@ -27,6 +27,7 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 *  [✓] Read Info [✓] Enable Trading [✓] Enable Futures [X] Enable Withdrawals
 * Whitelist your IP address to further secure your account, and so that your API keys don't expire after 1 month.
 * Fill in your api keys into api_secret and api_key in [API_keys.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/API_keys.py).
+* (Set up windows to sync time once a day)[https://www.makeuseof.com/tag/synchronise-computer-time-internet-custom-schedule-windows-7/#:~:text=Go%20to%20%3E%20Start%20and%20type,on%20the%20right%20hand%20side] if you don't do this binance will eventually reject orders with a timestamp error.
 ---
 ### Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
 ---
