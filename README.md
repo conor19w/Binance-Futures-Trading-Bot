@@ -16,7 +16,7 @@
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
-* [Find me on Tradalize](https://tradelize.com/) for copy trading under the username conor19w.📈 ₿ 🚀
+* [Find me on Tradalize](https://tradelize.com/) for copy trading under the username conor19w 📈 ₿ 🚀.
 * Min version = python 3.7 
 ## Binance Setup
 ---
