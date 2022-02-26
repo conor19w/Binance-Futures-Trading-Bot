@@ -1,13 +1,5 @@
 # Binance-Futures-Trading-Bot [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 ---
-## To-Do list: (suggest something and I'll add it) 😃
-* Fix an issue with graphing trades, for now don't use.
-* Fix trailing Stop in Back Tester, think its causing some rounding errors.
-* GUI if people were interested (could take a while I've no experience here)
-* Speed up Data Set aligner in Backtester with multiprocessing
-### Strategy suggestions:
-* [Heikin Ashi](https://www.youtube.com/watch?v=g3XV1hjCv_8) something like this
----
 ## Latest Changes (if any):
 * Added support in the live Bot environment for some of the strategies in Trading_strats.py , To make use of a strategy in Bot.py just uncomment it inside Make_Decision() inside Data_set.py (11/02/2022).
 * Added support for Heikin Ashi candles in Bot.py, there is now a switch in settings use_heikin_ashi. If switched on you may reference self.Open_H, self.Close_H etc. from make_Decision() in Data_set.py (17/01/22).
@@ -24,6 +16,7 @@
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
+* [Find me on Tradalize](https://tradelize.com/) for copy trading under the username conor19w.📈 ₿ 🚀
 * Min version = python 3.7 
 ## Binance Setup
 ---
@@ -96,11 +89,16 @@ __Triple EMA 4hr candles__
 ---
 ![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMA/4hr%20candles%202%20months%20ago.png)
 ---
-
+## To-Do list: (suggest something and I'll add it) 😃
+* Fix an issue with graphing trades, for now don't use.
+* Fix trailing Stop in Back Tester, think its causing some rounding errors.
+* GUI if people were interested (could take a while I've no experience here)
+* Speed up Data Set aligner in Backtester with multiprocessing
+---
 ###### (Depreciated) __Bot__(depreciated).py
 ###### (Depreciated) __Strategy_Tester(Depreciated).py__
 # Contact me [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 * If you have any querys about anything, or need me to explain any blocks of code please reach out to me at wconor539@gmail.com.
 * If you have any suggestions or requests please reach out to me as well.  
 [__Join My Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
-* [Find me on Tradalize](https://tradelize.com/) for copy trading under the username conor19w.📈 ₿ 🚀
+
