@@ -4,7 +4,6 @@ from binance.enums import *
 from datetime import timezone,datetime,date,timedelta
 import API_keys
 from joblib import load,dump
-from download_Data import path
 client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
 
 def get_TIME_INTERVAL(TIME_INTERVAL):
