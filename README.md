@@ -103,3 +103,4 @@ __Triple EMA 4hr candles__
 * If you have any querys about anything, or need me to explain any blocks of code please reach out to me at wconor539@gmail.com.
 * If you have any suggestions or requests please reach out to me as well.  
 [__Join My Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
+* Find me on tradalize for copy trading under the username conor19w.📈 ₿ 🚀
