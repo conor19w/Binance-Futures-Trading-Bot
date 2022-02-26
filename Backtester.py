@@ -352,7 +352,7 @@ for i in range(len(High_1min[0])-1):
         prev_Account_Bal=copy(AccountBalance)
         EffectiveAccountBalance = AccountBalance*leverage
         if Trade_Stage == 1:
-            if positionPrice - Open_1min[Trading_index][i] < -stoplossval and CurrentPos == 0:  # and not Hold_pos:
+            if positionPrice - High_1min[Trading_index][i] < -stoplossval and CurrentPos == 0:  # and not Hold_pos:
                 Profit += -stoplossval
                 month_return -= positionSize * stoplossval
                 AccountBalance += positionSize * -stoplossval
@@ -381,7 +381,7 @@ for i in range(len(High_1min[0])-1):
                     pass
                 Trading_index = -99
 
-            elif Open_1min[Trading_index][i] - positionPrice < -stoplossval and CurrentPos == 1:  # and not Hold_pos:
+            elif Low_1min[Trading_index][i] - positionPrice < -stoplossval and CurrentPos == 1:  # and not Hold_pos:
                 Profit += -stoplossval
                 month_return -= positionSize * stoplossval
                 AccountBalance += positionSize * -stoplossval
@@ -411,7 +411,7 @@ for i in range(len(High_1min[0])-1):
                     pass
                 Trading_index = -99
 
-            elif positionPrice - Open_1min[Trading_index][i] > takeprofitval and CurrentPos == 0 and not use_trailing_stop:  # and not Hold_pos:
+            elif positionPrice - Low_1min[Trading_index][i] > takeprofitval and CurrentPos == 0 and not use_trailing_stop:  # and not Hold_pos:
                 Profit += takeprofitval
                 month_return += positionSize * takeprofitval
                 AccountBalance += positionSize * takeprofitval
@@ -441,7 +441,7 @@ for i in range(len(High_1min[0])-1):
                 winning_trades.append(Trade_start)
                 Trading_index = -99
 
-            elif Open_1min[Trading_index][i] - positionPrice > takeprofitval and CurrentPos == 1 and not use_trailing_stop:  # and not Hold_pos:
+            elif High_1min[Trading_index][i] - positionPrice > takeprofitval and CurrentPos == 1 and not use_trailing_stop:  # and not Hold_pos:
                 Profit += takeprofitval
                 month_return += positionSize * takeprofitval
                 AccountBalance += positionSize * takeprofitval
