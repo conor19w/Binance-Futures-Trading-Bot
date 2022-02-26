@@ -32,8 +32,8 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 ---
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
-__There is no set strategy, You can selet one by uncommenting one in make_Decision() inside data_set.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
-* In __Bot.py__ on __line 341__ are the settings.
+__There is no set strategy, You can select one by uncommenting it in make_Decision() inside data_set.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
+* In __Bot.py__ the settings are on __line 341__.
 * Choose the Interval you want to trade and the buffer of candlesticks your strategy will need.
 * leverage and order_size should be changed acording to your preference
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
