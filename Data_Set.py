@@ -77,7 +77,7 @@ class Data_set:
             self.High.append(float(payload['h']))
             self.Low.append(float(payload['l']))
             self.Volume.append(float(payload['q']))
-            self.Date.append(datetime.utcfromtimestamp(round(payload['t']/1000)))
+            self.Date.append(datetime.utcfromtimestamp(round(payload['T']/1000)))
             ## remove oldest data point
             if self.add_hist_complete:
                 self.Open.pop(0)
