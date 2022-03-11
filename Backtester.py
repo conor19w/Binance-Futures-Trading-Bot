@@ -44,7 +44,7 @@ symbol = [x for x in symbol if not '_' in x] ##remove invalid symbols
 OrderSIZE = .05 ## Amount of effective account balance to use per trade
 AccountBalance = 1000
 leverage = 10  ##leverage being used
-test_set = 0  ##If OFF we are only paper trading on in-s ample data, if ON the we are paper trading on out of sample data to determine the validity of our strategies results
+fee = .00036
 start = '01-12-21' ##start of backtest dd/mm/yy
 end = '01-03-22'   ##end of backtest   dd/mm/yy
 TIME_INTERVAL = '1m'   ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M I think...
@@ -94,7 +94,6 @@ profitgraph.append(AccountBalance)
 count = 0
 percent = .01 ##percentage to hold out for
 originalBalance = copy(AccountBalance)
-fee = .00036
 trailing_stop_value = -99 ##gets set automatically depending on the trailing stop percent, if used above
 EffectiveAccountBalance = -99 ##set later
 #####################################################################################################################
