@@ -14,6 +14,7 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Max version = python 3.10.x
 ---
 ## Latest Changes (if any):
+* Simplified the system to be more user friendly, removed code that was obsolete. (11/03/22)
 * Added support in the live Bot environment for some of the strategies in Trading_strats.py , To make use of a strategy in Bot.py just uncomment it inside Make_Decision() inside Data_set.py (11/02/2022).
 * Added support for Heikin Ashi candles in Bot.py, there is now a switch in settings use_heikin_ashi. If switched on you may reference self.Open_H, self.Close_H etc. from make_Decision() in Data_set.py (17/01/22).
 * Updated Backtester to make it more user friendly & changed naming convention for saved data (14/01/22).
@@ -34,8 +35,8 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
 __There is no set strategy, You can select one by uncommenting it in make_Decision() inside data_set.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
-* In __Bot.py__ the settings are on __line 341__.
-* Choose the Interval you want to trade and the buffer of candlesticks your strategy will need.
+* In __Bot.py__ the settings are on __line 365__.
+* Choose the Interval you want to trade and the buffer of candlesticks your strategy will need this will be dependat on indicators you need to ensure you have a sufficient buffer or you will get errors.
 * leverage and order_size should be changed acording to your preference
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
 * __Trailing stop (NOT WORKING PROPERLY CURRENTLY): set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy__.  
@@ -43,33 +44,22 @@ __There is no set strategy, You can select one by uncommenting it in make_Decisi
 #### Creating Custom Strategies:
 __Strategies are implemented in Data_Set.py as a function named Make_decision() in the Data_set class__
 * Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to work properly
-* You might draw inspiration for a strategy from one In __TradingStrats.py__
-* I reccommend using the backtester first.
+* You might draw inspiration for a strategy from one in __TradingStrats.py__
+* I recommend using the backtester first.
 ---
 ### YouTube Channels with Strategy Ideas:
 [__Trade Pro__](https://www.youtube.com/channel/UCrXjzUN6EtlyhaaAerbPfkQ) | [__Strategy Testing__](https://www.youtube.com/c/TradingStrategyTesting) | [__Trading Journal__](https://www.youtube.com/c/TradingJournal1) | [__Critical Trading__](https://www.youtube.com/c/CriticalTrading) | [__The Moving Average__](https://www.youtube.com/channel/UCYFQzaZyTUzY-Tiytyv3HhA)  
 ---
 ### Back test strategies in [Backtester.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtester.py)
 ---
+* Create a 'price_data' folder on the desktop and change the path variable in Helper.py to suit your machine. Data pulled from Binance will be stored in this folder and automatically loaded from memory in future.
 * Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. symbol = ['BTCUSDT' , 'ETHUSDT'] , this would run your strategy on BTC and ETH.
 Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
-* The data is split into an in-sample set and a test set, the flag __test_set__ decides which set we are running the strategy on.
-* The reason for splitting the data like this is to optimize parameters on the in-sample set and then once optimized run the strategy on the test-set to see if you have overfit your model by cherry picking values for parameters that suit the in-sample data.
-* Settings are found at the top of the script, __line 52__.
-* Trailing Stop: turn the __use_trailing_stop__ flag on, specify the __trailing_stop_distance__ in decimal, now when a takeprofit margin target is hit the trailing stop will be placed and automatically & adjusted based off new Lows or Highs in price and the __trailing_stop_distance__ you've specified.
-* Next we want to choose our TA strategy, this is done after __line 640__ , uncomment a strategy or call a new strategy you have written yourself here, the 'Trade_Direction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
+* Settings are found at the top of the script, __line 44__.
+* Trailing Stop (NOT FUNCTIONING CORRECTLY): turn the __use_trailing_stop__ flag on, specify the __trailing_stop_distance__ in decimal, now when a takeprofit margin target is hit the trailing stop will be placed and automatically & adjusted based off new Lows or Highs in price and the __trailing_stop_distance__ you've specified.
+* Next we want to choose our TA strategy, this is done after __line 254__ , uncomment a strategy or call a new strategy you have written yourself here, the 'Trade_Direction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 * Heikin Ashi Candles are available under: CloseStream_H, OpenStream_H, LowStream_H, HighStream_H which can be referenced or passed to Strategies.
----
-#### Using Downloaded data for backtesting
----
-* Reason to do this is to speed up backtesting 
-* Create a folder on the desktop called __price_data__.
-*  In __download_Data.py__ change the __path__ to f"C:\\Users\\your_name\\Desktop\\  
-__replacing your_name with the user that you are logged into.__
-* Switch __load_data__ on in __Backtester.py__ on __line 71__, now when you run the script it will load from the folder & if the specified candlestick data isn't present in the folder then it will be downloaded and saved for future use.  
-* To overwrite existing data you can set the save_data flag = 1 & your data will be overwritten with new data.
-* Otherwise you can just turn load_data off and pull data from the server everytime you want to run a backtest.
 ---
 ### __Back Test top performers:__
 ---
