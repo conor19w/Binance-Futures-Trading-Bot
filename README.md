@@ -16,7 +16,6 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 ## Latest Changes (if any):
 * Added support in the live Bot environment for some of the strategies in Trading_strats.py , To make use of a strategy in Bot.py just uncomment it inside Make_Decision() inside Data_set.py (11/02/2022).
 * Added support for Heikin Ashi candles in Bot.py, there is now a switch in settings use_heikin_ashi. If switched on you may reference self.Open_H, self.Close_H etc. from make_Decision() in Data_set.py (17/01/22).
-* Added a feature in the backtester that graphs all the trades made and Indicators at the time of the trade and saves them to folders labelled winning and losing trades, to help with analysis of strategies (14/01/22) See below in the graph trades section.
 * Updated Backtester to make it more user friendly & changed naming convention for saved data (14/01/22).
 * At the end of a backtest you can see the date & time that every trade was taken. So you can debug strategies by checking on tradingview/binance (07/01/22).
 ---
@@ -61,11 +60,6 @@ Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * Next we want to choose our TA strategy, this is done after __line 640__ , uncomment a strategy or call a new strategy you have written yourself here, the 'Trade_Direction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 * Heikin Ashi Candles are available under: CloseStream_H, OpenStream_H, LowStream_H, HighStream_H which can be referenced or passed to Strategies.
-## __New:__ Graph your trades by Altering the Trade Graph settings at the top of the script:  
-* Ensure your __path__ in __download_data.py__ is correct as specified.
-* A folder will be made on your desktop named after the trade_graph_folder paramameter you provide.
-* Settings should be easy to follow just change the flags and the indicators will be added to the graphs.
-![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/losing%20trades/ALICEUSDT_16.png) 
 ---
 #### Using Downloaded data for backtesting
 ---
@@ -77,7 +71,6 @@ __replacing your_name with the user that you are logged into.__
 * To overwrite existing data you can set the save_data flag = 1 & your data will be overwritten with new data.
 * Otherwise you can just turn load_data off and pull data from the server everytime you want to run a backtest.
 ---
-
 ### __Back Test top performers:__
 ---
 __Not indicative of future returns, Check out the other backtests although results were poor on some that was due to transaction fees in many cases so maybe altering to take less trades or add confirmation could work. All of the strategies can be improved on but this is just a good place to start.__  
@@ -98,8 +91,6 @@ __Triple EMA 4hr candles__
 * GUI if people were interested (could take a while I've no experience here)
 * Speed up Data Set aligner in Backtester with multiprocessing
 ---
-###### (Depreciated) __Bot__(depreciated).py
-###### (Depreciated) __Strategy_Tester(Depreciated).py__
 # Contact me [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 * If you have any querys about anything, or need me to explain any blocks of code please reach out to me at wconor539@gmail.com.
 * If you have any suggestions or requests please reach out to me as well.  
