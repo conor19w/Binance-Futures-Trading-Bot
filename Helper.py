@@ -4,7 +4,7 @@ from binance.enums import *
 from datetime import timezone,datetime,date,timedelta
 import API_keys
 from joblib import load,dump
-from download_Data import path
+from github.download_Data import path
 client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
 
 def get_TIME_INTERVAL(TIME_INTERVAL):
@@ -162,7 +162,7 @@ def get_historical(symbol,start_string,Interval):
         print(e)
     return Date,Open,Close,High,Low,Volume
 
-def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume,symbol):
+def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume):
     start_date = [Date[0][0],0]
     end_date = [Date[0][-1],0]
     for i in range(len(Date)):
