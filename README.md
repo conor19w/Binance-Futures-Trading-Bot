@@ -11,6 +11,7 @@
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * [Find me on Tradalize](https://tradelize.com/) for copy trading under the username conor19w 📈 ₿ 🚀.
 * Min version = python 3.7 
+* Max version = python 3.10.x
 ---
 ## Latest Changes (if any):
 * Added support in the live Bot environment for some of the strategies in Trading_strats.py , To make use of a strategy in Bot.py just uncomment it inside Make_Decision() inside Data_set.py (11/02/2022).
