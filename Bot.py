@@ -50,9 +50,12 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client:Client,use_trailing_s
             try:
 
                 Data_temp = pipe.recv()  ##where we will receive from our pipe
-                if Data_temp != None:
-                    Data = copy(Data_temp)
-                    flag = 1
+                try:
+                    if Data_temp != None:
+                        Data = copy(Data_temp)
+                        flag = 1
+                except AssertionError as e:
+                    print("Caught Assertion error, Error: ",e)
 
 
                 if flag == 1 and not attempting_a_trade:  

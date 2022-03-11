@@ -4,8 +4,9 @@ from binance.enums import *
 from datetime import timezone,datetime,date,timedelta
 import API_keys
 from joblib import load,dump
-from github.download_Data import path
 client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
+
+desktop_path = f"C:\\Users\\conor\\Desktop"
 
 def get_TIME_INTERVAL(TIME_INTERVAL):
     ##Convert String to minutes
@@ -24,10 +25,15 @@ def get_TIME_INTERVAL(TIME_INTERVAL):
     elif TIME_INTERVAL[2]=='h':
         TIME_INTERVAL = int(TIME_INTERVAL[0])*10*60 + int(TIME_INTERVAL[1])*60
     return TIME_INTERVAL
-def get_Klines(TIME_INTERVAL,symbol,time_period,test_set,time_period_units,save_data):
+
+
+def get_Klines(TIME_INTERVAL,symbol,start_str,end_str,path):
+
+    ##Manipulate dates to american format:
+    start_date = f'{start_str[3:5]}-{start_str[0:2]}-{start_str[6:]}'
+    end_date = f'{end_str[3:5]}-{end_str[0:2]}-{end_str[6:]}'
+
     print(f"Downloading CandleStick Data for {symbol}...")
-    LENGTH = f"{time_period * 2} {time_period_units} ago UTC"  ##default to make the test set the same size as the non-test set
-    time_period = f'{time_period} {time_period_units} ago UTC'
 
     Date = []
     Open = []
@@ -41,53 +47,29 @@ def get_Klines(TIME_INTERVAL,symbol,time_period,test_set,time_period_units,save_
     Open_1min = []
     Date_1min = []
     ##klines for candlestick patterns and TA
-    if not test_set:
-        for kline in client.futures_historical_klines(symbol, TIME_INTERVAL, start_str=time_period):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
+    for kline in client.futures_historical_klines(symbol, TIME_INTERVAL, start_str=start_date,end_str=end_date):
+        Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
+        Open.append(float(kline[1]))
+        Close.append(float(kline[4]))
+        High.append(float(kline[2]))
+        Low.append(float(kline[3]))
+        Volume.append(float(kline[7]))
 
-        if TIME_INTERVAL != '1m':
-            for kline in client.futures_historical_klines(symbol, '1m', start_str=time_period):
-                # print(kline)
-                Date_1min.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-                Open_1min.append(float(kline[1]))
-                High_1min.append(float(kline[2]))
-                Low_1min.append(float(kline[3]))
-                Close_1min.append(float(kline[4]))
-        else:
-            Date_1min = Date
-            Open_1min = Open
-            High_1min = High
-            Low_1min = Low
-            Close_1min = Close
+    if TIME_INTERVAL != '1m':
+        for kline in client.futures_historical_klines(symbol, '1m', start_str=start_date,end_str=end_date):
+            # print(kline)
+            Date_1min.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
+            Open_1min.append(float(kline[1]))
+            High_1min.append(float(kline[2]))
+            Low_1min.append(float(kline[3]))
+            Close_1min.append(float(kline[4]))
     else:
-        for kline in client.futures_historical_klines(symbol, TIME_INTERVAL, start_str=LENGTH, end_str=time_period):
-            Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-        if TIME_INTERVAL != '1m':
-            for kline in client.futures_historical_klines(symbol, '1m', start_str=LENGTH, end_str=time_period):
-                # print(kline)
-                Date_1min.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-                Open_1min.append(float(kline[1]))
-                High_1min.append(float(kline[2]))
-                Low_1min.append(float(kline[3]))
-                Close_1min.append(float(kline[4]))
-        else:
-            Date_1min = Date
-            Open_1min = Open
-            High_1min = High
-            Low_1min = Low
-            Close_1min = Close
+        Date_1min = Date
+        Open_1min = Open
+        High_1min = High
+        Low_1min = Low
+        Close_1min = Close
 
-    ##Align minute data with higher timeframe
     for i in range(len(Date)):
         found_flag = 0
         for j in range(len(Date_1min)):
@@ -128,18 +110,15 @@ def get_Klines(TIME_INTERVAL,symbol,time_period,test_set,time_period_units,save_
             break
 
 
-    if save_data:
-        price_data = {'Date': Date, 'Open': Open, 'Close': Close, 'High': High, 'Low': Low,
-                      'Volume': Volume, 'High_1min': High_1min, 'Low_1min': Low_1min, 'Close_1min': Close_1min,
-                      'Open_1min': Open_1min, 'Date_1min': Date_1min}
-        try:
-            print("Saving Price data")
-            if test_set:
-                dump(price_data,f"{path}\\price_data\\{symbol}_{TIME_INTERVAL}_{time_period}_test.joblib")  ## address of where you will keep the data,
-            else:
-                dump(price_data,f"{path}\\price_data\\{symbol}_{TIME_INTERVAL}_{time_period}.joblib")  ## address of where you will keep the data,
-        except:
-            print("Failed to save data")
+
+    price_data = {'Date': Date, 'Open': Open, 'Close': Close, 'High': High, 'Low': Low,
+                  'Volume': Volume, 'High_1min': High_1min, 'Low_1min': Low_1min, 'Close_1min': Close_1min,
+                  'Open_1min': Open_1min, 'Date_1min': Date_1min}
+    try:
+        print("Saving Price data")
+        dump(price_data,path)  ## address of where you will keep the data,
+    except:
+        print("Failed to save data")
 
     return Date,Open,Close,High,Low,Volume,High_1min,Low_1min,Close_1min,Open_1min,Date_1min
 
@@ -163,16 +142,16 @@ def get_historical(symbol,start_string,Interval):
     return Date,Open,Close,High,Low,Volume
 
 def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume):
-    start_date = [Date[0][0],0]
-    end_date = [Date[0][-1],0]
+    start_date = [Date[0][0],0]  ##get 1st date of first coin
+    end_date = [Date[0][-1],0]  ##get last date of first coin
     for i in range(len(Date)):
-        if Date[i][0] < start_date[0]:
+        if Date[i][0] < start_date[0]:  ##Check if any other coin has an earlier date to find the earliest date
             start_date = [Date[i][0],i] ##Date,index of start date
-        if Date[i][-1] > end_date[0]:
+        if Date[i][-1] > end_date[0]: ##Check if any other coin has a later date to find the latest date
             end_date = [Date[i][-1],i] ##Date, index of end date
     for i in range(len(Date_1min)):
-        len_infront = 0
-        len_behind = 0
+        len_infront = 0  ##count how many dates we move along until we find the date at the current index's start, used to repeat the data until size is the same
+        len_behind = 0  ##count how many dates we move along until we find the date at the current index's end, used to repeat the data until size is the same
         for j in range(len(Date_1min[start_date[1]])):
             if Date_1min[start_date[1]][j]!=Date_1min[i][0]:
                 len_infront+=1
@@ -223,20 +202,10 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
             Open[i].append(Open[i][-1])
             Volume[i].insert(0,Volume[i][-1])
 
-    return Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume#,locations_to_pop
+    return Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume
 
-def get_CAGR(time_period_units,time_period):
-    time_CAGR = -99
-    if time_period_units == 'day':
-        time_CAGR = time_period / 365
-    elif time_period_units == 'week':
-        time_CAGR = time_period / 52
-    elif time_period_units == 'month':
-        time_CAGR = time_period/ 12
-    elif time_period_units == 'year':
-        time_CAGR = time_period
-
-    return time_CAGR
+def get_CAGR(start,end):
+    return (int(end[0:2]) - int(start[0:2]) + 30*(int(end[3:5]) - int(start[3:5])) + 365*(int(end[6:]) - int(start[6:])))/365
 
 def align_Datasets_easy(Date,Close,Open):
     start_date = [Date[0][0],0]
@@ -291,534 +260,3 @@ def get_heikin_ashi(Open, Close, High, Low):
                 High_heikin[i].append(max(High[i][j],Open_heikin[i][j],Close_heikin[i][j]))
                 Low_heikin[i].append(min(Low[i][j],Open_heikin[i][j],Close_heikin[i][j]))
     return Open_heikin, Close_heikin, High_heikin, Low_heikin
-
-
-def get_coin_attrib(symbol):
-    Coin_precision = -99
-    Order_precision = -99
-
-    if symbol == 'BTCUSDT':
-        Coin_precision = 2
-        Order_precision = 3
-
-    elif symbol == 'ETHUSDT':
-        Coin_precision = 2
-        Order_precision = 3
-
-    elif symbol == 'LTCUSDT':
-        Coin_precision = 2
-        Order_precision = 3
-
-    elif symbol == 'SOLUSDT':
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol == 'BNBUSDT':
-        Coin_precision = 2
-        Order_precision = 2
-
-    elif symbol == 'ADAUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == 'DOGEUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == 'MATICUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == "BAKEUSDT":
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == "SHIBUSDT":
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == "XRPUSDT":
-        Coin_precision = 4
-        Order_precision = 1
-
-    elif symbol == "SUSHIUSDT":
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol == "DOTUSDT":
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol == "ALPHAUSDT":
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == "DGBUSDT":
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == "RLCUSDT":
-        Coin_precision = 4
-        Order_precision = 1
-
-    elif symbol == "HNTUSDT":
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol == "OCEANUSDT":
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == "ZRXUSDT":
-        Coin_precision = 4
-        Order_precision = 1
-
-    elif symbol == "ONTUSDT":
-        Coin_precision = 4
-        Order_precision = 1
-
-    elif symbol == "FLMUSDT":
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == "BCHUSDT":
-        Coin_precision = 2
-        Order_precision = 3
-
-    elif symbol == "BTSUSDT":
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == "RSRUSDT":
-        Coin_precision = 6
-        Order_precision = 0
-
-    elif symbol == "BZRXUSDT":
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == "SFPUSDT":
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == "ZILUSDT":
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == "EOSUSDT":
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol == "ENJUSDT":
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == "TRXUSDT":
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == "LITUSDT":
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol == "RENUSDT":
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == "COTIUSDT":
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == "STORJUSDT":
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == "LRCUSDT":
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == "UNFIUSDT":
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='BALUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='YFIIUSDT':
-        Coin_precision = 1
-        Order_precision = 3
-
-    elif symbol =='UNIUSDT':
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol =='TLMUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol =='GTCUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='TRBUSDT':
-        Coin_precision = 2
-        Order_precision = 1
-
-    elif symbol == 'ALICEUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='ONEUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='RVNUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='AXSUSDT':
-        Coin_precision = 2
-        Order_precision = 0
-
-    elif symbol =='XEMUSDT':
-        Coin_precision = 4
-        Order_precision = 1
-
-    elif symbol =='VETUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='LINAUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='XLMUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='QTUMUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='SOLUSDT':
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol =='RAYUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='NEARUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol =='AUDIOUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol =='HOTUSDT':
-        Coin_precision = 6
-        Order_precision = 0
-
-    elif symbol =='ARUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='BELUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol =='CHRUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol =='WAVESUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='CHZUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='SANDUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='GRTUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='FTMUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='XTZUSDT':
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol =='LUNAUSDT':
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol =='SKLUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='1INCHUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol =='ATOMUSDT':
-        Coin_precision = 3
-        Order_precision = 3
-
-    elif symbol =='BLZUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='SNXUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='ETCUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='CELRUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='OGNUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol =='NEOUSDT':
-        Coin_precision = 3
-        Order_precision = 2
-
-    elif symbol =='TOMOUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol =='CELOUSDT':
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol =='KLAYUSDT':
-        Coin_precision = 4
-        Order_precision = 1
-
-    elif symbol =='EGLDUSDT':
-        Coin_precision = 2
-        Order_precision = 1
-
-    elif symbol =='CRVUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='NUUSDT':
-        Coin_precision = 4
-        Order_precision = 1
-
-    elif symbol =='SRMUSDT':
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol =='CTKUSDT':
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol =='ARPAUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='IOTXUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='DENTUSDT':
-        Coin_precision = 6
-        Order_precision = 0
-
-    elif symbol =='IOSTUSDT':
-        Coin_precision = 6
-        Order_precision = 0
-
-    elif symbol =='OMGUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='BANDUSDT':
-        Coin_precision = 4
-        Order_precision = 1
-
-    elif symbol =='NKNUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='IOTAUSDT':
-        Coin_precision = 4
-        Order_precision = 1
-
-    elif symbol =='CVCUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='REEFUSDT':
-        Coin_precision = 6
-        Order_precision = 0
-
-    elif symbol =='BTTUSDT':
-        Coin_precision = 6
-        Order_precision = 0
-
-    elif symbol =='ANKRUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol =='ALGOUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol =='SCUSDT':
-        Coin_precision = 6
-        Order_precision = 0
-
-    elif symbol =='MANAUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol =='ATAUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol =='MKRUSDT':
-        Coin_precision = 1
-        Order_precision = 3
-
-    elif symbol =='DODOUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol =='ICPUSDT':
-        Coin_precision = 2
-        Order_precision = 2
-
-    elif symbol =='ZECUSDT':
-        Coin_precision = 2
-        Order_precision = 2
-
-    elif symbol =='ICXUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == 'ZENUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol == 'SXPUSDT':
-        Coin_precision = 4
-        Order_precision = 1
-
-    elif symbol == 'HBARUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == 'CTSIUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == 'KAVAUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == 'C98USDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == 'THETAUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol == 'MASKUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == 'AAVEUSDT':
-        Coin_precision = 2
-        Order_precision = 1
-
-    elif symbol == 'YFIUSDT':
-        Coin_precision = 0
-        Order_precision = 3
-
-    elif symbol == 'COMPUSDT':
-        Coin_precision = 2
-        Order_precision = 3
-
-    elif symbol == 'RUNEUSDT':
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol == 'AVAXUSDT':
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol == 'KNCUSDT':
-        Coin_precision = 3
-        Order_precision = 0
-
-    elif symbol == 'LPTUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol == 'MTLUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == 'DASHUSDT':
-        Coin_precision = 2
-        Order_precision = 3
-
-    elif symbol == 'KEEPUSDT':
-        Coin_precision = 4
-        Order_precision = 0
-
-    elif symbol == 'DYDXUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol == 'LINKUSDT':
-        Coin_precision = 3
-        Order_precision = 2
-
-    elif symbol == 'KSMUSDT':
-        Coin_precision = 2
-        Order_precision = 1
-
-    elif symbol == 'FILUSDT':
-        Coin_precision = 3
-        Order_precision = 1
-
-    elif symbol == 'STMXUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == 'GALAUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == 'BATUSDT':
-        Coin_precision = 4
-        Order_precision = 1
-
-    elif symbol == 'AKROUSDT':
-        Coin_precision = 5
-        Order_precision = 0
-
-    elif symbol == 'XMRUSDT':
-        Coin_precision = 2
-        Order_precision = 3
-
-    return Coin_precision,Order_precision
