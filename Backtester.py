@@ -542,8 +542,7 @@ for i in range(len(High_1min[0])-1):
                     Trade_Stage = 0
                 elif Open_1min[Trading_index][i] * (
                         1 + trailing_stop_distance) < trailing_stop_value and trailing_stop_value != -99:
-                    trailing_stop_value = Open_1min[Trading_index][i] * (
-                                1 + trailing_stop_distance)  ##move trailing stop as a new low was reached
+                    trailing_stop_value = Open_1min[Trading_index][i] * (1 + trailing_stop_distance)  ##move trailing stop as a new low was reached
                     print("Trailing Stop: ", trailing_stop_value)
             elif use_trailing_stop and CurrentPos == 1:
                 # trailing_stop_value
@@ -565,7 +564,7 @@ for i in range(len(High_1min[0])-1):
                     fees_paid += positionSize * Open_1min[Trading_index][i] * fee
                     AccountBalance -= positionSize * trailing_stop_value * fee
                     month_return -= positionSize * trailing_stop_value * fee
-                    cashout.append({'x': i, 'y': trailing_stop_value, 'type': "win", 'position': 'short',
+                    cashout.append({'x': i, 'y': trailing_stop_value, 'type': "win", 'position': 'long',
                                     'Profit': positionSize * (trailing_stop_value - positionPrice)})
                     CurrentPos = -99
                     profitgraph.append(AccountBalance)
@@ -574,8 +573,7 @@ for i in range(len(High_1min[0])-1):
                     Trade_Stage = 0
                 elif Open_1min[Trading_index][i] * (
                         1 - trailing_stop_distance) > trailing_stop_value and trailing_stop_value != -99:
-                    trailing_stop_value = Open_1min[Trading_index][i] * (
-                                1 - trailing_stop_distance)  ##move trailing stop as a new high was reached
+                    trailing_stop_value = Open_1min[Trading_index][i] * (1 - trailing_stop_distance)  ##move trailing stop as a new high was reached
                     print("Trailing Stop: ", trailing_stop_value)
 
         if i%1440==0 and i!=0:
