@@ -201,7 +201,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client:Client,use_trailing_s
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_SELL,
                                                     type='TRAILING_STOP_MARKET',
-                                                    stopPrice=round(round((entry_price + takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size, Data[Trading_index].CP),
+                                                    activationPrice=round(round((entry_price + takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size, Data[Trading_index].CP),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size,
                                                     callbackRate = trailing_stop_percent)
@@ -230,7 +230,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client:Client,use_trailing_s
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_SELL,
                                                     type='TRAILING_STOP_MARKET',
-                                                    stopPrice=round(round((entry_price + takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size),
+                                                    activationPrice=round(round((entry_price + takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size,
                                                     callbackRate = trailing_stop_percent)
@@ -260,7 +260,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client:Client,use_trailing_s
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_BUY,
                                                     type='TRAILING_STOP_MARKET',
-                                                    stopPrice=round(round((entry_price - takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size, Data[Trading_index].CP),
+                                                    activationPrice=round(round((entry_price - takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size, Data[Trading_index].CP),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size,
                                                     callbackRate = trailing_stop_percent)
@@ -289,7 +289,7 @@ def Check_for_signals(pipe:Pipe,leverage,order_Size,client:Client,use_trailing_s
                                                     symbol=Data[Trading_index].symbol,
                                                     side=SIDE_BUY,
                                                     type='TRAILING_STOP_MARKET',
-                                                    stopPrice=round(round((entry_price - takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size),
+                                                    activationPrice=round(round((entry_price - takeprofitval)/Data[Trading_index].tick_size)*Data[Trading_index].tick_size),
                                                     timeInForce=TIME_IN_FORCE_GTC,
                                                     quantity=position_Size,
                                                     callbackRate = trailing_stop_percent)
