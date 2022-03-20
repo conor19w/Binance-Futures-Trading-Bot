@@ -9,6 +9,7 @@ import numpy as np
 import Helper
 import API_keys
 from copy import copy
+import TradingStrats as TS
 trades = deque(maxlen=100000) ##keep track of shorts/Longs for graphing
 cashout = deque(maxlen=100000) ##keep track of Winning trades/ Losing trades
 signals= deque(maxlen=100000) ##when a signal occured , NOT IN USE
@@ -45,7 +46,7 @@ OrderSIZE = .05 ## Amount of effective account balance to use per trade
 AccountBalance = 1000
 leverage = 10  ##leverage being used
 fee = .00036
-start = '01-12-21' ##start of backtest dd/mm/yy
+start = '01-02-22' ##start of backtest dd/mm/yy
 end = '01-03-22'   ##end of backtest   dd/mm/yy
 TIME_INTERVAL = '1m'   ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M I think...
 use_trailing_stop = 0 ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
@@ -173,7 +174,7 @@ for i in range(len(High_1min[0])-1):
                     ##Public Strats :) :
                     if CurrentPos == -99:
                         #Trade_Direction,stoplossval, takeprofitval = TS.StochRSIMACD(Trade_Direction, CloseStream[j],HighStream[j],LowStream[j])  ###########################################
-                        # Trade_Direction,stoplossval, takeprofitval = TS.tripleEMAStochasticRSIATR(CloseStream[j],HighStream[j],LowStream[j],Trade_Direction)
+                        #Trade_Direction,stoplossval, takeprofitval = TS.tripleEMAStochasticRSIATR(CloseStream[j],HighStream[j],LowStream[j],Trade_Direction)
                         # Trade_Direction,stoplossval, takeprofitval=TS.tripleEMA(CloseStream[j],HighStream[j],LowStream[j],Trade_Direction)
                         # Trade_Direction, stoplossval, takeprofitval = TS.breakout(Trade_Direction,CloseStream[j],VolumeStream[j],HighStream[j], LowStream[j])
                         # Trade_Direction,stoplossval,takeprofitval = TS.stochBB(Trade_Direction,CloseStream[j], HighStream[j], LowStream[j])
