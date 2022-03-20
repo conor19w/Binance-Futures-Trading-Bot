@@ -14,19 +14,19 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Max version = python 3.10.x
 ---
 
-### Run strategies live in [Bot.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Bot.py)
+### Run strategies live in __Live_Bot.py__
 ---
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
-__There is no set strategy, You can select one by uncommenting it in make_Decision() inside data_set.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
-* In __Bot.py__ the settings are on __line 365__.
-* Choose the Interval you want to trade and the buffer of candlesticks your strategy will need this will be dependat on indicators you need to ensure you have a sufficient buffer or you will get errors.
+__There is no set strategy, You can select one by uncommenting it in make_Decision() inside Bot_Class.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
+* In __Live_Bot.py__ the settings are on __line 365__.
+* Choose the Interval you want to trade and the buffer of candlesticks your strategy will need this will be dependant on indicators you need to ensure you have a sufficient buffer or you will get errors.
 * leverage and order_size should be changed acording to your preference
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
-* __Trailing stop (NOT WORKING PROPERLY CURRENTLY): set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy__.  
+* __Trailing stop: set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy__.  
 ---
 #### Creating Custom Strategies:
-__Strategies are implemented in Data_Set.py as a function named Make_decision() in the Data_set class__
+__Strategies are implemented in Bot_Class.py as a function named Make_decision() in the Bot class__
 * Make_decision() must return Trade_Direction,stoplossval,takeprofitval for the strategy to work properly
 * You might draw inspiration for a strategy from one in __TradingStrats.py__
 * I recommend using the backtester first.
@@ -41,7 +41,7 @@ __Strategies are implemented in Data_Set.py as a function named Make_decision() 
 Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * Settings are found at the top of the script, __line 44__.
 * Trailing Stop (NOT FUNCTIONING CORRECTLY): turn the __use_trailing_stop__ flag on, specify the __trailing_stop_distance__ in decimal, now when a takeprofit margin target is hit the trailing stop will be placed and automatically & adjusted based off new Lows or Highs in price and the __trailing_stop_distance__ you've specified.
-* Next we want to choose our TA strategy, this is done after __line 254__ , uncomment a strategy or call a new strategy you have written yourself here, the 'Trade_Direction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
+* Next we want to choose our TA strategy, this is done after __line 175__ , uncomment a strategy or call a new strategy you have written yourself here, the 'Trade_Direction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 * Heikin Ashi Candles are available under: CloseStream_H, OpenStream_H, LowStream_H, HighStream_H which can be referenced or passed to Strategies.
 ---
