@@ -19,9 +19,9 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
 __There is no set strategy, You can select one by uncommenting it in make_Decision() inside Bot_Class.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
-* In __Live_Bot.py__ the settings are on __line 365__.
+* Settings are on __line 365__.
 * Choose the Interval you want to trade and the buffer of candlesticks your strategy will need this will be dependant on indicators you need to ensure you have a sufficient buffer or you will get errors.
-* leverage and order_size should be changed acording to your preference
+* Leverage and order_size should be changed acording to your preference
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
 * __Trailing stop: set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy__.  
 ---
