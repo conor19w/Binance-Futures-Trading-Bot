@@ -14,14 +14,8 @@ from copy import copy
 import time
 
 
-'''def heikin_ashi(Close_H,Open_H,Low_H,High_H,Close):
-    Close_S = pd.Series(Close)
-    BB = bollinger_wband(Close_S)
-    EMA18 = ema_indicator(Close_S)
-    if Open_H[-1]==Low_H[-1] and BB[-1]<0 and Close_H[-1]'''
-
 def single_candle_swing_pump(Trade_Direction,Close,High,Low,CurrentPos,ClosePos,count,stoploss):
-    ##This function requires Hold_Pos to be switched on in Bot.py
+    ##This function requires Hold_Pos to be switched on in Live_Bot.py
     Trade_Direction = -99
     number_bars = 1 ##how many bars to wait until we sell
     if High[-5]<High[-4]<High[-3] and High[-3]>High[-2]>High[-1] and CurrentPos == -99: ##if we have a peak

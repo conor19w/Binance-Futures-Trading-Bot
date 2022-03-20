@@ -11,7 +11,7 @@ import API_keys
 from copy import copy
 trades = deque(maxlen=100000) ##keep track of shorts/Longs for graphing
 cashout = deque(maxlen=100000) ##keep track of Winning trades/ Losing trades
-signals= deque(maxlen=100000) ##when a siganl occured , NOT IN USE
+signals= deque(maxlen=100000) ##when a signal occured , NOT IN USE
 
 
 symbol = ['RAYUSDT', 'NEARUSDT', 'AUDIOUSDT']
@@ -66,12 +66,6 @@ Trade_Direction = -99
 Trading_index = -99 ##index of coin we are trading
 Trade_Stage = 0 ##flag to say in a trade
 Close_pos = 0
-Open=[]
-High=[]
-Low=[]
-Close=[]
-Volume=[]
-Date=[]
 OpenStream=[]
 HighStream=[]
 LowStream=[]
@@ -85,11 +79,6 @@ pp = pprint.PrettyPrinter()
 Sleep=0
 tradeNO=0 ##number of trades
 fees_paid = 0
-High_1min = []
-Low_1min = []
-Close_1min= []
-Open_1min = []
-Date_1min = []
 profitgraph.append(AccountBalance)
 count = 0
 percent = .01 ##percentage to hold out for
@@ -101,79 +90,11 @@ EffectiveAccountBalance = -99 ##set later
 trade_data = {}
 
 time_CAGR = Helper.get_CAGR(start, end)
-
-
-print("Loading Price Data")
-i = 0
-while i < len(symbol):
-    path = f"{Helper.desktop_path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{start}_{end}.joblib"
-    try:
-        price_data = load(path)
-        Date.append(price_data['Date'])
-        Open.append(price_data['Open'])
-        Close.append(price_data['Close'])
-        High.append(price_data['High'])
-        Low.append(price_data['Low'])
-        Volume.append(price_data['Volume'])
-        High_1min.append(price_data['High_1min'])
-        Low_1min.append(price_data['Low_1min'])
-        Close_1min.append(price_data['Close_1min'])
-        Open_1min.append(price_data['Open_1min'])
-        Date_1min.append(price_data['Date_1min'])
-        i += 1
-    except:
-        try:
-            print(f"Data doesnt exist in path: {path}, Downloading Data to specified path now...")
-            Helper.get_Klines(TIME_INTERVAL,symbol[i],start,end,path)
-            price_data = load(path)
-            Date.append(price_data['Date'])
-            Open.append(price_data['Open'])
-            Close.append(price_data['Close'])
-            High.append(price_data['High'])
-            Low.append(price_data['Low'])
-            Volume.append(price_data['Volume'])
-            High_1min.append(price_data['High_1min'])
-            Low_1min.append(price_data['Low_1min'])
-            Close_1min.append(price_data['Close_1min'])
-            Open_1min.append(price_data['Open_1min'])
-            Date_1min.append(price_data['Date_1min'])
-            print("Download Successful, Loading Data now")
-            i += 1
-        except BinanceAPIException as e:
-            if str(e) == 'APIError(code=-1121): Invalid symbol.':
-                print(f"Invalid Symbol: {symbol[i]}, removing from data set")
-                symbol.pop(i)
-            else:
-                print(f"Wrong path specified in Helper.py,error: {e}")
-                symbol.pop(i)
-                print("Fix path issue or else turn off load_data")
-                print("Contact me if still stuck @ wconor539@gmail.com")
-
-print("Symbols:", symbol, "Start Balance:", AccountBalance,"fee:",fee)
-
+print("Symbols:", symbol, "Start Balance:", AccountBalance, "fee:", fee)
 start_equity = AccountBalance
+Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol =\
+    Helper.get_aligned_candles([],[],[],[],[],[],[],[],[],[],[],symbol,TIME_INTERVAL,start,end)
 
-i = 0
-while i < len(Close):
-    if len(Close[i]) == 0:
-        Date.pop(i)
-        Open.pop(i)
-        Close.pop(i)
-        High.pop(i)
-        Low.pop(i)
-        Volume.pop(i)
-        High_1min.pop(i)
-        Low_1min.pop(i)
-        Close_1min.pop(i)
-        Open_1min.pop(i)
-        Date_1min.pop(i)
-        print(f"Not enough candleStick data for {symbol[i]} removing from dataset...")
-        symbol.pop(i)
-        i -= 1
-    i += 1
-print("Aligning Data Sets... This may take a few minutes")
-Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = Helper.align_Datasets(
-    Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume)
 Open_H = []
 Close_H = []
 High_H = []
@@ -286,8 +207,6 @@ for i in range(len(High_1min[0])-1):
 
                     print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
                     print("Time:", Date_1min[Trading_index][i])
-                    # print("Time Max",DateStream[max_pos])
-                    # print("Time Min", DateStream[min_pos])
                     try:
                         print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
                               (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
@@ -321,8 +240,6 @@ for i in range(len(High_1min[0])-1):
                         Trade_start = [symbol[Trading_index], f"{Date_1min[Trading_index][i]}", 'Short']
                     print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
                     print("Time:", Date_1min[Trading_index][i])
-                    # print("Time Max",DateStream[max_pos])
-                    # print("Time Min", DateStream[min_pos])
                     try:
                         print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
                               (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
@@ -351,8 +268,6 @@ for i in range(len(High_1min[0])-1):
                 Trade_Stage = 0
                 print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
                 print("Time:", Date_1min[Trading_index][i])
-                # print("Time Max",DateStream[max_pos])
-                # print("Time Min", DateStream[min_pos])
                 try:
                     print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
                           (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,
@@ -379,8 +294,6 @@ for i in range(len(High_1min[0])-1):
                 Trade_Stage = 0
                 print(f"\nCurrent Position {symbol[Trading_index]}:", CurrentPos)
                 print("Time:", Date_1min[Trading_index][i])
-                # print("Time Max",DateStream[max_pos])
-                # print("Time Min", DateStream[min_pos])
                 try:
                     print("Account Balance: ", AccountBalance, "Order Size:", positionSize, "PV:",
                           (Profit * 100) / (tradeNO * CloseStream[Trading_index][-1]), "Stoploss:", stoplossval,

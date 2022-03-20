@@ -260,3 +260,75 @@ def get_heikin_ashi(Open, Close, High, Low):
                 High_heikin[i].append(max(High[i][j],Open_heikin[i][j],Close_heikin[i][j]))
                 Low_heikin[i].append(min(Low[i][j],Open_heikin[i][j],Close_heikin[i][j]))
     return Open_heikin, Close_heikin, High_heikin, Low_heikin
+
+
+def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol,TIME_INTERVAL,start,end):
+    print("Loading Price Data")
+    i = 0
+    while i < len(symbol):
+        path = f"{desktop_path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{start}_{end}.joblib"
+        try:
+            price_data = load(path)
+            Date.append(price_data['Date'])
+            Open.append(price_data['Open'])
+            Close.append(price_data['Close'])
+            High.append(price_data['High'])
+            Low.append(price_data['Low'])
+            Volume.append(price_data['Volume'])
+            High_1min.append(price_data['High_1min'])
+            Low_1min.append(price_data['Low_1min'])
+            Close_1min.append(price_data['Close_1min'])
+            Open_1min.append(price_data['Open_1min'])
+            Date_1min.append(price_data['Date_1min'])
+            i += 1
+        except:
+            try:
+                print(f"Data doesnt exist in path: {path}, Downloading Data to specified path now...")
+                get_Klines(TIME_INTERVAL, symbol[i], start, end, path)
+                price_data = load(path)
+                Date.append(price_data['Date'])
+                Open.append(price_data['Open'])
+                Close.append(price_data['Close'])
+                High.append(price_data['High'])
+                Low.append(price_data['Low'])
+                Volume.append(price_data['Volume'])
+                High_1min.append(price_data['High_1min'])
+                Low_1min.append(price_data['Low_1min'])
+                Close_1min.append(price_data['Close_1min'])
+                Open_1min.append(price_data['Open_1min'])
+                Date_1min.append(price_data['Date_1min'])
+                print("Download Successful, Loading Data now")
+                i += 1
+            except BinanceAPIException as e:
+                if str(e) == 'APIError(code=-1121): Invalid symbol.':
+                    print(f"Invalid Symbol: {symbol[i]}, removing from data set")
+                    symbol.pop(i)
+                else:
+                    print(f"Wrong path specified in Helper.py,error: {e}")
+                    symbol.pop(i)
+                    print("Fix path issue or else turn off load_data")
+                    print("Contact me if still stuck @ wconor539@gmail.com")
+
+    i = 0
+    while i < len(Close):
+        if len(Close[i]) == 0:
+            Date.pop(i)
+            Open.pop(i)
+            Close.pop(i)
+            High.pop(i)
+            Low.pop(i)
+            Volume.pop(i)
+            High_1min.pop(i)
+            Low_1min.pop(i)
+            Close_1min.pop(i)
+            Open_1min.pop(i)
+            Date_1min.pop(i)
+            print(f"Not enough candleStick data for {symbol[i]} removing from dataset...")
+            symbol.pop(i)
+            i -= 1
+        i += 1
+    print("Aligning Data Sets... This may take a few minutes")
+
+    Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume = \
+        align_Datasets(Date_1min, High_1min, Low_1min, Close_1min,Open_1min, Date, Open, Close, High, Low, Volume)
+    return Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol
