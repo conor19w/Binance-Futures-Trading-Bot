@@ -66,6 +66,7 @@ __Triple EMA 4hr candles__
 * Speed up Data Set aligner in Backtester with multiprocessing
 ---
 ## Latest Changes (if any):
+* Added Functionality for opening and managing multiple positions. (20/03/22)
 * Simplified the system to be more user friendly, removed code that was obsolete. (11/03/22)
 * Added support in the live Bot environment for some of the strategies in Trading_strats.py , To make use of a strategy in Bot.py just uncomment it inside Make_Decision() inside Data_set.py (11/02/2022).
 * Added support for Heikin Ashi candles in Bot.py, there is now a switch in settings use_heikin_ashi. If switched on you may reference self.Open_H, self.Close_H etc. from make_Decision() in Data_set.py (17/01/22).
