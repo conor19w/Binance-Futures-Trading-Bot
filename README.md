@@ -14,7 +14,7 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Max version = python 3.10.x
 ---
 
-### Run strategies live in __Live_Bot.py__
+### Run strategies live on Binance from __Live_Bot.py__
 ---
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
