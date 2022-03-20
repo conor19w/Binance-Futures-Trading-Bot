@@ -19,7 +19,8 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
 __There is no set strategy, You can select one by uncommenting it in make_Decision() inside Bot_Class.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
-* Settings are on __line 365__.
+* Settings are on __line 286__.
+* Trade a single position at a time by setting __Max_Margin = 0__, to trade multiple coins just change this value to suit your desired Max Margin for your positions.
 * Choose the Interval you want to trade and the buffer of candlesticks your strategy will need this will be dependant on indicators you need to ensure you have a sufficient buffer or you will get errors.
 * Leverage and order_size should be changed acording to your preference
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
