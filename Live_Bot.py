@@ -8,11 +8,7 @@ from binance import ThreadedWebsocketManager
 from datetime import timezone, datetime, date, timedelta
 
 import API_keys
-<<<<<<< HEAD
 import Helper
-=======
-import Helper as Helper
->>>>>>> 12c4c5f5600489c07ea1b073d1854909e1fcbd9a
 from threading import Thread
 from copy import copy
 from multiprocessing import Process,Pipe
