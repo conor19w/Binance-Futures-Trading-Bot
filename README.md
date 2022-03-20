@@ -63,7 +63,6 @@ __Triple EMA 4hr candles__
 ## To-Do list: (suggest something and I'll add it) 😃
 * Fix trailing Stop in Back Tester, think its causing some rounding errors.
 * GUI if people were interested (could take a while I've no experience here)
-* Speed up Data Set aligner in Backtester with multiprocessing
 ---
 ## Latest Changes (if any):
 * Added Functionality for opening and managing multiple positions. (20/03/22)
