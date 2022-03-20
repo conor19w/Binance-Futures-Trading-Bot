@@ -8,11 +8,11 @@ from binance import ThreadedWebsocketManager
 from datetime import timezone, datetime, date, timedelta
 
 import API_keys
-import github.Helper as Helper
+import Helper
 from threading import Thread
 from copy import copy
 from multiprocessing import Process,Pipe
-from github.Bot_Class import Bot
+from Bot_Class import Bot
 
 
 # noinspection PyTypeChecker
