@@ -19,7 +19,8 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
 __There is no set strategy, You can select one by uncommenting it in make_Decision() inside Bot_Class.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
-* Settings are on __line 365__.
+* Settings are on __line 286__.
+* Trade a single position at a time by setting __Max_Margin = 0__, to trade multiple coins just change this value to suit your desired Max Margin for your positions ie. __Max_Margin = .15__ will allow the bot to open positions until you have used up 15% of your account as margin.
 * Choose the Interval you want to trade and the buffer of candlesticks your strategy will need this will be dependant on indicators you need to ensure you have a sufficient buffer or you will get errors.
 * Leverage and order_size should be changed acording to your preference
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
@@ -62,9 +63,9 @@ __Triple EMA 4hr candles__
 ## To-Do list: (suggest something and I'll add it) 😃
 * Fix trailing Stop in Back Tester, think its causing some rounding errors.
 * GUI if people were interested (could take a while I've no experience here)
-* Speed up Data Set aligner in Backtester with multiprocessing
 ---
 ## Latest Changes (if any):
+* Added Functionality for opening and managing multiple positions. (20/03/22)
 * Simplified the system to be more user friendly, removed code that was obsolete. (11/03/22)
 * Added support in the live Bot environment for some of the strategies in Trading_strats.py , To make use of a strategy in Bot.py just uncomment it inside Make_Decision() inside Data_set.py (11/02/2022).
 * Added support for Heikin Ashi candles in Bot.py, there is now a switch in settings use_heikin_ashi. If switched on you may reference self.Open_H, self.Close_H etc. from make_Decision() in Data_set.py (17/01/22).
