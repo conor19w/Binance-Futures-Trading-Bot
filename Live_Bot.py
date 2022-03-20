@@ -228,7 +228,6 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client):
                                 ##We've hit our SL so close open orders and pop off list
                                 client.futures_cancel_all_open_orders(symbol=Data[active_trades[q][0]].symbol)
                                 flag = 1 ##Pop off the list
-                                break
 
                             if flag==1:
                                 active_trades.pop(q)
