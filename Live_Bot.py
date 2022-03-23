@@ -360,6 +360,13 @@ if __name__ == '__main__':
     i = 0
     while i < len(Data):
         Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp = Helper.get_historical(symbol[i],start_string,Interval)
+        ##Pop off last candle as it is a duplicate, luki009's suggestion
+        Date_temp.pop(-1)
+        Open_temp.pop(-1)
+        Close_temp.pop(-1)
+        High_temp.pop(-1)
+        Low_temp.pop(-1)
+        Volume_temp.pop(-1)
         if len(Date_temp) < 100:
             print(f"Not enough data for {symbol[i]} ")
             symbol.pop(i)
