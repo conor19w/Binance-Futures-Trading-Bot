@@ -131,7 +131,7 @@ def get_historical(symbol,start_string,Interval):
     Date = []
     try:
         for kline in client.futures_historical_klines(symbol, Interval,start_str=start_string):
-            Date.append(datetime.utcfromtimestamp(round(kline[0]/1000)))
+            Date.append(datetime.utcfromtimestamp(round(kline[6]/1000)))
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
