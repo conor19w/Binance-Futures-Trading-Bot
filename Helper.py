@@ -1,12 +1,147 @@
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
-from datetime import timezone,datetime,date,timedelta
+from datetime import datetime
 import API_keys
 from joblib import load,dump
+import sys, os
 client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
 
 desktop_path = f"C:\\Users\\conor\\Desktop"
+
+class Trade:
+    def __init__(self,index,position_size,tp_vals,stop_loss_val,trade_direction,order_id_temp,symbol):
+        self.index = index
+        self.symbol = symbol
+        self.position_size = position_size
+        self.TP_vals = tp_vals
+        self.SL_val = stop_loss_val
+        self.trade_direction = trade_direction
+        self.order_id = order_id_temp
+        self.TP_id = ''
+        self.SL_id = ''
+class Trade_Maker:
+    def __init__(self, client: Client, use_trailing_stop, trailing_stop_callback):
+        self.client = client
+        self.use_trailing_stop = use_trailing_stop
+        self.trailing_stop_callback = trailing_stop_callback
+
+    def open_trade(self, symbol, side, order_qty, OP):
+        try:
+            try:
+                order = ['']
+                if OP == 0:
+                    order_qty = round(order_qty)
+                else:
+                    order_qty = round(order_qty, OP)
+
+                ##Could Make limit orders but for now the entry is a market
+                if side == 0:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=SIDE_SELL,
+                        type=FUTURE_ORDER_TYPE_MARKET,
+                        quantity=order_qty)
+
+                if side == 1:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=SIDE_BUY,
+                        type=FUTURE_ORDER_TYPE_MARKET,
+                        quantity=order_qty)
+
+                entry = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
+
+                return order['orderId'], order_qty, entry
+
+            except BinanceAPIException as e:
+                print("Error in open_trade(), Error: ", e)
+
+        except Exception as e:
+            print(e)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
+
+    def place_TP(self, symbol, TP, side, CP, tick_size):
+        try:
+            try:
+                TP_ID = ''
+                TP_val = 0
+                order = ''
+                order_side = ''
+                for x in TP:
+                    if CP == 0:
+                        TP_val = round(x[0])
+                    else:
+                        TP_val = round(round(x[0] / tick_size) * tick_size, CP)
+                    if side == 1 and not self.use_trailing_stop:
+                        order_side = SIDE_SELL
+                    elif side == 0:
+                        order_side = SIDE_BUY
+                    if not self.use_trailing_stop:
+                        order = self.client.futures_create_order(
+                            symbol=symbol,
+                            side=order_side,
+                            type=FUTURE_ORDER_TYPE_LIMIT,
+                            price=TP_val,
+                            timeInForce=TIME_IN_FORCE_GTC,
+                            quantity=x[1])
+                    else:
+                        order = self.client.futures_create_order(
+                            symbol=symbol,
+                            side=order_side,
+                            type='TRAILING_STOP_MARKET',
+                            ActivationPrice=TP_val,
+                            callbackRate=self.trailing_stop_callback,
+                            closePosition=True)
+                    TP_ID = order['orderId']
+                return TP_ID
+
+            except BinanceAPIException as e:
+                print("\nError in place_TP(), Error: ", e)
+                print(f"symbol: {symbol} TP: {TP}\n")
+        except Exception as e:
+            print(e)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
+
+    def place_SL(self, symbol, SL, side, CP, tick_size):
+        try:
+            try:
+                if CP == 0:
+                    SL = round(SL)
+                else:
+                    SL = round(round(SL / tick_size) * tick_size, CP)
+                order_ID = ''
+                if side == 1:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=SIDE_SELL,
+                        type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                        stopPrice=SL,
+                        closePosition='true')
+                    order_ID = order['orderId']
+                else:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=SIDE_BUY,
+                        type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                        stopPrice=SL,
+                        closePosition='true')
+                    order_ID = order['orderId']
+
+                return order_ID
+
+            except BinanceAPIException as e:
+                print("Error in place_SL(), Error: ", e)
+                print(f"symbol: {symbol} SL: {SL}\n")
+        except Exception as e:
+            print(e)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
 
 def get_TIME_INTERVAL(TIME_INTERVAL):
     ##Convert String to minutes
