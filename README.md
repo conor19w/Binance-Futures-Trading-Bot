@@ -48,7 +48,10 @@ Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 ---
 ### __Back Test top performers:__
 ---
-__Not indicative of future returns, Check out the other backtests although results were poor on some that was due to transaction fees in many cases so maybe altering to take less trades or add confirmation could work. All of the strategies can be improved on but this is just a good place to start.__  
+__Not indicative of future returns__
+* Check out the other backtests although results were poor on some that was due to transaction fees in many cases so maybe altering to take less trades or add confirmation could work.
+* All of the strategies can be improved on but this is just a good place to start.
+* Try removing some coins from the list traded, the tests below were on all coins available at the time. 
 ---
 __Golden Cross 15m candles__  
 ---
