@@ -101,7 +101,7 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                         take_profit_val = entry_price_temp - take_profit
                         stop_loss_val = entry_price_temp + stop_loss
                     ##Add on the trade which we will later Check on
-                    active_trades.append(Trade(index,position_size_temp,[[take_profit_val,position_size_temp]],stop_loss_val,trade_direction,order_id_temp,Data[index].symbol))
+                    active_trades.append(Trade(index,position_size_temp,[take_profit_val,position_size_temp],stop_loss_val,trade_direction,order_id_temp,Data[index].symbol))
                 if margin_used >= Max_Margin*account_balance:
                     new_trades = [] ##Don't Open any new positions
 

@@ -70,32 +70,31 @@ class Trade_Maker:
                 TP_val = 0
                 order = ''
                 order_side = ''
-                for x in TP:
-                    if CP == 0:
-                        TP_val = round(x[0])
-                    else:
-                        TP_val = round(round(x[0] / tick_size) * tick_size, CP)
-                    if side == 1 and not self.use_trailing_stop:
-                        order_side = SIDE_SELL
-                    elif side == 0:
-                        order_side = SIDE_BUY
-                    if not self.use_trailing_stop:
-                        order = self.client.futures_create_order(
-                            symbol=symbol,
-                            side=order_side,
-                            type=FUTURE_ORDER_TYPE_LIMIT,
-                            price=TP_val,
-                            timeInForce=TIME_IN_FORCE_GTC,
-                            quantity=x[1])
-                    else:
-                        order = self.client.futures_create_order(
-                            symbol=symbol,
-                            side=order_side,
-                            type='TRAILING_STOP_MARKET',
-                            ActivationPrice=TP_val,
-                            callbackRate=self.trailing_stop_callback,
-                            closePosition=True)
-                    TP_ID = order['orderId']
+                if CP == 0:
+                    TP_val = round(TP[0])
+                else:
+                    TP_val = round(round(TP[0] / tick_size) * tick_size, CP)
+                if side == 1 and not self.use_trailing_stop:
+                    order_side = SIDE_SELL
+                elif side == 0:
+                    order_side = SIDE_BUY
+                if not self.use_trailing_stop:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=order_side,
+                        type=FUTURE_ORDER_TYPE_LIMIT,
+                        price=TP_val,
+                        timeInForce=TIME_IN_FORCE_GTC,
+                        quantity=TP[1])
+                else:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=order_side,
+                        type='TRAILING_STOP_MARKET',
+                        ActivationPrice=TP_val,
+                        callbackRate=self.trailing_stop_callback,
+                        quantity=TP[1])
+                TP_ID = order['orderId']
                 return TP_ID
 
             except BinanceAPIException as e:
