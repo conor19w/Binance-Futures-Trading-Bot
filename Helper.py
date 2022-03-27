@@ -74,7 +74,7 @@ class Trade_Maker:
                     TP_val = round(TP[0])
                 else:
                     TP_val = round(round(TP[0] / tick_size) * tick_size, CP)
-                if side == 1 and not self.use_trailing_stop:
+                if side == 1:
                     order_side = SIDE_SELL
                 elif side == 0:
                     order_side = SIDE_BUY
