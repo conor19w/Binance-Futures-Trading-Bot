@@ -27,9 +27,10 @@ class Trade_Maker:
         self.trailing_stop_callback = trailing_stop_callback
 
     def open_trade(self, symbol, side, order_qty, OP):
+        orderID = ''
         try:
             try:
-                order = ['']
+
                 if OP == 0:
                     order_qty = round(order_qty)
                 else:
@@ -42,17 +43,17 @@ class Trade_Maker:
                         side=SIDE_SELL,
                         type=FUTURE_ORDER_TYPE_MARKET,
                         quantity=order_qty)
-
+                    orderID = order['orderId']
                 if side == 1:
                     order = self.client.futures_create_order(
                         symbol=symbol,
                         side=SIDE_BUY,
                         type=FUTURE_ORDER_TYPE_MARKET,
                         quantity=order_qty)
+                    orderID= order['orderId']
 
-                entry = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
 
-                return order['orderId'], order_qty, entry
+
 
             except BinanceAPIException as e:
                 print("Error in open_trade(), Error: ", e)
@@ -63,10 +64,14 @@ class Trade_Maker:
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
 
+        entry = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
+        return orderID, order_qty, entry
+
     def place_TP(self, symbol, TP, side, CP, tick_size):
+        TP_ID = ''
         try:
             try:
-                TP_ID = ''
+
                 TP_val = 0
                 order = ''
                 order_side = ''
@@ -95,7 +100,6 @@ class Trade_Maker:
                         callbackRate=self.trailing_stop_callback,
                         quantity=TP[1])
                 TP_ID = order['orderId']
-                return TP_ID
 
             except BinanceAPIException as e:
                 print("\nError in place_TP(), Error: ", e)
@@ -106,14 +110,17 @@ class Trade_Maker:
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
 
+        return TP_ID
+
     def place_SL(self, symbol, SL, side, CP, tick_size):
+        order_ID = ''
         try:
             try:
                 if CP == 0:
                     SL = round(SL)
                 else:
                     SL = round(round(SL / tick_size) * tick_size, CP)
-                order_ID = ''
+
                 if side == 1:
                     order = self.client.futures_create_order(
                         symbol=symbol,
@@ -131,7 +138,7 @@ class Trade_Maker:
                         closePosition='true')
                     order_ID = order['orderId']
 
-                return order_ID
+
 
             except BinanceAPIException as e:
                 print("Error in place_SL(), Error: ", e)
@@ -141,6 +148,7 @@ class Trade_Maker:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
+        return order_ID
 
 def get_TIME_INTERVAL(TIME_INTERVAL):
     ##Convert String to minutes
