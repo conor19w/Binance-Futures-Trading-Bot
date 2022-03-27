@@ -9,7 +9,6 @@
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
-* [Find me on Tradalize](https://tradelize.com/) for copy trading under the username conor19w 📈 ₿ 🚀.
 * Min version = python 3.7 
 * Max version = python 3.10.x
 ---
@@ -19,7 +18,7 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
 __There is no set strategy, You can select one by uncommenting it in make_Decision() inside Bot_Class.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
-* Settings are on __line 286__.
+* Settings are on __line 171__.
 * Trade a single position at a time by setting __Max_Margin = 0__, to trade multiple coins just change this value to suit your desired Max Margin for your positions ie. __Max_Margin = .15__ will allow the bot to open positions until you have used up 15% of your account as margin.
 * Choose the Interval you want to trade and the buffer of candlesticks your strategy will need this will be dependant on indicators you need to ensure you have a sufficient buffer or you will get errors.
 * Leverage and order_size should be changed acording to your preference
