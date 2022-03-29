@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 
 import TradingStrats as TS
- 
 
 class Bot:
     def __init__(self,symbol,Open,Close,High,Low,Volume,Date,OP,CP,index,use_heikin_ashi,tick):
@@ -105,11 +104,6 @@ class Bot:
         ######################### Strategy ###############################
         ###Can use indicators from ta python & check out TradingStrats.py for some strategy ideas
         ##implement your strategy here:
-
-
-
-
-
 
         ##OR use one of these Strategies Available from the backtester:
         #Trade_Direction,stop_loss_val, take_profit_val = TS.StochRSIMACD(Trade_Direction, self.Close,self.High,self.Low)

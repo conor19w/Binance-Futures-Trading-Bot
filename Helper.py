@@ -2,10 +2,10 @@ from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
 from datetime import datetime
-import API_keys
+from Config_File import api_key,api_secret
 from joblib import load,dump
 import sys, os
-client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret) ##Binance keys needed to get historical data/ Trade on an account
+client = Client(api_key=api_key,api_secret=api_secret) ##Binance keys needed to get historical data/ Trade on an account
 
 desktop_path = f"C:\\Users\\conor\\Desktop"
 
@@ -143,6 +143,7 @@ class Trade_Maker:
             except BinanceAPIException as e:
                 print("Error in place_SL(), Error: ", e)
                 print(f"symbol: {symbol} SL: {SL}\n")
+
         except Exception as e:
             print(e)
             exc_type, exc_obj, exc_tb = sys.exc_info()

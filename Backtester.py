@@ -7,7 +7,7 @@ from binance.exceptions import BinanceAPIException
 import pandas as pd
 import numpy as np
 import Helper
-import API_keys
+from Config_File import api_key,api_secret
 from copy import copy
 import TradingStrats as TS
 trades = deque(maxlen=100000) ##keep track of shorts/Longs for graphing
@@ -30,7 +30,7 @@ symbol = ['RAYUSDT', 'NEARUSDT', 'AUDIOUSDT']
           'MTLUSDT', 'VETUSDT', 'DASHUSDT', 'KEEPUSDT', 'LTCUSDT', 'DYDXUSDT', 'LINAUSDT', 'XLMUSDT', 'LINKUSDT', 'QTUMUSDT',
           'KSMUSDT', 'FILUSDT', 'STMXUSDT', 'BALUSDT', 'GALAUSDT', 'BATUSDT', 'AKROUSDT', 'XMRUSDT', 'COTIUSDT']'''
 
-client = Client(API_keys.api_key,API_keys.api_secret)
+client = Client(api_key,api_secret)
 ##################### Run on all USDT pairs or else comment out and specify a list like above ####################################
 x = client.futures_ticker()  # [0]
     ##get all symbols
@@ -38,15 +38,15 @@ for y in x:
     symbol.append(y['symbol'])
 symbol = [x for x in symbol if 'USDT' in x] ##filter for usdt futures
 symbol = [x for x in symbol if not '_' in x] ##remove invalid symbols
-symbol = ['GALAUSDT','ENJUSDT','UNIUSDT','SFPUSDT','THETAUSDT']#,'LINKUSDT','HNTUSDT','LUNAUSDT','DOGEUSDT']
+#symbol = ['GALAUSDT','ENJUSDT','UNIUSDT','SFPUSDT','THETAUSDT']#,'LINKUSDT','HNTUSDT','LUNAUSDT','DOGEUSDT']
 ###################################################################################################################################
 #######################################             SETTINGS            ###########################################################
 ###################################################################################################################################
-OrderSIZE = .1 ## Amount of effective account balance to use per trade
+OrderSIZE = .01 ## Amount of effective account balance to use per trade
 AccountBalance = 1000
 leverage = 10  ##leverage being used
 fee = .00036
-start = '01-02-22' ##start of backtest dd/mm/yy
+start = '01-08-21' ##start of backtest dd/mm/yy
 end = '01-03-22'   ##end of backtest   dd/mm/yy
 TIME_INTERVAL = '15m'   ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M I think...
 use_trailing_stop = 0 ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
@@ -184,7 +184,8 @@ for i in range(len(High_1min[0])-1):
                         # Trade_Direction, stoplossval, takeprofitval, Close_pos = TS.heikin_ashi_ema2(CloseStream[j], OpenStream_H[j], HighStream_H[j], LowStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval, takeprofitval, CurrentPos, Close_pos)
                         # Trade_Direction,stoplossval,takeprofitval,Close_pos = TS.heikin_ashi_ema(CloseStream[j], OpenStream_H[j], CloseStream_H[j], Trade_Direction, stoplossval,takeprofitval, CurrentPos, Close_pos)
                         ##must be unhighlighted below in the else clause also as it returns the Close_pos var
-
+                        #Trade_Direction,stoplossval,takeprofitval = TS.single_candle_swing_pump(HighStream[j],LowStream[j],VolumeStream[j],CloseStream[j],OpenStream[j],stoplossval,takeprofitval)
+                        Trade_Direction,stoplossval,takeprofitval = TS.yi_long_musk(CloseStream[j])
                         pass
                 if CurrentPos == -99 and Trade_Direction == 0:
                     Trading_index = j
@@ -554,7 +555,10 @@ for trade in cashout:
 print("Trades Made: ",len(trades))
 print("Successful Trades:",correct)
 print("Accuracy: ",(correct/tradeNO)*100)
-print("Win/Loss Ratio: ",{correct/(tradeNO-correct)})
+try:
+    print("Win/Loss Ratio: ",{correct/(tradeNO-correct)})
+except:
+    pass
 print("Profit before fees: ",shortCash+longCash)
 print("Trading fees paid: ",fees_paid)
 try:

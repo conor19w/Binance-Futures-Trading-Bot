@@ -14,5 +14,5 @@ trailing_stop_callback = 0.1 ##trailing stop percent, this is .1% range is [.1% 
 ##################################################################################
 ###################### Coins Traded ##############################################
 ##Trade All Coins if True, can also specify a list of coins to trade instead. Example: symbol = ['ETHUSDT','BTCUSDT'] & set Trade_All_Coins = False
-Trade_All_Coins = True
+Trade_All_Coins = False
 symbol = ['GMTUSDT']  ## If Trade_All_Coins is False then we list the coins we want to trade here, otherwise the bot will automatically get all coins and trade them
