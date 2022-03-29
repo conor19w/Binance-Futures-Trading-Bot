@@ -11,5 +11,8 @@ Max_Margin = 0  ## Set to zero to hold only a single position at a time, Margin 
 use_heikin_ashi = 0 ## Create heikin ashi candles that can be referenced in Bot_Class.Bot.make_decision()
 use_trailing_stop = 0 ##If on we will use our TP value as the Activation price for a trailing stop loss
 trailing_stop_callback = 0.1 ##trailing stop percent, this is .1% range is [.1% - 5%] .ie [0.1 - 5]
-
-######################################################################################################################################################
+##################################################################################
+###################### Coins Traded ##############################################
+##Trade All Coins if True, can also specify a list of coins to trade instead. Example: symbol = ['ETHUSDT','BTCUSDT'] & set Trade_All_Coins = False
+Trade_All_Coins = True
+symbol = ['GMTUSDT']  ## If Trade_All_Coins is False then we list the coins we want to trade here, otherwise the bot will automatically get all coins and trade them

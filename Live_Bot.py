@@ -180,13 +180,15 @@ if __name__ == '__main__':
     twm.start()  ##start manager
     streams = []  ##store streams allowing the option to start and stop streams if needed
 
-    ##Trade All Coins Default, can also specify a list of coins to trade instead. Example: symbol = ['ETHUSDT','BTCUSDT']
-    symbol = []
-    x = client.futures_ticker()  # [0]
-    for y in x:
-        symbol.append(y['symbol'])
-    symbol = [x for x in symbol if 'USDT' in x]
-    symbol = [x for x in symbol if not '_' in x]
+
+    if Trade_All_Coins:
+        symbol = []
+        ##Trade All Coins Default, can also specify a list of coins to trade instead. Example: symbol = ['ETHUSDT','BTCUSDT']
+        x = client.futures_ticker()  # [0]
+        for y in x:
+            symbol.append(y['symbol'])
+        symbol = [x for x in symbol if 'USDT' in x]
+        symbol = [x for x in symbol if not '_' in x]
 
     print("Setting Leverage...")
     i = 0

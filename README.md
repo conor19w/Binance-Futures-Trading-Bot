@@ -23,7 +23,7 @@ __There is no set strategy, You can select one by uncommenting it in make_Decisi
 * Choose the Interval you want to trade and the buffer of candlesticks your strategy will need this will be dependent on indicators you need to ensure you have a sufficient buffer, or you will get errors.
 * Leverage and order_size should be changed according to your preference
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
-* __Trailing stop: set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e. 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy__.  
+* __Trailing stop: set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e. 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy__.
 ---
 #### Creating Custom Strategies:
 __Strategies are implemented in Bot_Class.py as a function named Make_decision() in the Bot class__
