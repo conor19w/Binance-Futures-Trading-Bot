@@ -10,7 +10,7 @@ from multiprocessing import Process,Pipe
 ##Local Imports
 from Helper import Trade_Maker,get_historical,Trade
 from Bot_Class import Bot
-import API_keys
+from Config_File import *
 
 Data:[Bot] = []
 new_candle_flag = 0
@@ -165,21 +165,9 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
 
 
 if __name__ == '__main__':
-    ################## settings, these are very strategy dependant ensure you have enough data for your chosen strategy ##################################
-    order_Size = .02
-    leverage = 10
-    start_string = '4 hour ago'
-    Interval = '1m' ##candle sticks you want to trade
-    Max_Margin = 0  ## Set to zero to hold only a single position at a time, Margin allowed to be used up by opening positions
-    use_heikin_ashi = 0 ## Create heikin ashi candles that can be referenced in Bot_Class.Bot.make_decision()
-    use_trailing_stop = 0 ##If on we will use our TP value as the Activation price for a trailing stop loss
-    trailing_stop_callback = 0.1 ##trailing stop percent, this is .1% range is [.1% - 5%] .ie [0.1 - 5]
-
-    ######################################################################################################################################################
-
     pp = PrettyPrinter()  ##for printing json text cleanly (inspect binance API call returns)
     #client = Client(api_key=API_keys.api_key,api_secret=API_keys.api_secret)  ##Binance keys needed to get historical data/ Trade on an account
-    client = Client(api_key=API_keys.api_key, api_secret=API_keys.api_secret)#, requests_params={"timeout": '20'})
+    client = Client(api_key=api_key, api_secret=api_secret)#, requests_params={"timeout": '20'})
     y = client.futures_exchange_info()['symbols']
     coin_info = []
     for x in y:
@@ -188,7 +176,7 @@ if __name__ == '__main__':
                           x['filters'][0]['minPrice']])
 
     # twm = ThreadedWebsocketManager(api_key=API_keys.api_key, api_secret=API_keys.api_secret)  ##handles websockets
-    twm = ThreadedWebsocketManager(api_key=API_keys.api_key, api_secret=API_keys.api_secret)
+    twm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)
     twm.start()  ##start manager
     streams = []  ##store streams allowing the option to start and stop streams if needed
 

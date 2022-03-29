@@ -99,8 +99,8 @@ class Bot:
     def Make_decision(self):
         ##Must return these:
         Trade_Direction = -99 ## Short (0), Long (1)
-        stoplossval = -99   ##the margin of increase/decrease that would stop us out/ be our take profit, NOT the price target.
-        takeprofitval = -99 #That is worked out later by adding or subtracting:
+        stop_loss_val = -99   ##the margin of increase/decrease that would stop us out/ be our take profit, NOT the price target.
+        take_profit_val = -99 #That is worked out later by adding or subtracting:
 
         ######################### Strategy ###############################
         ###Can use indicators from ta python & check out TradingStrats.py for some strategy ideas
@@ -112,14 +112,14 @@ class Bot:
 
 
         ##OR use one of these Strategies Available from the backtester:
-        #Trade_Direction,stoplossval, takeprofitval = TS.StochRSIMACD(Trade_Direction, self.Close,self.High,self.Low)
-        #Trade_Direction,stoplossval, takeprofitval = TS.tripleEMAStochasticRSIATR(self.Close,self.High,self.Low,Trade_Direction)
-        #Trade_Direction, stoplossval, takeprofitval = TS.tripleEMA(self.Close, self.High, self.Low,Trade_Direction)
-        #Trade_Direction, stoplossval, takeprofitval = TS.breakout(Trade_Direction,self.Close,self.Volume,self.High, self.Low)
-        #Trade_Direction,stoplossval,takeprofitval = TS.stochBB(Trade_Direction,self.Close, self.High, self.Low)
-        #Trade_Direction, stoplossval, takeprofitval = TS.goldenCross(Trade_Direction,self.Close, self.High, self.Low)
-        #Trade_Direction , stoplossval, takeprofitval = TS.candle_wick(Trade_Direction,self.Close,self.Open,self.High,self.Low)
-        #Trade_Direction,stoplossval,takeprofitval = TS.fibMACD(Trade_Direction, self.Close, self.Open,self.High,self.Low)
-        #Trade_Direction, stoplossval, takeprofitval, _ = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stoplossval, takeprofitval, CurrentPos, 0)
-        #Trade_Direction,stoplossval,takeprofitval,_ = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stoplossval,takeprofitval, CurrentPos, 0)
-        return Trade_Direction,stoplossval,takeprofitval
+        #Trade_Direction,stop_loss_val, take_profit_val = TS.StochRSIMACD(Trade_Direction, self.Close,self.High,self.Low)
+        #Trade_Direction,stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close,self.High,self.Low,Trade_Direction)
+        #Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMA(self.Close, self.High, self.Low,Trade_Direction)
+        #Trade_Direction, stop_loss_val, take_profit_val = TS.breakout(Trade_Direction,self.Close,self.Volume,self.High, self.Low)
+        #Trade_Direction,stop_loss_val,take_profit_val = TS.stochBB(Trade_Direction,self.Close, self.High, self.Low)
+        #Trade_Direction, stop_loss_val, take_profit_val = TS.goldenCross(Trade_Direction,self.Close, self.High, self.Low)
+        #Trade_Direction , stop_loss_val, take_profit_val = TS.candle_wick(Trade_Direction,self.Close,self.Open,self.High,self.Low)
+        #Trade_Direction,stop_loss_val,take_profit_val = TS.fibMACD(Trade_Direction, self.Close, self.Open,self.High,self.Low)
+        #Trade_Direction, stop_loss_val, take_profit_val, _ = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stoplossval, takeprofitval, CurrentPos, 0)
+        #Trade_Direction,stop_loss_val,take_profit_val,_ = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stoplossval,takeprofitval, CurrentPos, 0)
+        return Trade_Direction,stop_loss_val,take_profit_val
