@@ -26,15 +26,12 @@ def web_soc_process(pipe:Pipe):
     ##keep process running
     while True:
         ##Check if all coins we are trading have received a new data point
-        flag = 1
+        count = 0
         for x in Data:
             if x.new_data:
-                pass
-            else:
-                flag = 0
-                break
+                count += 1
         ##If they have, Send the updated Data_set to the process handling trading
-        if flag:
+        if count > len(Data) * .9:
             for x in Data:
                 x.new_data = 0
             pipe.send(Data)
