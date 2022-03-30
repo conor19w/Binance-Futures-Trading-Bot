@@ -760,11 +760,11 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
     if Type==1:
         ATR = np.array(average_true_range(pd.Series(HighStream), pd.Series(LowStream), pd.Series(CloseStream)))
         if Trade_Direction == 0:
-            stoplossval = 3 * ATR[-1]
-            takeprofitval = 5 * ATR[-1]
+            stoplossval = 3 * abs(ATR[-1])
+            takeprofitval = 5 * abs(ATR[-1])
         elif Trade_Direction == 1:
-            stoplossval = 3 * ATR[-1]
-            takeprofitval = 5 * ATR[-1]
+            stoplossval = 3 * abs(ATR[-1])
+            takeprofitval = 5 * abs(ATR[-1])
 
     ## Highest/Lowest Close in last 30 periods
     elif Type==2:
@@ -863,14 +863,14 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
 
         if Trade_Direction == 0:
             temp = (highswing - CloseStream[-1])
-            stoplossval = 1.25 * ATR[-1]
+            stoplossval = 1.25 * abs(ATR[-1])
             if temp < 0:
                 temp *= -1
             takeprofitval = temp * 2
 
         elif Trade_Direction == 1:
             temp = (CloseStream[-1] - Lowswing)
-            stoplossval = 1.25 * ATR[-1]
+            stoplossval = 1.25 * abs(ATR[-1])
             if temp < 0:
                 temp *= -1
             takeprofitval = temp * 2
@@ -878,11 +878,11 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
     elif Type==6:
         ATR = np.array(average_true_range(pd.Series(HighStream), pd.Series(LowStream), pd.Series(CloseStream)))
         if Trade_Direction == 0:
-            stoplossval = .5 * ATR[-1]
-            takeprofitval = 3 * ATR[-1]
+            stoplossval = .5 * abs(ATR[-1])
+            takeprofitval = 3 * abs(ATR[-1])
         elif Trade_Direction == 1:
-            stoplossval = .5 * ATR[-1]
-            takeprofitval = 3 * ATR[-1]
+            stoplossval = .5 * abs(ATR[-1])
+            takeprofitval = 3 * abs(ATR[-1])
 
     elif Type==7:
         stoplossval = .007*CloseStream[-1]
@@ -891,18 +891,18 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
     elif Type==8:
         ATR = np.array(average_true_range(pd.Series(HighStream[:-1]), pd.Series(LowStream[:-1]), pd.Series(CloseStream[:-1]),window=25))
         if Trade_Direction == 0:
-            stoplossval = 2 * ATR[-1]
-            takeprofitval = 2.5 * ATR[-1]
+            stoplossval = 2 * abs(ATR[-1])
+            takeprofitval = 2.5 * abs(ATR[-1])
         elif Trade_Direction == 1:
-            stoplossval = 2 * ATR[-1]
-            takeprofitval = 2.5 * ATR[-1]
+            stoplossval = 2 * abs(ATR[-1])
+            takeprofitval = 2.5 * abs(ATR[-1])
     elif Type==9:
         ATR = np.array(average_true_range(pd.Series(HighStream[:-1]), pd.Series(LowStream[:-1]), pd.Series(CloseStream[:-1]),window=20))
         if Trade_Direction == 0:
-            stoplossval = SL * ATR[-1]
-            takeprofitval = TP * ATR[-1]
+            stoplossval = SL * abs(ATR[-1])
+            takeprofitval = TP * abs(ATR[-1])
         elif Trade_Direction == 1:
-            stoplossval = SL * ATR[-1]
-            takeprofitval = TP * ATR[-1]
+            stoplossval = SL * abs(ATR[-1])
+            takeprofitval = TP * abs(ATR[-1])
     return stoplossval,takeprofitval
 
