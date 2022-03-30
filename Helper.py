@@ -9,8 +9,16 @@ client = Client(api_key=api_key,api_secret=api_secret) ##Binance keys needed to 
 
 desktop_path = f"C:\\Users\\conor\\Desktop"
 
+class Trade_Stats:
+    def __init__(self):
+        self.start_balance = 0
+        self.total_profit = 0
+        self.total_number_of_trades = 0
+        self.wins = 0
+        self.losses = 0
+
 class Trade:
-    def __init__(self,index,position_size,tp_vals,stop_loss_val,trade_direction,order_id_temp,symbol):
+    def __init__(self,index,position_size,tp_vals,stop_loss_val,trade_direction,order_id_temp,symbol,start_account_balance):
         self.index = index
         self.symbol = symbol
         self.position_size = position_size
@@ -20,6 +28,7 @@ class Trade:
         self.order_id = order_id_temp
         self.TP_id = ''
         self.SL_id = ''
+        self.start_account_balance = start_account_balance
 class Trade_Maker:
     def __init__(self, client: Client, use_trailing_stop, trailing_stop_callback):
         self.client = client

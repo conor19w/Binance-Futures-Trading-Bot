@@ -6,9 +6,9 @@ from binance import ThreadedWebsocketManager
 from datetime import datetime, date, timedelta
 from threading import Thread
 from multiprocessing import Process,Pipe
-
+import time
 ##Local Imports
-from Helper import Trade_Maker,get_historical,Trade
+from Helper import Trade_Maker,get_historical,Trade,Trade_Stats
 from Bot_Class import Bot
 from Config_File import *
 
@@ -45,6 +45,7 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
     Data = []
     margin_used = 0
     TM = Trade_Maker(client,use_trailing_stop,trailing_stop_callback)
+    TS = Trade_Stats()
     start = datetime.now().time()
     yesterdate = date.today()
     all_orders = []
@@ -79,12 +80,13 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                 while len(new_trades)>0 and margin_used <= Max_Margin*account_balance:
 
                     account_balance = 0
+                    start_account_balance = 0
                     account_balance_info = client.futures_account_balance()
                     for item in account_balance_info:
                         if item['asset'] == 'USDT':
                             account_balance = float(item['balance'])
+                            start_account_balance = float(item['balance'])
                             break
-
                     [index, [trade_direction,stop_loss,take_profit]] = new_trades.pop(0)
                     order_qty = leverage*order_Size*account_balance/Data[index].Close[-1]
                     margin_used += order_Size*account_balance
@@ -98,7 +100,7 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                         take_profit_val = entry_price_temp - take_profit
                         stop_loss_val = entry_price_temp + stop_loss
                     ##Add on the trade which we will later Check on
-                    active_trades.append(Trade(index,position_size_temp,[take_profit_val,position_size_temp],stop_loss_val,trade_direction,order_id_temp,Data[index].symbol))
+                    active_trades.append(Trade(index,position_size_temp,[take_profit_val,position_size_temp],stop_loss_val,trade_direction,order_id_temp,Data[index].symbol,start_account_balance))
                 if margin_used >= Max_Margin*account_balance:
                     new_trades = [] ##Don't Open any new positions
 
@@ -123,11 +125,33 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                         while trade_index < len(active_trades):
                             flag = 0
                             if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == active_trades[trade_index].TP_id and order['status']=='FILLED':
+                                ##Trading Statisti
+                                TS.wins+=1
+                                TS.total_number_of_trades+=1
+                                account_balance = 0
+                                account_balance_info = client.futures_account_balance()
+                                for item in account_balance_info:
+                                    if item['asset'] == 'USDT':
+                                        account_balance = float(item['balance'])
+                                        break
+                                TS.total_profit += (account_balance - active_trades[trade_index].start_account_balance)
                                 ##Position Closed so cancel open orders and pop off list
                                 client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
+
                                 flag = 1 ##position Closed so pop instead of iterating
 
                             if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == active_trades[trade_index].SL_id and order['status']=='FILLED' and flag == 0:
+                                ##Trading Statistics
+                                TS.losses+=1
+                                TS.total_number_of_trades += 1
+                                account_balance = 0
+                                account_balance_info = client.futures_account_balance()
+                                for item in account_balance_info:
+                                    if item['asset'] == 'USDT':
+                                        account_balance = float(item['balance'])
+                                        break
+                                TS.total_profit += (account_balance - active_trades[trade_index].start_account_balance)
+
                                 ##We've hit our SL so close open orders and pop off list
                                 client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
                                 flag = 1 ##Pop off the list
@@ -153,6 +177,10 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                     for t in active_trades:
                         temp_symbols.append(t.symbol)
                     print(f"Account Balance: {account_balance}, {Data[0].Date[-1]}: Active Trades: {temp_symbols}")
+                    try:
+                        print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {TS.total_profit}, Average Trade Profit: ${TS.total_profit/TS.total_number_of_trades}")
+                    except:
+                        print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {TS.total_profit}")
 
 
             except BinanceAPIException as e:
@@ -246,6 +274,8 @@ if __name__ == '__main__':
         else:
             Data[i].add_hist(Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp)
             i += 1
+        if RATE_LIMIT_WAIT:
+            time.sleep(4)  ##wait a few second to avoid api rate limit
     print("Finished.")
     AccountBalance = 0
     y = client.futures_account_balance()

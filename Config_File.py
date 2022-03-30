@@ -14,5 +14,8 @@ trailing_stop_callback = 0.1 ##trailing stop percent, this is .1% range is [.1% 
 ##################################################################################
 ###################### Coins Traded ##############################################
 ##Trade All Coins if True, can also specify a list of coins to trade instead. Example: symbol = ['ETHUSDT','BTCUSDT'] & set Trade_All_Coins = False
-Trade_All_Coins = False
+Trade_All_Coins = True
 symbol = ['GMTUSDT']  ## If Trade_All_Coins is False then we list the coins we want to trade here, otherwise the bot will automatically get all coins and trade them
+
+## If you are getting a rate limit error on startup this will add a delay for downloading candlesticks to start
+RATE_LIMIT_WAIT = False ## It will not slow down the bot, it will only slow down the startup by about (4 x (number of coins you're trading)) seconds
