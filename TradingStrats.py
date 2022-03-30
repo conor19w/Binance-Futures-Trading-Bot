@@ -13,6 +13,13 @@ from math import log10, floor
 from copy import copy
 import time
 
+def yi_long_musk(close):
+    RSI= np.array(rsi(pd.Series(close)))
+    if 20 < RSI[-2] and 20>RSI[-1]:
+        return 1, close[-1]*.1, close[-1]*.01
+    # elif 80 > RSI[-3] and 80 < RSI[-2] and 80>RSI[-1]:
+    #     return 0, close[-1]*.1, close[-1]*.01
+    return -99,-99,-99
 
 def single_candle_swing_pump(Trade_Direction,Close,High,Low,CurrentPos,ClosePos,count,stoploss):
     ##This function requires Hold_Pos to be switched on in Live_Bot.py
