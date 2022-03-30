@@ -11,24 +11,22 @@ desktop_path = f"C:\\Users\\conor\\Desktop"
 
 class Trade_Stats:
     def __init__(self):
-        self.start_balance = 0
-        self.total_profit = 0
         self.total_number_of_trades = 0
         self.wins = 0
         self.losses = 0
 
 class Trade:
-    def __init__(self,index,position_size,tp_vals,stop_loss_val,trade_direction,order_id_temp,symbol,start_account_balance):
+    def __init__(self,index,position_size,tp_val,stop_loss_val,trade_direction,order_id_temp,symbol):
         self.index = index
         self.symbol = symbol
+        self.entry_price = -99
         self.position_size = position_size
-        self.TP_vals = tp_vals
+        self.TP_val = tp_val
         self.SL_val = stop_loss_val
         self.trade_direction = trade_direction
         self.order_id = order_id_temp
         self.TP_id = ''
         self.SL_id = ''
-        self.start_account_balance = start_account_balance
 class Trade_Maker:
     def __init__(self, client: Client, use_trailing_stop, trailing_stop_callback):
         self.client = client
@@ -60,10 +58,6 @@ class Trade_Maker:
                         type=FUTURE_ORDER_TYPE_MARKET,
                         quantity=order_qty)
                     orderID= order['orderId']
-
-
-
-
             except BinanceAPIException as e:
                 print("Error in open_trade(), Error: ", e)
 
@@ -73,8 +67,7 @@ class Trade_Maker:
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
 
-        entry = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
-        return orderID, order_qty, entry
+        return orderID, order_qty
 
     def place_TP(self, symbol, TP, side, CP, tick_size):
         TP_ID = ''
@@ -99,6 +92,7 @@ class Trade_Maker:
                         type=FUTURE_ORDER_TYPE_LIMIT,
                         price=TP_val,
                         timeInForce=TIME_IN_FORCE_GTC,
+                        reduceOnly='true',
                         quantity=TP[1])
                 else:
                     order = self.client.futures_create_order(
@@ -150,15 +144,45 @@ class Trade_Maker:
 
 
             except BinanceAPIException as e:
-                print("Error in place_SL(), Error: ", e)
-                print(f"symbol: {symbol} SL: {SL}\n")
+                if "Order would immediately trigger." in e:
+                    print("Order Would trigger immediately, closing position")
+                    return -1
+                else:
+                    print("Error in place_SL(), Error: ", e)
+                    print(f"symbol: {symbol} SL: {SL}\n")
 
         except Exception as e:
             print(e)
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
+
         return order_ID
+
+    def close_position(self,symbol,trade_direction,total_position_size):
+        try:
+            try:
+                self.client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel orders for this symbol
+                if trade_direction == 0:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=SIDE_BUY,
+                        type=FUTURE_ORDER_TYPE_MARKET,
+                        quantity=total_position_size)
+                if trade_direction == 1:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=SIDE_SELL,
+                        type=FUTURE_ORDER_TYPE_MARKET,
+                        quantity=total_position_size)
+
+            except BinanceAPIException as e:
+                print(f"{symbol}: Error in close_position(), Error: ", e)
+        except Exception as e:
+            print(e)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
 
 def get_TIME_INTERVAL(TIME_INTERVAL):
     ##Convert String to minutes

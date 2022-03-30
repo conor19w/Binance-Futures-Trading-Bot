@@ -52,10 +52,12 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
     print_flag = 0
     print("Searching for Trade Entries...")
     account_balance = 0
+    startup_account_balance = 0
     account_balance_info = client.futures_account_balance()
     for item in account_balance_info:
         if item['asset'] == 'USDT':
             account_balance = float(item['balance'])
+            startup_account_balance = float(item['balance'])
             break
     data_thread = Thread(target=listen_pipe, args=(pipe,))  ## thread to listen for new candles
     data_thread.start()
@@ -78,7 +80,6 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                                 new_trades.append([i,temp_dec]) ##[index,[trade_direction,SL,TP]]
                 ##Sort out new trades to be opened
                 while len(new_trades)>0 and margin_used <= Max_Margin*account_balance:
-
                     account_balance = 0
                     start_account_balance = 0
                     account_balance_info = client.futures_account_balance()
@@ -90,20 +91,16 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                     [index, [trade_direction,stop_loss,take_profit]] = new_trades.pop(0)
                     order_qty = leverage*order_Size*account_balance/Data[index].Close[-1]
                     margin_used += order_Size*account_balance
-                    order_id_temp,position_size_temp,entry_price_temp = TM.open_trade(Data[index].symbol,trade_direction,order_qty,Data[index].OP)
-                    take_profit_val = 0
-                    stop_loss_val = 0
-                    if trade_direction:
-                        take_profit_val =  take_profit + entry_price_temp
-                        stop_loss_val = entry_price_temp - stop_loss
-                    else:
-                        take_profit_val = entry_price_temp - take_profit
-                        stop_loss_val = entry_price_temp + stop_loss
-                    ##Add on the trade which we will later Check on
-                    active_trades.append(Trade(index,position_size_temp,[take_profit_val,position_size_temp],stop_loss_val,trade_direction,order_id_temp,Data[index].symbol,start_account_balance))
-                if margin_used >= Max_Margin*account_balance:
-                    new_trades = [] ##Don't Open any new positions
+                    order_id_temp,position_size_temp = TM.open_trade(Data[index].symbol,trade_direction,order_qty,Data[index].OP)
 
+                    ##Add on the trade which we will later Check on
+                    active_trades.append(Trade(index,position_size_temp,take_profit,stop_loss,trade_direction,order_id_temp,Data[index].symbol))
+                    if margin_used >= Max_Margin*account_balance:
+                        new_trades = [] ##Don't Open any new positions
+
+                ##Clear trades if trade list is full
+                if margin_used >= Max_Margin * account_balance:
+                    new_trades = []  ##Don't Open any new positions
 
                 rightnow = datetime.now().time()  ##time right now
                 timer = timedelta(hours=0, minutes=0, seconds=15)  ##how often to run code below
@@ -116,16 +113,31 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                     for order in all_orders:
                         for t in active_trades:
                             if order['symbol'] == t.symbol and order['orderId'] == t.order_id and t.SL_id=='' and order['status']=='FILLED':
+
+                                t.entry_price = float(client.futures_position_information(symbol=t.symbol)[0]['entryPrice'])
+                                take_profit_val = 0
+                                stop_loss_val = 0
+                                if t.trade_direction:
+                                    take_profit_val = t.TP_val + t.entry_price
+                                    stop_loss_val = t.entry_price - t.SL_val
+                                else:
+                                    take_profit_val = t.entry_price - t.TP_val
+                                    stop_loss_val = t.entry_price + t.SL_val
+
                                 ##This position has been opened
-                                t.TP_id = TM.place_TP(t.symbol,t.TP_vals,t.trade_direction,Data[t.index].CP,Data[t.index].tick_size)
-                                t.SL_id = TM.place_SL(t.symbol,t.SL_val,t.trade_direction,Data[t.index].CP,Data[t.index].tick_size)
+                                if t.TP_id == '':
+                                    t.TP_id = TM.place_TP(t.symbol,[take_profit_val,t.position_size],t.trade_direction,Data[t.index].CP,Data[t.index].tick_size)
+                                t.SL_id = TM.place_SL(t.symbol,stop_loss_val,t.trade_direction,Data[t.index].CP,Data[t.index].tick_size)
+                                ##Order would trigger immediately so close the position
+                                if t.SL_id == -1:
+                                    TM.close_position(t.symbol,t.trade_direction,t.position_size)
                     ##Check If trades have hit their TP values or SL value and move SL/Cancel open orders cause the trade is finished
                     for order in all_orders:
                         trade_index = 0
                         while trade_index < len(active_trades):
                             flag = 0
                             if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == active_trades[trade_index].TP_id and order['status']=='FILLED':
-                                ##Trading Statisti
+                                ##Trading Statistics
                                 TS.wins+=1
                                 TS.total_number_of_trades+=1
                                 account_balance = 0
@@ -134,7 +146,6 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                                     if item['asset'] == 'USDT':
                                         account_balance = float(item['balance'])
                                         break
-                                TS.total_profit += (account_balance - active_trades[trade_index].start_account_balance)
                                 ##Position Closed so cancel open orders and pop off list
                                 client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
 
@@ -150,8 +161,6 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                                     if item['asset'] == 'USDT':
                                         account_balance = float(item['balance'])
                                         break
-                                TS.total_profit += (account_balance - active_trades[trade_index].start_account_balance)
-
                                 ##We've hit our SL so close open orders and pop off list
                                 client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
                                 flag = 1 ##Pop off the list
@@ -178,9 +187,9 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                         temp_symbols.append(t.symbol)
                     print(f"Account Balance: {account_balance}, {Data[0].Date[-1]}: Active Trades: {temp_symbols}")
                     try:
-                        print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {TS.total_profit}, Average Trade Profit: ${TS.total_profit/TS.total_number_of_trades}")
+                        print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance}, Average Trade Profit: ${(account_balance - startup_account_balance)/TS.total_number_of_trades}")
                     except:
-                        print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {TS.total_profit}")
+                        print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance}")
 
 
             except BinanceAPIException as e:
@@ -202,7 +211,7 @@ if __name__ == '__main__':
         # z = x['filters'][0]
         coin_info.append([x['pair'], x['pricePrecision'], x['quantityPrecision'], x['filters'][0]['tickSize'],
                           x['filters'][0]['minPrice']])
-
+    #pp.pprint(client.futures_get_all_orders())
     # twm = ThreadedWebsocketManager(api_key=API_keys.api_key, api_secret=API_keys.api_secret)  ##handles websockets
     twm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)
     twm.start()  ##start manager
@@ -275,7 +284,7 @@ if __name__ == '__main__':
             Data[i].add_hist(Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp)
             i += 1
         if RATE_LIMIT_WAIT:
-            time.sleep(4)  ##wait a few second to avoid api rate limit
+            time.sleep(2)  ##wait a few second to avoid api rate limit
     print("Finished.")
     AccountBalance = 0
     y = client.futures_account_balance()
