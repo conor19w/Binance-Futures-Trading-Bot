@@ -144,12 +144,9 @@ class Trade_Maker:
 
 
             except BinanceAPIException as e:
-                if "Order would immediately trigger." in e:
-                    print("Order Would trigger immediately, closing position")
-                    return -1
-                else:
-                    print("Error in place_SL(), Error: ", e)
-                    print(f"symbol: {symbol} SL: {SL}\n")
+                print("Error in place_SL(), Error: ", e)
+                print(f"symbol: {symbol} SL: {SL}\n")
+                return -1
 
         except Exception as e:
             print(e)

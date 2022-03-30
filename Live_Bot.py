@@ -110,32 +110,41 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                     all_orders = client.futures_get_all_orders()
 
                     ##Check if we are in a trade set compensation and TPs
-                    for order in all_orders:
-                        for t in active_trades:
-                            if order['symbol'] == t.symbol and order['orderId'] == t.order_id and t.SL_id=='' and order['status']=='FILLED':
+                    trade_index = 0
+                    while trade_index < len(active_trades):
+                        pop_flag = 0
+                        for order in all_orders:
+                            if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == active_trades[trade_index].order_id and active_trades[trade_index].SL_id=='' and order['status']=='FILLED':
 
-                                t.entry_price = float(client.futures_position_information(symbol=t.symbol)[0]['entryPrice'])
+                                active_trades[trade_index].entry_price = float(client.futures_position_information(symbol=active_trades[trade_index].symbol)[0]['entryPrice'])
                                 take_profit_val = 0
                                 stop_loss_val = 0
-                                if t.trade_direction:
-                                    take_profit_val = t.TP_val + t.entry_price
-                                    stop_loss_val = t.entry_price - t.SL_val
+                                if active_trades[trade_index].trade_direction:
+                                    take_profit_val = active_trades[trade_index].TP_val + active_trades[trade_index].entry_price
+                                    stop_loss_val = active_trades[trade_index].entry_price - active_trades[trade_index].SL_val
                                 else:
-                                    take_profit_val = t.entry_price - t.TP_val
-                                    stop_loss_val = t.entry_price + t.SL_val
+                                    take_profit_val = active_trades[trade_index].entry_price - active_trades[trade_index].TP_val
+                                    stop_loss_val = active_trades[trade_index].entry_price + active_trades[trade_index].SL_val
 
                                 ##This position has been opened
-                                if t.TP_id == '':
-                                    t.TP_id = TM.place_TP(t.symbol,[take_profit_val,t.position_size],t.trade_direction,Data[t.index].CP,Data[t.index].tick_size)
-                                t.SL_id = TM.place_SL(t.symbol,stop_loss_val,t.trade_direction,Data[t.index].CP,Data[t.index].tick_size)
+                                if active_trades[trade_index].TP_id == '':
+                                    active_trades[trade_index].TP_id = TM.place_TP(active_trades[trade_index].symbol,[take_profit_val,active_trades[trade_index].position_size],active_trades[trade_index].trade_direction,Data[active_trades[trade_index].index].CP,Data[active_trades[trade_index].index].tick_size)
+                                active_trades[trade_index].SL_id = TM.place_SL(active_trades[trade_index].symbol,stop_loss_val,active_trades[trade_index].trade_direction,Data[active_trades[trade_index].index].CP,Data[active_trades[trade_index].index].tick_size)
                                 ##Order would trigger immediately so close the position
-                                if t.SL_id == -1:
-                                    TM.close_position(t.symbol,t.trade_direction,t.position_size)
+                                if active_trades[trade_index].SL_id == -1:
+                                    TM.close_position(active_trades[trade_index].symbol,active_trades[trade_index].trade_direction,active_trades[trade_index].position_size)
+                                    print(f"Closed Trade on {active_trades[trade_index].symbol} as SL would immediately trigger")
+                                    pop_flag = 1
+                                    break
+                        if pop_flag:
+                            active_trades.pop(trade_index)
+                        else:
+                            trade_index+=1
                     ##Check If trades have hit their TP values or SL value and move SL/Cancel open orders cause the trade is finished
-                    for order in all_orders:
-                        trade_index = 0
-                        while trade_index < len(active_trades):
-                            flag = 0
+                    trade_index = 0
+                    while trade_index < len(active_trades):
+                        pop_flag = 0
+                        for order in all_orders:
                             if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == active_trades[trade_index].TP_id and order['status']=='FILLED':
                                 ##Trading Statistics
                                 TS.wins+=1
@@ -148,10 +157,9 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                                         break
                                 ##Position Closed so cancel open orders and pop off list
                                 client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
-
-                                flag = 1 ##position Closed so pop instead of iterating
-
-                            if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == active_trades[trade_index].SL_id and order['status']=='FILLED' and flag == 0:
+                                pop_flag = 1 ##position Closed so pop instead of iterating
+                                break
+                            elif order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == active_trades[trade_index].SL_id and order['status']=='FILLED':
                                 ##Trading Statistics
                                 TS.losses+=1
                                 TS.total_number_of_trades += 1
@@ -163,12 +171,12 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                                         break
                                 ##We've hit our SL so close open orders and pop off list
                                 client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
-                                flag = 1 ##Pop off the list
-
-                            if flag==1:
-                                active_trades.pop(trade_index)
-                            else:
-                                trade_index+=1
+                                pop_flag = 1 ##Pop off the list
+                                break
+                        if pop_flag==1:
+                            active_trades.pop(trade_index)
+                        else:
+                            trade_index+=1
 
                     ##Update the margin used every 15 seconds, done last to avoid slowing down other orders
                     position_info = client.futures_position_information()
