@@ -11,7 +11,7 @@
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Min version = Python 3.7 
 * Max version = Python 3.9.x
-* recommended version = Python 3.8.10 (one I use and have no issues with)
+* Recommended version = Python 3.8.10 (one I use and have no issues with)
 
 ---
 
