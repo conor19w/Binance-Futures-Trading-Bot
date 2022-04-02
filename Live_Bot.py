@@ -42,7 +42,6 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
     pp = PrettyPrinter()  ## for printing json text cleanly (inspect binance API call returns)
     active_trades:[Trade] = [] ## List of active trades
     new_trades = []
-    Data = []
     margin_used = 0
     TM = Trade_Maker(client,use_trailing_stop,trailing_stop_callback)
     TS = Trade_Stats()
