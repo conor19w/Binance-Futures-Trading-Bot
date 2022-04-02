@@ -68,32 +68,35 @@ class Bot:
         self.add_hist_complete = 1
 
     def handle_socket_message(self,msg):
-        payload = msg['k']
-        if payload['x']:
-            ## append incoming data
-            self.Open.append(float(payload['o']))
-            self.Close.append(float(payload['c']))
-            self.High.append(float(payload['h']))
-            self.Low.append(float(payload['l']))
-            self.Volume.append(float(payload['q']))
-            self.Date.append(datetime.utcfromtimestamp(round(payload['T']/1000)))
-            ## remove oldest data point
-            if self.add_hist_complete:
-                self.Open.pop(0)
-                self.Close.pop(0)
-                self.High.pop(0)
-                self.Low.pop(0)
-                self.Date.pop(0)
-                if self.use_heikin_ashi:
-                    self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
-                    self.Open_H.append((self.Open_H[-2] + self.Close_H[-2]) / 2)
-                    self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
-                    self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
-                    self.Open_H.pop(0)
-                    self.Close_H.pop(0)
-                    self.Low_H.pop(0)
-                    self.High_H.pop(0)
-                self.new_data = 1
+        try:
+            payload = msg['k']
+            if payload['x']:
+                ## append incoming data
+                self.Open.append(float(payload['o']))
+                self.Close.append(float(payload['c']))
+                self.High.append(float(payload['h']))
+                self.Low.append(float(payload['l']))
+                self.Volume.append(float(payload['q']))
+                self.Date.append(datetime.utcfromtimestamp(round(payload['T']/1000)))
+                ## remove oldest data point
+                if self.add_hist_complete:
+                    self.Open.pop(0)
+                    self.Close.pop(0)
+                    self.High.pop(0)
+                    self.Low.pop(0)
+                    self.Date.pop(0)
+                    if self.use_heikin_ashi:
+                        self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
+                        self.Open_H.append((self.Open_H[-2] + self.Close_H[-2]) / 2)
+                        self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
+                        self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
+                        self.Open_H.pop(0)
+                        self.Close_H.pop(0)
+                        self.Low_H.pop(0)
+                        self.High_H.pop(0)
+                    self.new_data = 1
+        except Exception as e:
+            print(f"Error caught in websocket, {e}")
 
     def Make_decision(self):
         ##Must return these:
