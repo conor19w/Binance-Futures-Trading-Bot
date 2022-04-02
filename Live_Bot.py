@@ -155,7 +155,10 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                                         account_balance = float(item['balance'])
                                         break
                                 ##Position Closed so cancel open orders and pop off list
-                                client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
+                                try:
+                                    client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
+                                except:
+                                    pass
                                 pop_flag = 1 ##position Closed so pop instead of iterating
                                 break
                             elif order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == active_trades[trade_index].SL_id and order['status']=='FILLED':
@@ -169,7 +172,10 @@ def Check_for_signals(pipe: Pipe,leverage, order_Size,Max_Margin,client:Client,u
                                         account_balance = float(item['balance'])
                                         break
                                 ##We've hit our SL so close open orders and pop off list
-                                client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
+                                try:
+                                    client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
+                                except:
+                                    pass
                                 pop_flag = 1 ##Pop off the list
                                 break
                         if pop_flag==1:
