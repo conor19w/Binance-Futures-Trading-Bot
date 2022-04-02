@@ -10,7 +10,7 @@
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Min version = python 3.7 
-* Max version = python 3.10.x
+* Max version = python 3.9.x
 ---
 
 ### Run strategies live on Binance from __Live_Bot.py__
