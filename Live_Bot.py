@@ -15,6 +15,31 @@ from Config_File import *
 Data:[Bot] = []
 new_candle_flag = 0
 
+def monitor_websockets(streams,twm:ThreadedWebsocketManager):
+    global Data
+    start = datetime.now().time()
+    yesterdate = date.today()
+    while True:
+        ## Check if any websockets have failed
+        rightnow = datetime.now().time()  ##time right now
+        timer = timedelta(hours=0, minutes=0, seconds=30)  ##how often to run code below
+        if (datetime.combine(date.today(), rightnow) - datetime.combine(yesterdate, start)) > timer :
+            start = datetime.now().time()  ##reset start
+            yesterdate = date.today()
+            for x in Data:
+                if x.socket_failed:
+                    try:
+                        twm.stop_socket(streams[x.index])
+                    except Exception as e:
+                        print(e)
+                    try:
+                        print(f"Attempting to restart socket for {x.symbol}")
+                        streams[x.index]=twm.start_kline_futures_socket(x.handle_socket_message,symbol=x.symbol,interval=Interval)
+                        print("Successful restart I think...")
+                    except Exception as e:
+                        print(f"Failed to restart socket, Error: {e}")
+                    x.socket_failed = False
+
 def listen_pipe(pipe:Pipe):
     global Data, new_candle_flag
     while True:
@@ -312,6 +337,9 @@ if __name__ == '__main__':
         x.new_data = 0
     _thread = Thread(target=web_soc_process, args=(pipe1,))
     _thread.start()
+
+    monitor_websockets_thread = Thread(target=monitor_websockets, args=(streams,twm))
+    monitor_websockets_thread.start()
 
     P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size,Max_Margin,client,use_trailing_stop,trailing_stop_callback))
     P1.start()

@@ -30,6 +30,7 @@ class Bot:
         self.High_H = []
         self.Low_H = []
         self.tick_size = tick
+        self.socket_failed = False
 
     def add_hist(self,Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp):
         while 0<len(self.Date):
@@ -97,6 +98,7 @@ class Bot:
                     self.new_data = 1
         except Exception as e:
             print(f"Error caught in websocket, {e}")
+            self.socket_failed = True
 
     def Make_decision(self):
         ##Must return these:
