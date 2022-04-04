@@ -68,24 +68,23 @@ class Bot:
                     self.Low_H.append(min(self.Low[i], self.Open_H[i], self.Close_H[i]))
         self.add_hist_complete = 1
 
-    def handle_socket_message(self,msg):
+    def handle_socket_message(self,Data):
         try:
-            payload = msg['k']
-            if payload['x']:
-                ## append incoming data
-                self.Open.append(float(payload['o']))
-                self.Close.append(float(payload['c']))
-                self.High.append(float(payload['h']))
-                self.Low.append(float(payload['l']))
-                self.Volume.append(float(payload['q']))
-                self.Date.append(datetime.utcfromtimestamp(round(payload['T']/1000)))
-                ## remove oldest data point
+            if Data['Date'] != -99:
+                self.Date.append(Data['Date'])
+                self.Close.append(Data['Close'])
+                self.Volume.append(Data['Volume'])
+                self.High.append(Data['High'])
+                self.Low.append(Data['Low'])
+                self.Open.append(Data['Open'])
                 if self.add_hist_complete:
-                    self.Open.pop(0)
+                    self.Date.pop(0)
                     self.Close.pop(0)
+                    self.Volume.pop(0)
                     self.High.pop(0)
                     self.Low.pop(0)
-                    self.Date.pop(0)
+                    self.Open.pop(0)
+                    self.new_data = 1
                     if self.use_heikin_ashi:
                         self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
                         self.Open_H.append((self.Open_H[-2] + self.Close_H[-2]) / 2)
@@ -97,7 +96,7 @@ class Bot:
                         self.High_H.pop(0)
                     self.new_data = 1
         except Exception as e:
-            print(f"Error caught in websocket, {e}")
+            print(f"Error in {self.symbol}.handle_socket_message(): ", e)
             self.socket_failed = True
 
     def Make_decision(self):
@@ -113,7 +112,7 @@ class Bot:
         ##OR use one of these Strategies Available from the backtester:
         #Trade_Direction,stop_loss_val, take_profit_val = TS.StochRSIMACD(Trade_Direction, self.Close,self.High,self.Low)
         #Trade_Direction,stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close,self.High,self.Low,Trade_Direction)
-        #Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMA(self.Close, self.High, self.Low,Trade_Direction)
+        Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMA(self.Close, self.High, self.Low, Trade_Direction)
         #Trade_Direction, stop_loss_val, take_profit_val = TS.breakout(Trade_Direction,self.Close,self.Volume,self.High, self.Low)
         #Trade_Direction,stop_loss_val,take_profit_val = TS.stochBB(Trade_Direction,self.Close, self.High, self.Low)
         #Trade_Direction, stop_loss_val, take_profit_val = TS.goldenCross(Trade_Direction,self.Close, self.High, self.Low)

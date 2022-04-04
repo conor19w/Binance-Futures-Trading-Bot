@@ -2,12 +2,42 @@ from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
 from datetime import datetime
-from Config_File import api_key,api_secret
-from joblib import load,dump
+from Config_File import API_KEY, API_SECRET
+from joblib import load, dump
 import sys, os
-client = Client(api_key=api_key,api_secret=api_secret) ##Binance keys needed to get historical data/ Trade on an account
+
+client = Client(api_key=API_KEY,
+                api_secret=API_SECRET)  ##Binance keys needed to get historical data/ Trade on an account
 
 desktop_path = f"C:\\Users\\conor\\Desktop"
+
+
+class Data_Handler:
+    def __init__(self, symbol, index):
+        self.symbol = symbol
+        self.index = index
+        self.new_data = False
+        self.socket_failed = False
+        self.next_candle = {'Date': '', 'Close': 0.0, 'Open': 0.0, 'High': 0.0, 'Low': 0.0, 'Volume': 0.0}
+
+    def handle_socket_message(self, msg):
+        # print(msg['k']['x'])
+        try:
+            if msg != '':
+                payload = msg['k']
+                if payload['x']:
+                    self.next_candle['Date'] = datetime.utcfromtimestamp(round(payload['T'] / 1000))
+                    self.next_candle['Close'] = float(payload['c'])
+                    self.next_candle['Volume'] = float(payload['q'])
+                    self.next_candle['High'] = float(payload['h'])
+                    self.next_candle['Low'] = float(payload['l'])
+                    self.next_candle['Open'] = float(payload['o'])
+                    # print(self.symbol_data)
+                    self.new_data = True
+        except Exception as e:
+            print(f"Error in handling of websocket, Error: {e}")
+            self.socket_failed = True
+
 
 class Trade_Stats:
     def __init__(self):
@@ -15,8 +45,9 @@ class Trade_Stats:
         self.wins = 0
         self.losses = 0
 
+
 class Trade:
-    def __init__(self,index,position_size,tp_val,stop_loss_val,trade_direction,order_id_temp,symbol):
+    def __init__(self, index, position_size, tp_val, stop_loss_val, trade_direction, order_id_temp, symbol):
         self.index = index
         self.symbol = symbol
         self.entry_price = -99
@@ -27,7 +58,9 @@ class Trade:
         self.order_id = order_id_temp
         self.TP_id = ''
         self.SL_id = ''
-class Trade_Maker:
+
+
+class Trade_Manager:
     def __init__(self, client: Client, use_trailing_stop, trailing_stop_callback):
         self.client = client
         self.use_trailing_stop = use_trailing_stop
@@ -57,7 +90,7 @@ class Trade_Maker:
                         side=SIDE_BUY,
                         type=FUTURE_ORDER_TYPE_MARKET,
                         quantity=order_qty)
-                    orderID= order['orderId']
+                    orderID = order['orderId']
             except BinanceAPIException as e:
                 print("Error in open_trade(), Error: ", e)
 
@@ -156,7 +189,7 @@ class Trade_Maker:
 
         return order_ID
 
-    def close_position(self,symbol,trade_direction,total_position_size):
+    def close_position(self, symbol, trade_direction, total_position_size):
         try:
             try:
                 self.client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel orders for this symbol
@@ -181,27 +214,27 @@ class Trade_Maker:
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
 
+
 def get_TIME_INTERVAL(TIME_INTERVAL):
     ##Convert String to minutes
-    if TIME_INTERVAL[1]=='m':
+    if TIME_INTERVAL[1] == 'm':
         TIME_INTERVAL = int(TIME_INTERVAL[0])
-    elif TIME_INTERVAL[1]=='h':
-        TIME_INTERVAL = int(TIME_INTERVAL[0])*60
-    elif TIME_INTERVAL[1]=='d':
+    elif TIME_INTERVAL[1] == 'h':
+        TIME_INTERVAL = int(TIME_INTERVAL[0]) * 60
+    elif TIME_INTERVAL[1] == 'd':
         TIME_INTERVAL = int(TIME_INTERVAL[0]) * 1440
-    elif TIME_INTERVAL[1]=='w':
-        TIME_INTERVAL = int(TIME_INTERVAL[0]) * 1440*7
-    elif TIME_INTERVAL[1]=='M':
-        TIME_INTERVAL = int(TIME_INTERVAL[0]) * 1440*7*4
-    elif TIME_INTERVAL[2]=='m':
-        TIME_INTERVAL = int(TIME_INTERVAL[0])*10+int(TIME_INTERVAL[1])
-    elif TIME_INTERVAL[2]=='h':
-        TIME_INTERVAL = int(TIME_INTERVAL[0])*10*60 + int(TIME_INTERVAL[1])*60
+    elif TIME_INTERVAL[1] == 'w':
+        TIME_INTERVAL = int(TIME_INTERVAL[0]) * 1440 * 7
+    elif TIME_INTERVAL[1] == 'M':
+        TIME_INTERVAL = int(TIME_INTERVAL[0]) * 1440 * 7 * 4
+    elif TIME_INTERVAL[2] == 'm':
+        TIME_INTERVAL = int(TIME_INTERVAL[0]) * 10 + int(TIME_INTERVAL[1])
+    elif TIME_INTERVAL[2] == 'h':
+        TIME_INTERVAL = int(TIME_INTERVAL[0]) * 10 * 60 + int(TIME_INTERVAL[1]) * 60
     return TIME_INTERVAL
 
 
-def get_Klines(TIME_INTERVAL,symbol,start_str,end_str,path):
-
+def get_Klines(TIME_INTERVAL, symbol, start_str, end_str, path):
     ##Manipulate dates to american format:
     start_date = f'{start_str[3:5]}-{start_str[0:2]}-{start_str[6:]}'
     end_date = f'{end_str[3:5]}-{end_str[0:2]}-{end_str[6:]}'
@@ -220,7 +253,7 @@ def get_Klines(TIME_INTERVAL,symbol,start_str,end_str,path):
     Open_1min = []
     Date_1min = []
     ##klines for candlestick patterns and TA
-    for kline in client.futures_historical_klines(symbol, TIME_INTERVAL, start_str=start_date,end_str=end_date):
+    for kline in client.futures_historical_klines(symbol, TIME_INTERVAL, start_str=start_date, end_str=end_date):
         Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
         Open.append(float(kline[1]))
         Close.append(float(kline[4]))
@@ -229,7 +262,7 @@ def get_Klines(TIME_INTERVAL,symbol,start_str,end_str,path):
         Volume.append(float(kline[7]))
 
     if TIME_INTERVAL != '1m':
-        for kline in client.futures_historical_klines(symbol, '1m', start_str=start_date,end_str=end_date):
+        for kline in client.futures_historical_klines(symbol, '1m', start_str=start_date, end_str=end_date):
             # print(kline)
             Date_1min.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
             Open_1min.append(float(kline[1]))
@@ -282,20 +315,19 @@ def get_Klines(TIME_INTERVAL,symbol,start_str,end_str,path):
         if found_flag:
             break
 
-
-
     price_data = {'Date': Date, 'Open': Open, 'Close': Close, 'High': High, 'Low': Low,
                   'Volume': Volume, 'High_1min': High_1min, 'Low_1min': Low_1min, 'Close_1min': Close_1min,
                   'Open_1min': Open_1min, 'Date_1min': Date_1min}
     try:
         print("Saving Price data")
-        dump(price_data,path)  ## address of where you will keep the data,
+        dump(price_data, path)  ## address of where you will keep the data,
     except:
         print("Failed to save data")
 
-    return Date,Open,Close,High,Low,Volume,High_1min,Low_1min,Close_1min,Open_1min,Date_1min
+    return Date, Open, Close, High, Low, Volume, High_1min, Low_1min, Close_1min, Open_1min, Date_1min
 
-def get_historical(symbol,start_string,Interval):
+
+def get_historical(symbol, start_string, Interval):
     Open = []
     High = []
     Low = []
@@ -303,8 +335,8 @@ def get_historical(symbol,start_string,Interval):
     Volume = []
     Date = []
     try:
-        for kline in client.futures_historical_klines(symbol, Interval,start_str=start_string):
-            Date.append(datetime.utcfromtimestamp(round(kline[6]/1000)))
+        for kline in client.futures_historical_klines(symbol, Interval, start_str=start_string):
+            Date.append(datetime.utcfromtimestamp(round(kline[6] / 1000)))
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -312,35 +344,36 @@ def get_historical(symbol,start_string,Interval):
             Volume.append(float(kline[7]))
     except BinanceAPIException as e:
         print(e)
-    return Date,Open,Close,High,Low,Volume
+    return Date, Open, Close, High, Low, Volume
 
-def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume):
-    start_date = [Date[0][0],0]  ##get 1st date of first coin
-    end_date = [Date[0][-1],0]  ##get last date of first coin
+
+def align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume):
+    start_date = [Date[0][0], 0]  ##get 1st date of first coin
+    end_date = [Date[0][-1], 0]  ##get last date of first coin
     for i in range(len(Date)):
         if Date[i][0] < start_date[0]:  ##Check if any other coin has an earlier date to find the earliest date
-            start_date = [Date[i][0],i] ##Date,index of start date
-        if Date[i][-1] > end_date[0]: ##Check if any other coin has a later date to find the latest date
-            end_date = [Date[i][-1],i] ##Date, index of end date
+            start_date = [Date[i][0], i]  ##Date,index of start date
+        if Date[i][-1] > end_date[0]:  ##Check if any other coin has a later date to find the latest date
+            end_date = [Date[i][-1], i]  ##Date, index of end date
     for i in range(len(Date_1min)):
         len_infront = 0  ##count how many dates we move along until we find the date at the current index's start, used to repeat the data until size is the same
         len_behind = 0  ##count how many dates we move along until we find the date at the current index's end, used to repeat the data until size is the same
         for j in range(len(Date_1min[start_date[1]])):
-            if Date_1min[start_date[1]][j]!=Date_1min[i][0]:
-                len_infront+=1
+            if Date_1min[start_date[1]][j] != Date_1min[i][0]:
+                len_infront += 1
             else:
                 break
-        for j in range(len(Date_1min[end_date[1]])-1,-1,-1):
-            if Date_1min[end_date[1]][j]!=Date_1min[i][-1]:
-                len_behind+=1
+        for j in range(len(Date_1min[end_date[1]]) - 1, -1, -1):
+            if Date_1min[end_date[1]][j] != Date_1min[i][-1]:
+                len_behind += 1
             else:
                 break
         for j in range(len_infront):
-            Date_1min[i].insert(0,"Data Set hasn't started yet")
-            High_1min[i].insert(0,High_1min[i][0])
-            Low_1min[i].insert(0,Low_1min[i][0])
-            Close_1min[i].insert(0,Close_1min[i][0])
-            Open_1min[i].insert(0,Open_1min[i][0])
+            Date_1min[i].insert(0, "Data Set hasn't started yet")
+            High_1min[i].insert(0, High_1min[i][0])
+            Low_1min[i].insert(0, Low_1min[i][0])
+            Close_1min[i].insert(0, Close_1min[i][0])
+            Open_1min[i].insert(0, Open_1min[i][0])
         for j in range(len_behind):
             Date_1min[i].append("Data Set Ended")
             High_1min[i].append(High_1min[i][-1])
@@ -366,28 +399,31 @@ def align_Datasets(Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,C
             Low[i].insert(0, Low[i][0])
             Close[i].insert(0, Close[i][0])
             Open[i].insert(0, Open[i][0])
-            Volume[i].insert(0,Volume[i][0])
+            Volume[i].insert(0, Volume[i][0])
         for j in range(len_behind):
             Date[i].append("Data Set Ended")
             High[i].append(High[i][-1])
             Low[i].append(Low[i][-1])
             Close[i].append(Close[i][-1])
             Open[i].append(Open[i][-1])
-            Volume[i].insert(0,Volume[i][-1])
+            Volume[i].insert(0, Volume[i][-1])
 
-    return Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume
+    return Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume
 
-def get_CAGR(start,end):
-    return (int(end[0:2]) - int(start[0:2]) + 30*(int(end[3:5]) - int(start[3:5])) + 365*(int(end[6:]) - int(start[6:])))/365
 
-def align_Datasets_easy(Date,Close,Open):
-    start_date = [Date[0][0],0]
-    end_date = [Date[0][-1],0]
+def get_CAGR(start, end):
+    return (int(end[0:2]) - int(start[0:2]) + 30 * (int(end[3:5]) - int(start[3:5])) + 365 * (
+                int(end[6:]) - int(start[6:]))) / 365
+
+
+def align_Datasets_easy(Date, Close, Open):
+    start_date = [Date[0][0], 0]
+    end_date = [Date[0][-1], 0]
     for i in range(len(Date)):
         if Date[i][0] < start_date[0]:
-            start_date = [Date[i][0],i] ##Date,index of start date
+            start_date = [Date[i][0], i]  ##Date,index of start date
         if Date[i][-1] > end_date[0]:
-            end_date = [Date[i][-1],i] ##Date, index of end date
+            end_date = [Date[i][-1], i]  ##Date, index of end date
     for i in range(len(Date)):
         len_infront = 0
         len_behind = 0
@@ -404,13 +440,14 @@ def align_Datasets_easy(Date,Close,Open):
         for j in range(len_infront):
             Date[i].insert(0, "Data Set hasn't started yet")
             Close[i].insert(0, Close[i][0])
-            Open[i].insert(0,Open[i][0])
+            Open[i].insert(0, Open[i][0])
         for j in range(len_behind):
             Date[i].append("Data Set Ended")
             Close[i].append(Close[i][-1])
             Open[i].append(Open[i][-1])
 
-    return Date,Close,Open
+    return Date, Close, Open
+
 
 def get_heikin_ashi(Open, Close, High, Low):
     Open_heikin = []
@@ -424,18 +461,19 @@ def get_heikin_ashi(Open, Close, High, Low):
         Low_heikin.append([])
         for j in range(len(Close[i])):
             Close_heikin[i].append((Open[i][j] + Close[i][j] + Low[i][j] + High[i][j]) / 4)
-            if j==0:
-                Open_heikin[i].append((Close_heikin[i][j]+Open[i][j])/2)
+            if j == 0:
+                Open_heikin[i].append((Close_heikin[i][j] + Open[i][j]) / 2)
                 High_heikin[i].append(High[i][j])
                 Low_heikin[i].append(Low[i][j])
             else:
-                Open_heikin[i].append((Open_heikin[i][j-1]+Close_heikin[i][j-1])/2)
-                High_heikin[i].append(max(High[i][j],Open_heikin[i][j],Close_heikin[i][j]))
-                Low_heikin[i].append(min(Low[i][j],Open_heikin[i][j],Close_heikin[i][j]))
+                Open_heikin[i].append((Open_heikin[i][j - 1] + Close_heikin[i][j - 1]) / 2)
+                High_heikin[i].append(max(High[i][j], Open_heikin[i][j], Close_heikin[i][j]))
+                Low_heikin[i].append(min(Low[i][j], Open_heikin[i][j], Close_heikin[i][j]))
     return Open_heikin, Close_heikin, High_heikin, Low_heikin
 
 
-def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol,TIME_INTERVAL,start,end):
+def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume,
+                        symbol, TIME_INTERVAL, start, end):
     print("Loading Price Data")
     i = 0
     while i < len(symbol):
@@ -502,6 +540,6 @@ def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, D
         i += 1
     print("Aligning Data Sets... This may take a few minutes")
 
-    Date_1min,High_1min,Low_1min,Close_1min,Open_1min,Date,Open,Close,High,Low,Volume = \
-        align_Datasets(Date_1min, High_1min, Low_1min, Close_1min,Open_1min, Date, Open, Close, High, Low, Volume)
+    Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = \
+        align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume)
     return Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol

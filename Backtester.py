@@ -96,10 +96,6 @@ start_equity = AccountBalance
 Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol =\
     Helper.get_aligned_candles([],[],[],[],[],[],[],[],[],[],[],symbol,TIME_INTERVAL,start,end)
 
-Open_H = []
-Close_H = []
-High_H = []
-Low_H = []
 OpenStream_H = []
 CloseStream_H = []
 HighStream_H = []
@@ -136,7 +132,7 @@ print(f"{TIME_INTERVAL} OHLC Candle Sticks from a {start} to {end}")
 original_time_interval = copy(TIME_INTERVAL)
 TIME_INTERVAL = Helper.get_TIME_INTERVAL(TIME_INTERVAL) ##Convert string to an integer for the rest of the script
 for i in range(len(High_1min[0])-1):
-    if (i%TIME_INTERVAL==0 and i!=0) or TIME_INTERVAL==1:
+    if (i % TIME_INTERVAL == 0 and i != 0) or TIME_INTERVAL == 1:
         for j in range(len(High_1min)):
             DateStream[j].append(Date[j][int(i/TIME_INTERVAL)-1])
             OpenStream[j].append(float(Open[j][int(i/TIME_INTERVAL)-1]))

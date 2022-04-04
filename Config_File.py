@@ -1,6 +1,6 @@
 ##fill in your API keys here to be accessed by other scripts
-api_key = ''
-api_secret = ''
+API_KEY = ''
+API_SECRET = ''
 
 ################## settings, these are very strategy dependant ensure you have enough data for your chosen strategy ##################################
 order_Size = .02
