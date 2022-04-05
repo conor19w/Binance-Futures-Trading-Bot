@@ -50,6 +50,7 @@ def web_soc_process(pipe: Pipe, twm: ThreadedWebsocketManager):
                     print(f"Attempting to reset socket for {data.symbol}")
                     twm.stop_socket(streams[data.index])
                     streams[data.index] = twm.start_kline_futures_socket(data.handle_socket_message, symbol=data.symbol)
+                    data.socket_failed = False
                     print(f"Reset successful")
                 except:
                     print(f"Error in resetting websocket for {data.symbol}")
@@ -61,7 +62,7 @@ def web_soc_process(pipe: Pipe, twm: ThreadedWebsocketManager):
             pipe.send(Data)
 
 
-def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Margin, client: Client, use_trailing_stop, trailing_stop_callback, twm: ThreadedWebsocketManager):
+def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Margin, client: Client, use_trailing_stop, trailing_stop_callback):
     global new_candle_flag, symbol, Data
     pp = PrettyPrinter()  ## for printing json text cleanly (inspect binance API call returns)
     active_trades: [Trade] = []  ## List of active trades
@@ -77,20 +78,6 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Margin, client: Clie
         # z = x['filters'][0]
         coin_info.append([x['pair'], x['pricePrecision'], x['quantityPrecision'], x['filters'][0]['tickSize'],
                           x['filters'][0]['minPrice']])
-
-    print("Setting Leverage...")
-    i = 0
-    while i < len(symbol):
-        try:
-            client.futures_change_leverage(symbol=symbol[i], leverage=leverage)
-            i += 1
-        except BinanceAPIException as e:
-            if e == 'APIError(code=-4141): Symbol is closed.':
-                print(f"Symbol: {symbol[i]}, error: {e}")
-                symbol.pop(i)
-            else:
-                print(f"Error: {e}, removing symbol")
-                symbol.pop(i)
 
     i = 0
     while i < len(symbol):
@@ -350,6 +337,20 @@ if __name__ == '__main__':
     twm = ThreadedWebsocketManager(api_key=API_KEY, api_secret=API_SECRET)
     twm.start()  ##start manager
 
+    print("Setting Leverage...")
+    i = 0
+    while i < len(symbol):
+        try:
+            client.futures_change_leverage(symbol=symbol[i], leverage=leverage)
+            i += 1
+        except BinanceAPIException as e:
+            if e == 'APIError(code=-4141): Symbol is closed.':
+                print(f"Symbol: {symbol[i]}, error: {e}")
+                symbol.pop(i)
+            else:
+                print(f"Error: {e}, removing symbol")
+                symbol.pop(i)
+
     i = 0
     while i < len(symbol):
         try:
@@ -364,6 +365,6 @@ if __name__ == '__main__':
     _thread = Thread(target=web_soc_process, args=(pipe1, twm))
     _thread.start()
 
-    P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, Max_Margin, client, use_trailing_stop, trailing_stop_callback, twm))
+    P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, Max_Margin, client, use_trailing_stop, trailing_stop_callback))
     P1.start()
     twm.join()  ##keep websockets running
