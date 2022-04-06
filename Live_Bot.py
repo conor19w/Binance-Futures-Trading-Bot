@@ -123,7 +123,6 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Margin, client: Clie
             print(f"Not enough data for {symbol[i]}, Increase your start_str variable in Config_File so we have a buffer of candles ")
             symbol.pop(i)
             Bots.pop(i)
-            twm.stop_socket(streams[i])
             streams.pop(i)
         else:
             Bots[i].add_hist(Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp)
