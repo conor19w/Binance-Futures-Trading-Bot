@@ -12,6 +12,7 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Min version = Python 3.7 
 * Max version = Python 3.9.x
 * Recommended version = Python 3.8.10 (one I use and have no issues with)
+* [Set up windows to sync time once a day](https://www.makeuseof.com/tag/synchronise-computer-time-internet-custom-schedule-windows-7/#:~:text=Go%20to%20%3E%20Start%20and%20type,on%20the%20right%20hand%20side) if you don't do this binance will eventually reject orders with a timestamp error.
 
 ---
 
