@@ -9,7 +9,8 @@
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
-* Want Coding Assistance, Custom Strategies & Custom Features? [Sponsor Me](https://github.com/sponsors/conor19w) for access to all these from my private discord channel
+* Want Coding Assistance, Custom Strategies & Custom Features? [Sponsor Me](https://github.com/sponsors/conor19w) for access to all these from my private discord channel.
+* [One time payment](https://github.com/sponsors/conor19w) for custom strategies available also.
 * Min version = Python 3.7 
 * Max version = Python 3.9.x
 * Recommended version = Python 3.8.10 (one I use and have no issues with)
