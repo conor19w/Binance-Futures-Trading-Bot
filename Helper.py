@@ -236,10 +236,10 @@ def get_TIME_INTERVAL(TIME_INTERVAL):
 
 def get_Klines(TIME_INTERVAL, symbol, start_str, end_str, path):
     ##Manipulate dates to american format:
-    # start_date = f'{start_str[3:5]}-{start_str[0:2]}-{start_str[6:]}'
-    # end_date = f'{end_str[3:5]}-{end_str[0:2]}-{end_str[6:]}'
-    start_date = start_str
-    end_date = end_str
+    start_date = f'{start_str[3:5]}-{start_str[0:2]}-{start_str[6:]}'
+    end_date = f'{end_str[3:5]}-{end_str[0:2]}-{end_str[6:]}'
+    #start_date = start_str
+    #end_date = end_str
 
     print(f"Downloading CandleStick Data for {symbol}...")
 
