@@ -44,11 +44,10 @@ __Strategies are implemented in Bot_Class.py as a function named Make_decision()
 * Create a 'price_data' folder on the desktop and change the path variable in Helper.py to suit your machine. Data pulled from Binance will be stored in this folder and automatically loaded from memory in future.
 * Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. symbol = ['BTCUSDT' , 'ETHUSDT'] , this would run your strategy on BTC and ETH.
 Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
-* Settings are found at the top of the script, __line 44__.
+* Settings are found at the top of the script, __line 13__.
 * Trailing Stop (NOT FUNCTIONING CORRECTLY): turn the __use_trailing_stop__ flag on, specify the __trailing_stop_distance__ in decimal, now when a takeprofit margin target is hit the trailing stop will be placed and automatically & adjusted based off new Lows or Highs in price and the __trailing_stop_distance__ you've specified.
-* Next we want to choose our TA strategy, this is done after __line 175__ , uncomment a strategy or call a new strategy you have written yourself here, the 'Trade_Direction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
+* Next we want to choose our TA strategy, this is done in Bot_Class.py in Make_decision() , uncomment a strategy or call a new strategy you have written yourself here, the 'Trade_Direction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
-* Heikin Ashi Candles are available under: CloseStream_H, OpenStream_H, LowStream_H, HighStream_H which can be referenced or passed to Strategies.
 ---
 ### __Back Test top performers:__
 ---
@@ -68,13 +67,13 @@ __Triple EMA 4hr candles__
 ![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMA/4hr%20candles%202%20months%20ago.png)
 ---
 ## To-Do list: (suggest something and I'll add it) 😃
-* Update Backtester to Open multiple positions, and Improve similarities to live Bot.
-* Add check that removes trades that the user manually closed, currently the bot monitors orderId's so If you manualy close a trade it won't know.
 * Add option to create csv file of trades with keys: "long/short | date | strike price | candle high | candle low". 
 * Fix trailing Stop in Back Tester, think its causing some floating point rounding errors (think I know a fix just need time to implement).
 * GUI if people were interested (could take a while I've no experience here)
 ---
 ## Latest Changes (if any):
+* Updated Backtester to Open multiple positions, and Improved similarities to live Bot. (15/04/22)
+* Added a check that removes trades that the user manually closed by the user. (15/04/22)
 * Added Functionality for opening and managing multiple positions. (20/03/22)
 * Simplified the system to be more user friendly, removed code that was obsolete. (11/03/22)
 * Added support in the live Bot environment for some of the strategies in Trading_strats.py , To make use of a strategy in Bot.py just uncomment it inside Make_Decision() inside Data_set.py (11/02/2022).

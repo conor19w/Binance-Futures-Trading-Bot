@@ -5,12 +5,11 @@ from datetime import datetime
 from Config_File import API_KEY, API_SECRET
 from joblib import load, dump
 import sys, os
-
+from tabulate import tabulate
 client = Client(api_key=API_KEY,
                 api_secret=API_SECRET)  ##Binance keys needed to get historical data/ Trade on an account
 
 desktop_path = f"C:\\Users\\conor\\Desktop"
-
 
 class Data_Handler:
     def __init__(self, symbol, index):
@@ -58,6 +57,11 @@ class Trade:
         self.order_id = order_id_temp
         self.TP_id = ''
         self.SL_id = ''
+        self.trade_status = 0 ## hasn't started
+        self.trade_start = ''
+
+    def print_vals(self):
+        return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status
 
 
 class Trade_Manager:
@@ -545,3 +549,106 @@ def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, D
     Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = \
         align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume)
     return Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol
+
+
+def check_TP(t: Trade, account_balance, High, Low, fee, printing_on=1):
+    if t.TP_val < High and t.trade_direction == 1:
+        if printing_on:
+            print(f"Take Profit hit on {t.symbol}")
+        account_balance += ((t.TP_val-t.entry_price) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
+        t.trade_status = 2
+
+    elif t.TP_val > Low and t.trade_direction == 0:
+        if printing_on:
+            print(f"Take Profit hit on {t.symbol}")
+        account_balance += ((t.entry_price-t.TP_val) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
+        t.trade_status = 2
+
+    return t, account_balance
+
+
+def check_SL(t: Trade, account_balance, High, Low, fee, printing_on=1):
+    if t.SL_val < High and t.trade_direction == 0:
+        if printing_on:
+            print(f"Stop Loss hit on {t.symbol}")
+        account_balance -= ((t.SL_val - t.entry_price) * t.position_size + t.SL_val * fee * t.position_size)  ## fee + stop loss
+        t.trade_status = 3
+
+    elif t.SL_val > Low and t.trade_direction == 1:
+        if printing_on:
+            print(f"Stop Loss hit on {t.symbol}")
+        account_balance -= ((t.entry_price - t.SL_val) * t.position_size + t.SL_val * fee * t.position_size)  ## fee + stop loss
+        t.trade_status = 3
+
+    return t, account_balance
+
+
+def open_trade(symbol, Order_Notional, account_balance, Open, fee, OP, printing_on=1):
+    if OP == 0:
+        order_qty = round(Order_Notional / Open)
+    else:
+        order_qty = round(Order_Notional / Open, OP)
+
+    entry_price = Open
+
+    if order_qty > 0:
+        account_balance -= Order_Notional * fee
+        if printing_on:
+            print(f"Trade Opened Successfully on {symbol}")
+    return order_qty, entry_price, account_balance
+
+
+def print_trades(active_trades: [Trade], trade_price, Date, account_balance):
+    ###########################################################################################################
+    #####################               PRINT TRADE DETAILS                          ##########################
+    ###########################################################################################################
+
+    info = {}
+    symbol_info = []
+    entry_price_info = []
+    position_size_info = []
+    TP_vals_info = []
+    SL_val_info = []
+    trade_direction_info = []
+    trade_status_info = []
+    for k in range(len(active_trades)):
+        symbol_info_temp, entry_price_info_temp, position_size_info_temp, TP_vals_info_temp, SL_val_info_temp, \
+        trade_direction_info_temp, trade_status_info_temp = \
+            active_trades[k].print_vals()
+        symbol_info.append(symbol_info_temp)
+        entry_price_info.append(entry_price_info_temp)
+        position_size_info.append(position_size_info_temp)
+        TP_vals_info.append(TP_vals_info_temp)
+        SL_val_info.append(SL_val_info_temp)
+        trade_direction_info.append(trade_direction_info_temp)
+        trade_status_info.append(trade_status_info_temp)
+    trade_pnl = []
+    for i in range(len(active_trades)):
+        if active_trades[i].trade_direction == 0:
+            trade_pnl.append((entry_price_info[i] - trade_price[i])*(position_size_info[i]))
+        elif active_trades[i].trade_direction == 1:
+            trade_pnl.append((trade_price[i] - entry_price_info[i]) * (position_size_info[i]))
+    info['Symbol'] = symbol_info
+    info['trade direction'] = trade_direction_info
+    info['entry price'] = entry_price_info
+    info['current price'] = trade_price
+    info['Size'] = position_size_info
+    info['Next TP'] = TP_vals_info
+    info['SL'] = SL_val_info
+    info['PNL'] = trade_pnl
+    info['trade status'] = trade_status_info
+
+
+    print(f"\nTime: {Date} , Account Balance: {account_balance}")
+    print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
+    print(f"Time: {Date} , Account Balance: {account_balance}")
+    print("------------------------------------------------------------\n")
+
+    total_pnl = 0
+    for x in trade_pnl:
+        total_pnl += x
+
+    if total_pnl + account_balance < 0:
+        return total_pnl, 1
+    else:
+        return total_pnl, 0

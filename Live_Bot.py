@@ -62,12 +62,11 @@ def web_soc_process(pipe: Pipe, twm: ThreadedWebsocketManager):
             pipe.send(Data)
 
 
-def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Margin, client: Client, use_trailing_stop, trailing_stop_callback):
+def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, client: Client, use_trailing_stop, trailing_stop_callback):
     global new_candle_flag, symbol, Data
     pp = PrettyPrinter()  ## for printing json text cleanly (inspect binance API call returns)
     active_trades: [Trade] = []  ## List of active trades
     new_trades = []
-    margin_used = 0
     TM = Trade_Manager(client, use_trailing_stop, trailing_stop_callback)
     TS = Trade_Stats()
     Bots: [Bot_Class.Bot] = []
@@ -173,7 +172,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Margin, client: Clie
                             if temp_dec[0] != -99:
                                 new_trades.append([i, temp_dec])  ##[index,[trade_direction,SL,TP]]
                 ##Sort out new trades to be opened
-                while len(new_trades) > 0 and margin_used <= Max_Margin * account_balance:
+                while len(new_trades) > 0 and len(active_trades) < Max_Number_Of_Trades:
                     account_balance = 0
                     start_account_balance = 0
                     account_balance_info = client.futures_account_balance()
@@ -184,7 +183,6 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Margin, client: Clie
                             break
                     [index, [trade_direction, stop_loss, take_profit]] = new_trades.pop(0)
                     order_qty = leverage * order_Size * account_balance / Bots[index].Close[-1]
-                    margin_used += order_Size * account_balance
                     order_id_temp, position_size_temp = TM.open_trade(Bots[index].symbol, trade_direction, order_qty,
                                                                       Bots[index].OP)
 
@@ -192,11 +190,11 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Margin, client: Clie
                     active_trades.append(
                         Trade(index, position_size_temp, take_profit, stop_loss, trade_direction, order_id_temp,
                               Bots[index].symbol))
-                    if margin_used >= Max_Margin * account_balance:
+                    if len(active_trades) >= Max_Number_Of_Trades:
                         new_trades = []  ##Don't Open any new positions
 
                 ##Clear trades if trade list is full
-                if margin_used >= Max_Margin * account_balance:
+                if len(active_trades) >= Max_Number_Of_Trades:
                     new_trades = []  ##Don't Open any new positions
 
                 rightnow = datetime.now().time()  ##time right now
@@ -215,9 +213,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Margin, client: Clie
                                     active_trades[trade_index].order_id and active_trades[trade_index].SL_id == '' and \
                                     order['status'] == 'FILLED':
 
-                                active_trades[trade_index].entry_price = float(
-                                    client.futures_position_information(symbol=active_trades[trade_index].symbol)[0][
-                                        'entryPrice'])
+                                active_trades[trade_index].entry_price = float(client.futures_position_information(symbol=active_trades[trade_index].symbol)[0]['entryPrice'])
                                 take_profit_val = 0
                                 stop_loss_val = 0
                                 if active_trades[trade_index].trade_direction:
@@ -298,15 +294,19 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Margin, client: Clie
                         else:
                             trade_index += 1
 
-                    ##Update the margin used every 15 seconds, done last to avoid slowing down other orders
-                    position_info = client.futures_position_information()
-                    margin_used = 0
-                    for item in position_info:
-                        if float(item['notional']) != 0:
-                            if float(item['notional']) < 0:
-                                margin_used -= float(item['notional']) / leverage
-                            else:
-                                margin_used += float(item['notional']) / leverage
+                    ##Check If positions have been closed manually by the user
+                    i = 0
+                    while i < len(active_trades):
+                        position_info = client.futures_position_information(symbol=active_trades[i].symbol)[0]
+                        if float(position_info['positionAmt']) == 0:
+                            try:
+                                client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol) ##Close open orders on that symbol
+                            except:
+                                pass
+                            active_trades.pop(i)
+                        else:
+                            i += 1
+
 
                 if print_flag:
                     print_flag = 0
@@ -364,6 +364,6 @@ if __name__ == '__main__':
     _thread = Thread(target=web_soc_process, args=(pipe1, twm))
     _thread.start()
 
-    P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, Max_Margin, client, use_trailing_stop, trailing_stop_callback))
+    P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, Max_Number_Of_Trades, client, use_trailing_stop, trailing_stop_callback))
     P1.start()
     twm.join()  ##keep websockets running

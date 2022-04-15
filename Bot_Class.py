@@ -11,7 +11,7 @@ import pandas as pd
 import TradingStrats as TS
 
 class Bot:
-    def __init__(self,symbol,Open,Close,High,Low,Volume,Date,OP,CP,index,use_heikin_ashi,tick):
+    def __init__(self, symbol, Open, Close, High, Low, Volume, Date, OP, CP, index, generate_heikin_ashi, tick):
         self.symbol = symbol
         self.Open = Open
         self.Close = Close
@@ -24,7 +24,7 @@ class Bot:
         self.index = index
         self.add_hist_complete = 0
         self.new_data = 0
-        self.use_heikin_ashi = use_heikin_ashi
+        self.generate_heikin_ashi = generate_heikin_ashi
         self.Open_H = []
         self.Close_H = []
         self.High_H = []
@@ -32,9 +32,9 @@ class Bot:
         self.tick_size = tick
         self.socket_failed = False
 
-    def add_hist(self,Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp):
-        while 0<len(self.Date):
-            if self.Date[0]>Date_temp[-1]:
+    def add_hist(self, Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp):
+        while 0 < len(self.Date):
+            if self.Date[0] > Date_temp[-1]:
                 Date_temp.append(self.Date.pop(0))
                 Open_temp.append(self.Open.pop(0))
                 Close_temp.append(self.Close.pop(0))
@@ -54,7 +54,7 @@ class Bot:
         self.High = High_temp
         self.Low = Low_temp
         self.Volume = Volume_temp
-        if self.use_heikin_ashi:
+        if self.generate_heikin_ashi:
             ##Create Heikin Ashi bars
             for i in range(len(self.Close)):
                 self.Close_H.append((self.Open[i] + self.Close[i] + self.Low[i] + self.High[i]) / 4)
@@ -68,9 +68,33 @@ class Bot:
                     self.Low_H.append(min(self.Low[i], self.Open_H[i], self.Close_H[i]))
         self.add_hist_complete = 1
 
-    def handle_socket_message(self,Data):
+    def handle_socket_message(self, Data, Date=0, Close=0, Volume=0, Open=0, High=0, Low=0):
         try:
-            if Data['Date'] != -99:
+            if Data == -99:
+                self.Date.append(Date)
+                self.Close.append(Close)
+                self.Volume.append(Volume)
+                self.High.append(High)
+                self.Low.append(Low)
+                self.Open.append(Open)
+                if self.add_hist_complete:
+                    self.Date.pop(0)
+                    self.Close.pop(0)
+                    self.Volume.pop(0)
+                    self.High.pop(0)
+                    self.Low.pop(0)
+                    self.Open.pop(0)
+                    if self.generate_heikin_ashi:
+                        self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
+                        self.Open_H.append((self.Open_H[-2] + self.Close_H[-2]) / 2)
+                        self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
+                        self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
+                        self.Open_H.pop(0)
+                        self.Close_H.pop(0)
+                        self.Low_H.pop(0)
+                        self.High_H.pop(0)
+                    self.new_data = 1
+            elif Data['Date'] != -99:
                 self.Date.append(Data['Date'])
                 self.Close.append(Data['Close'])
                 self.Volume.append(Data['Volume'])
@@ -84,8 +108,7 @@ class Bot:
                     self.High.pop(0)
                     self.Low.pop(0)
                     self.Open.pop(0)
-                    self.new_data = 1
-                    if self.use_heikin_ashi:
+                    if self.generate_heikin_ashi:
                         self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
                         self.Open_H.append((self.Open_H[-2] + self.Close_H[-2]) / 2)
                         self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
@@ -100,16 +123,13 @@ class Bot:
             self.socket_failed = True
 
     def Make_decision(self):
-        ##Must return these:
+        ##Initialize vars:
         Trade_Direction = -99 ## Short (0), Long (1)
         stop_loss_val = -99   ##the margin of increase/decrease that would stop us out/ be our take profit, NOT the price target.
         take_profit_val = -99 #That is worked out later by adding or subtracting:
 
-        ######################### Strategy ###############################
-        ###Can use indicators from ta python & check out TradingStrats.py for some strategy ideas
-        ##implement your strategy here:
 
-        ##OR use one of these Strategies Available from the backtester:
+        ## Strategies found in TradingStrats.py:
         #Trade_Direction,stop_loss_val, take_profit_val = TS.StochRSIMACD(Trade_Direction, self.Close,self.High,self.Low)
         #Trade_Direction,stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close,self.High,self.Low,Trade_Direction)
         Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMA(self.Close, self.High, self.Low, Trade_Direction)
