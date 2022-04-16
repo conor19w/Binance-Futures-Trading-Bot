@@ -156,7 +156,7 @@ for i in range(301, len(Close_1min[0]) - 1):
             ## (index, position_size, tp_val, stop_loss_val, trade_direction, order_id_temp, symbol)
             active_trades.append(Trade(index, order_qty, take_profit_val, stop_loss_val, trade_direction, '', Bots[index].symbol))
             active_trades[-1].entry_price = entry_price
-            active_trades[-1].trade_start = Date[index][i + 1]
+            active_trades[-1].trade_start = Date_1min[index][i + 1]
             ##Empty the list of trades
             if len(active_trades) == Number_Of_Trades:
                 new_trades = []
