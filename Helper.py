@@ -667,21 +667,38 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
     info['trade status'] = trade_status_info
     info['Highest Candle'] = trade_highest_info
     info['Lowest Candle'] = trade_lowest_info
-    if change_occurred:
-        print(f"\nTime: {Date} , Account Balance: {account_balance}")
+
+    if change_occurred and len(account_balance) == 1:
+        print(f"\nTime: {Date} , Account Balance: {account_balance[0]}")
         print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
-        print(f"Time: {Date} , Account Balance: {account_balance}")
+        print(f"Time: {Date} , Account Balance: {account_balance[0]}")
         print("------------------------------------------------------------\n")
         if print_to_csv:
             with open(csv_name, 'a') as O:
                 for i in range(len(active_trades)):
-                    O.write(f'{Date},{account_balance},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
+                    O.write(f'{Date},{account_balance[0]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
                             f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
-    total_pnl = 0
-    for x in trade_pnl:
-        total_pnl += x
+        total_pnl = 0
+        for x in trade_pnl:
+            total_pnl += x
 
-    if total_pnl + account_balance < 0:
-        return total_pnl, 1, False
-    else:
-        return total_pnl, 0, False
+        if total_pnl + account_balance[0] < 0:
+            return total_pnl, 1, False
+        else:
+            return total_pnl, 0, False
+    elif change_occurred and len(account_balance) > 1:
+        account_balance_info = []
+        for t in active_trades:
+            account_balance_info.append(account_balance[t.index])
+        info['Account Balance'] = account_balance_info
+        print(f"\nTime: {Date}")
+        print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
+        print(f"Time: {Date}")
+        print("------------------------------------------------------------\n")
+        if print_to_csv:
+            with open(csv_name, 'a') as O:
+                for i in range(len(active_trades)):
+                    O.write(f'{Date},{account_balance_info[i]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
+                            f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
+
+    return 0, 0, False
