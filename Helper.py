@@ -598,7 +598,7 @@ def open_trade(symbol, Order_Notional, account_balance, Open, fee, OP, printing_
     return order_qty, entry_price, account_balance
 
 
-def print_trades(active_trades: [Trade], trade_price, Date, account_balance):
+def print_trades(active_trades: [Trade], trade_price, Date, account_balance, change_occurred):
     ###########################################################################################################
     #####################               PRINT TRADE DETAILS                          ##########################
     ###########################################################################################################
@@ -621,7 +621,14 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance):
         TP_vals_info.append(TP_vals_info_temp)
         SL_val_info.append(SL_val_info_temp)
         trade_direction_info.append(trade_direction_info_temp)
-        trade_status_info.append(trade_status_info_temp)
+        if trade_status_info_temp == 0:
+            trade_status_info.append('New position Opened')
+        if trade_status_info_temp == 1:
+            trade_status_info.append('In Progress')
+        if trade_status_info_temp == 2:
+            trade_status_info.append('Take Profit Hit')
+        if trade_status_info_temp == 3:
+            trade_status_info.append('Stop Loss Hit')
     trade_pnl = []
     for i in range(len(active_trades)):
         if active_trades[i].trade_direction == 0:
@@ -638,17 +645,17 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance):
     info['PNL'] = trade_pnl
     info['trade status'] = trade_status_info
 
-
-    print(f"\nTime: {Date} , Account Balance: {account_balance}")
-    print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
-    print(f"Time: {Date} , Account Balance: {account_balance}")
-    print("------------------------------------------------------------\n")
+    if change_occurred:
+        print(f"\nTime: {Date} , Account Balance: {account_balance}")
+        print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
+        print(f"Time: {Date} , Account Balance: {account_balance}")
+        print("------------------------------------------------------------\n")
 
     total_pnl = 0
     for x in trade_pnl:
         total_pnl += x
 
     if total_pnl + account_balance < 0:
-        return total_pnl, 1
+        return total_pnl, 1, False
     else:
-        return total_pnl, 0
+        return total_pnl, 0, False

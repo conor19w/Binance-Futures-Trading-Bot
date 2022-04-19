@@ -27,8 +27,8 @@ printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
 Trade_All_Symbols = False
 symbol = ['BTCUSDT', 'ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
-use_trailing_stop = 0 ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
-trailing_stop_distance = .01 ## 1% trailing stop activated by hitting the takeprofitval for a coin
+use_trailing_stop = 0  ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
+trailing_stop_distance = .01  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 ####################################################################################################
 
 client = Client(api_key=API_KEY, api_secret=API_SECRET)
@@ -46,7 +46,7 @@ profitgraph = []  # for graphing the profit change over time
 pp = pprint.PrettyPrinter()
 profitgraph.append(account_balance)
 originalBalance = copy(account_balance)
-
+change_occurred = False
 time_CAGR = Helper.get_CAGR(start, end)
 
 Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = \
@@ -130,8 +130,8 @@ for i in range(301, len(Close_1min[0]) - 1):
 
         Order_Notional = account_balance * leverage * order_Size
         order_qty, entry_price, account_balance = Helper.open_trade(Bots[index].symbol, Order_Notional,
-                                                                             account_balance, Open_1min[index][i + 1],
-                                                                             fee, Bots[index].OP)
+                                                                    account_balance, Open_1min[index][i + 1],
+                                                                    fee, Bots[index].OP)
 
         take_profit_val = -99
         stop_loss_val = -99
@@ -154,9 +154,11 @@ for i in range(301, len(Close_1min[0]) - 1):
             tradeNO += 1
             ## Append new trade, to our trade list
             ## (index, position_size, tp_val, stop_loss_val, trade_direction, order_id_temp, symbol)
-            active_trades.append(Trade(index, order_qty, take_profit_val, stop_loss_val, trade_direction, '', Bots[index].symbol))
+            active_trades.append(
+                Trade(index, order_qty, take_profit_val, stop_loss_val, trade_direction, '', Bots[index].symbol))
             active_trades[-1].entry_price = entry_price
             active_trades[-1].trade_start = Date_1min[index][i + 1]
+            change_occurred = True
             ##Empty the list of trades
             if len(active_trades) == Number_Of_Trades:
                 new_trades = []
@@ -165,23 +167,28 @@ for i in range(301, len(Close_1min[0]) - 1):
         ## Check SL Hit
         if t.trade_status == 1:
             t, account_balance = Helper.check_SL(t, account_balance, High_1min[t.index][i],
-                                                          Low_1min[t.index][i], fee)
+                                                 Low_1min[t.index][i], fee)
+            if t.trade_status != 1:
+                change_occurred = True
         ##Check if TP Hit
         if t.trade_status == 1:
             t, account_balance = Helper.check_TP(t, account_balance, High_1min[t.index][i],
-                                                          Low_1min[t.index][i], fee)
+                                                 Low_1min[t.index][i], fee)
+            if t.trade_status != 1:
+                change_occurred = True
 
     ## Check PNL here as well as print the current trades:
     if printing_on:
         trade_price = []
         for t in active_trades:
             trade_price.append(Bots[t.index].Close[-1])
-        pnl, negative_balance_flag = Helper.print_trades(active_trades, trade_price, Bots[0].Date[-1], account_balance)
+        pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Bots[0].Date[-1],
+                                                                          account_balance, change_occurred)
         if negative_balance_flag:
             print("**************** You have been liquidated *******************")
             profitgraph.append(0)
             account_balance = 0
-            break ## break out of loop as weve been liquidated
+            break  ## break out of loop as weve been liquidated
         if add_delay:
             time.sleep(1)
 
@@ -201,8 +208,6 @@ for i in range(301, len(Close_1min[0]) - 1):
             if active_trades[k].trade_status == 0:
                 active_trades[k].trade_status = 1
             k += 1
-
-
 
     if i == len(Close[0]) - 2:
         for x in Date:
