@@ -170,7 +170,7 @@ for i in range(301, len(Close_1min[0]) - 1):
 
     for t in active_trades:
         ## stuff for csv
-        if print_to_csv:
+        if print_to_csv and t.trade_status == 1:
             if t.Highest_val < High_1min[t.index][i]:
                 t.Highest_val = High_1min[t.index][i]
             if t.Lowest_val > Low_1min[t.index][i]:
