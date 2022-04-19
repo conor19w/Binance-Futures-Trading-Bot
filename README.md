@@ -67,7 +67,6 @@ __Triple EMA 4hr candles__
 ![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMA/4hr%20candles%202%20months%20ago.png)
 ---
 ## To-Do list: (suggest something and I'll add it) 😃
-* Add option to create csv file of trades with keys: "long/short | date | strike price | candle high | candle low". 
 * Fix trailing Stop in Back Tester, think its causing some floating point rounding errors (think I know a fix just need time to implement).
 * GUI if people were interested (could take a while I've no experience here)
 ---
