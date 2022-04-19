@@ -29,8 +29,13 @@ Trade_All_Symbols = False
 symbol = ['BTCUSDT', 'ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 use_trailing_stop = 0  ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_distance = .01  ## 1% trailing stop activated by hitting the takeprofitval for a coin
-####################################################################################################
 
+print_to_csv = False
+csv_name = 'myFile.csv'
+####################################################################################################
+if print_to_csv:
+    with open(csv_name, 'x') as O:
+        O.write('Date,Account Balance,symbol,Entry Price,Position Size,Current Price,TP val,SL val,Trade Direction,Highest Candle,Lowest Candle,Trade Status\n')
 client = Client(api_key=API_KEY, api_secret=API_SECRET)
 if Trade_All_Symbols:
     symbol = []  ## reset symbol before we fill with all symbols below
@@ -164,6 +169,12 @@ for i in range(301, len(Close_1min[0]) - 1):
                 new_trades = []
 
     for t in active_trades:
+        ## stuff for csv
+        if print_to_csv:
+            if t.Highest_val < High_1min[t.index][i]:
+                t.Highest_val = High_1min[t.index][i]
+            if t.Lowest_val > Low_1min[t.index][i]:
+                t.Lowest_val = Low_1min[t.index][i]
         ## Check SL Hit
         if t.trade_status == 1:
             t, account_balance = Helper.check_SL(t, account_balance, High_1min[t.index][i],
@@ -183,7 +194,7 @@ for i in range(301, len(Close_1min[0]) - 1):
         for t in active_trades:
             trade_price.append(Bots[t.index].Close[-1])
         pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Bots[0].Date[-1],
-                                                                          account_balance, change_occurred)
+                                                                          account_balance, change_occurred, print_to_csv, csv_name)
         if negative_balance_flag:
             print("**************** You have been liquidated *******************")
             profitgraph.append(0)

@@ -59,9 +59,10 @@ class Trade:
         self.SL_id = ''
         self.trade_status = 0 ## hasn't started
         self.trade_start = ''
-
+        self.Highest_val = -999999
+        self.Lowest_val = 999999
     def print_vals(self):
-        return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status
+        return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status, self.Highest_val ,self.Lowest_val
 
 
 class Trade_Manager:
@@ -598,7 +599,7 @@ def open_trade(symbol, Order_Notional, account_balance, Open, fee, OP, printing_
     return order_qty, entry_price, account_balance
 
 
-def print_trades(active_trades: [Trade], trade_price, Date, account_balance, change_occurred):
+def print_trades(active_trades: [Trade], trade_price, Date, account_balance, change_occurred, print_to_csv, csv_name):
     ###########################################################################################################
     #####################               PRINT TRADE DETAILS                          ##########################
     ###########################################################################################################
@@ -611,24 +612,44 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
     SL_val_info = []
     trade_direction_info = []
     trade_status_info = []
+    trade_highest_info = []
+    trade_lowest_info = []
     for k in range(len(active_trades)):
         symbol_info_temp, entry_price_info_temp, position_size_info_temp, TP_vals_info_temp, SL_val_info_temp, \
-        trade_direction_info_temp, trade_status_info_temp = \
+        trade_direction_info_temp, trade_status_info_temp, trade_highest_temp, trade_lowest_temp = \
             active_trades[k].print_vals()
         symbol_info.append(symbol_info_temp)
         entry_price_info.append(entry_price_info_temp)
         position_size_info.append(position_size_info_temp)
         TP_vals_info.append(TP_vals_info_temp)
         SL_val_info.append(SL_val_info_temp)
-        trade_direction_info.append(trade_direction_info_temp)
+
+        if trade_direction_info_temp == 0:
+            trade_direction_info.append('Short')
+        elif trade_direction_info_temp == 1:
+            trade_direction_info.append('Long')
+        elif trade_direction_info_temp == -99:
+            trade_direction_info.append('Closed')
+
         if trade_status_info_temp == 0:
             trade_status_info.append('New position Opened')
-        if trade_status_info_temp == 1:
+        elif trade_status_info_temp == 1:
             trade_status_info.append('In Progress')
-        if trade_status_info_temp == 2:
+        elif trade_status_info_temp == 2:
             trade_status_info.append('Take Profit Hit')
-        if trade_status_info_temp == 3:
+        elif trade_status_info_temp == 3:
             trade_status_info.append('Stop Loss Hit')
+
+        if trade_highest_temp != -999999:
+            trade_highest_info.append(trade_highest_temp)
+        else:
+            trade_highest_info.append('N/A')
+
+        if trade_lowest_temp != 999999:
+            trade_lowest_info.append(trade_lowest_temp)
+        else:
+            trade_lowest_info.append('N/A')
+
     trade_pnl = []
     for i in range(len(active_trades)):
         if active_trades[i].trade_direction == 0:
@@ -644,13 +665,18 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
     info['SL'] = SL_val_info
     info['PNL'] = trade_pnl
     info['trade status'] = trade_status_info
-
+    info['Highest Candle'] = trade_highest_info
+    info['Lowest Candle'] = trade_lowest_info
     if change_occurred:
         print(f"\nTime: {Date} , Account Balance: {account_balance}")
-        print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
+        print(tabulate(info, headers='keys', tablefmt='tsv'))
         print(f"Time: {Date} , Account Balance: {account_balance}")
         print("------------------------------------------------------------\n")
-
+        if print_to_csv:
+            with open(csv_name, 'a') as O:
+                for i in range(len(active_trades)):
+                    O.write(f'{Date},{account_balance},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
+                            f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
     total_pnl = 0
     for x in trade_pnl:
         total_pnl += x
