@@ -669,7 +669,7 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
     info['Lowest Candle'] = trade_lowest_info
     if change_occurred:
         print(f"\nTime: {Date} , Account Balance: {account_balance}")
-        print(tabulate(info, headers='keys', tablefmt='tsv'))
+        print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
         print(f"Time: {Date} , Account Balance: {account_balance}")
         print("------------------------------------------------------------\n")
         if print_to_csv:
