@@ -53,7 +53,8 @@ profitgraph = []  # for graphing the profit change over time
 pp = pprint.PrettyPrinter()
 change_occurred = False
 time_CAGR = Helper.get_CAGR(start, end)
-
+if Trade_Each_Coin_With_Separate_Accounts:
+    Number_Of_Trades = len(symbol)
 Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = \
     Helper.get_aligned_candles([], [], [], [], [], [], [], [], [], [], [], symbol, TIME_INTERVAL, start, end)
 
