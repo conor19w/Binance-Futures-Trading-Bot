@@ -71,6 +71,7 @@ __Triple EMA 4hr candles__
 * GUI if people were interested (could take a while I've no experience here)
 ---
 ## Latest Changes (if any):
+* Added feature to trade each coin with an isolated account balance in Backtester, activated with new flag variable 'Trade_Each_Coin_With_Separate_Accounts'. (19/04/22)
 * Added option to create a csv file from a backtest __Line 33__. (19/04/22)
 * Updated Backtester to Open multiple positions, and Improved similarities to live Bot. (15/04/22)
 * Added a check that removes trades that the user manually closed by the user. (15/04/22)
