@@ -17,12 +17,12 @@ order_Size = .1  ##percent of Effective account to risk ie. (leverage X Account 
 fee = .00036  ##binance fees for backtesting
 
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
-start = '02-04-22'  ##start of backtest dd/mm/yy
-end = '09-04-22'  ##end of backtest   dd/mm/yy
+start = '14-04-22'  ##start of backtest dd/mm/yy
+end = '16-04-22'  ##end of backtest   dd/mm/yy
 TIME_INTERVAL = '1m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
 Number_Of_Trades = 2  ## allowed to open 5 positions at a time
 
-generate_heikin_ashi = False  ## generate Heikin ashi candles that can be consumed by your strategy in Bot Class
+generate_heikin_ashi = True  ## generate Heikin ashi candles that can be consumed by your strategy in Bot Class
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
 Trade_All_Symbols = False
@@ -31,7 +31,7 @@ Trade_Each_Coin_With_Separate_Accounts = False ## If True we will trade all coin
 use_trailing_stop = 0  ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_distance = .01  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
-symbol = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']  ## If Above is false strategy will only trade the list of coins specified here
+symbol = ['HBARUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 print_to_csv = False
 csv_name = 'myFile.csv'
 ####################################################################################################
@@ -97,10 +97,9 @@ for k in range(len(symbol)):
             min_price_temp = float(x[4])
             flag = 1
             break
-    Bots.append(
-        Bot(symbol[k], Open[k][:300], Close[k][:300], High[k][:300], Low[k][:300], Volume[k][:300], Date[k][:300],
-            Order_precision_temp, Coin_precision_temp, k, generate_heikin_ashi, tick_temp))
-    Bots[k].add_hist_complete = 1
+    Bots.append(Bot(symbol[k], Open[k][:300], Close[k][:300], High[k][:300], Low[k][:300], Volume[k][:300], Date[k][:300],
+            Order_precision_temp, Coin_precision_temp, k, generate_heikin_ashi, tick_temp, 1))
+    Bots[k].add_hist([], [], [], [], [], [])
 tradeNO = 0  ##number of trades
 active_trades: [Trade] = []
 new_trades = []
