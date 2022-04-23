@@ -17,9 +17,9 @@ order_Size = .1  ##percent of Effective account to risk ie. (leverage X Account 
 fee = .00036  ##binance fees for backtesting
 
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
-start = '14-04-22'  ##start of backtest dd/mm/yy
-end = '16-04-22'  ##end of backtest   dd/mm/yy
-TIME_INTERVAL = '1m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
+start = '01-04-22'  ##start of backtest dd/mm/yy
+end = '21-04-22'  ##end of backtest   dd/mm/yy
+TIME_INTERVAL = '2h'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
 Number_Of_Trades = 2  ## allowed to open 5 positions at a time
 
 generate_heikin_ashi = True  ## generate Heikin ashi candles that can be consumed by your strategy in Bot Class
@@ -31,7 +31,7 @@ Trade_Each_Coin_With_Separate_Accounts = False ## If True we will trade all coin
 use_trailing_stop = 0  ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_distance = .01  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
-symbol = ['HBARUSDT']  ## If Above is false strategy will only trade the list of coins specified here
+symbol = ['ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 print_to_csv = False
 csv_name = 'myFile.csv'
 ####################################################################################################
@@ -210,10 +210,10 @@ for i in range(301, len(Close_1min[0]) - 1):
         for t in active_trades:
             trade_price.append(Bots[t.index].Close[-1])
         if Trade_Each_Coin_With_Separate_Accounts:
-            pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Bots[0].Date[-1],
+            pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][-1],
                                                                               account_balance, change_occurred, print_to_csv, csv_name)
         else:
-            pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Bots[0].Date[-1],
+            pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][-1],
                                                                               [account_balance[0]], change_occurred,print_to_csv, csv_name)
         if negative_balance_flag and not Trade_Each_Coin_With_Separate_Accounts:
             print("**************** You have been liquidated *******************")
