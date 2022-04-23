@@ -210,10 +210,10 @@ for i in range(301, len(Close_1min[0]) - 1):
         for t in active_trades:
             trade_price.append(Bots[t.index].Close[-1])
         if Trade_Each_Coin_With_Separate_Accounts:
-            pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][-1],
+            pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][i],
                                                                               account_balance, change_occurred, print_to_csv, csv_name)
         else:
-            pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][-1],
+            pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][i],
                                                                               [account_balance[0]], change_occurred,print_to_csv, csv_name)
         if negative_balance_flag and not Trade_Each_Coin_With_Separate_Accounts:
             print("**************** You have been liquidated *******************")
