@@ -49,7 +49,7 @@ Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
 * Next we want to choose our TA strategy, this is done in Bot_Class.py in Make_decision() , uncomment a strategy or call a new strategy you have written yourself here, the 'Trade_Direction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 * Trade_All_Symbols flag will run the strategy on all the coins on binance if True.
-* Trade_Each_Coin_With_Separate_Accounts flag will run the strategy with isolated account Balances for each coin you list if True.
+* Trade_Each_Coin_With_Separate_Accounts flag will run the strategy with isolated account Balances for each coin you list if True. (Useful to see which coins the strategy works on before combining the trades to a single account)
 * generate_heikin_ashi flag will make Heikin Ashi candles available to be consumed by your strategy make_decision() in the Bot Class.
 * Generate a csv file of all the trades taken over a backtest by setting __print_to_csv__ to True and setting csv_name to a unique name,
 will throw an error if the file already exists.
