@@ -10,11 +10,7 @@ from ta.momentum import tsi
 from ta.trend import stc
 import numpy as np
 import pandas as pd
-import pandas_ta as TA
-
-import STC_HALF_EMA
 import TradingStrats as TS
-from gritito import gritito
 
 
 def RSI(close):
