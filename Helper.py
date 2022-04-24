@@ -6,10 +6,12 @@ from Config_File import API_KEY, API_SECRET
 from joblib import load, dump
 import sys, os
 from tabulate import tabulate
+
 client = Client(api_key=API_KEY,
                 api_secret=API_SECRET)  ##Binance keys needed to get historical data/ Trade on an account
 
 desktop_path = f"C:\\Users\\conor\\Desktop"
+
 
 class Data_Handler:
     def __init__(self, symbol, index):
@@ -57,12 +59,13 @@ class Trade:
         self.order_id = order_id_temp
         self.TP_id = ''
         self.SL_id = ''
-        self.trade_status = 0 ## hasn't started
+        self.trade_status = 0  ## hasn't started
         self.trade_start = ''
         self.Highest_val = -999999
         self.Lowest_val = 999999
+
     def print_vals(self):
-        return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status, self.Highest_val ,self.Lowest_val
+        return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status, self.Highest_val, self.Lowest_val
 
 
 class Trade_Manager:
@@ -243,8 +246,8 @@ def get_Klines(TIME_INTERVAL, symbol, start_str, end_str, path):
     ##Manipulate dates to american format:
     start_date = f'{start_str[3:5]}-{start_str[0:2]}-{start_str[6:]}'
     end_date = f'{end_str[3:5]}-{end_str[0:2]}-{end_str[6:]}'
-    #start_date = start_str
-    #end_date = end_str
+    # start_date = start_str
+    # end_date = end_str
 
     print(f"Downloading CandleStick Data for {symbol}...")
 
@@ -420,7 +423,7 @@ def align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, 
 
 def get_CAGR(start, end):
     return (int(end[0:2]) - int(start[0:2]) + 30 * (int(end[3:5]) - int(start[3:5])) + 365 * (
-                int(end[6:]) - int(start[6:]))) / 365
+            int(end[6:]) - int(start[6:]))) / 365
 
 
 def align_Datasets_easy(Date, Close, Open):
@@ -556,13 +559,15 @@ def check_TP(t: Trade, account_balance, High, Low, fee, printing_on=1):
     if t.TP_val < High and t.trade_direction == 1:
         if printing_on:
             print(f"Take Profit hit on {t.symbol}")
-        account_balance += ((t.TP_val-t.entry_price) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
+        account_balance += (
+                    (t.TP_val - t.entry_price) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
         t.trade_status = 2
 
     elif t.TP_val > Low and t.trade_direction == 0:
         if printing_on:
             print(f"Take Profit hit on {t.symbol}")
-        account_balance += ((t.entry_price-t.TP_val) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
+        account_balance += (
+                    (t.entry_price - t.TP_val) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
         t.trade_status = 2
 
     return t, account_balance
@@ -572,13 +577,15 @@ def check_SL(t: Trade, account_balance, High, Low, fee, printing_on=1):
     if t.SL_val < High and t.trade_direction == 0:
         if printing_on:
             print(f"Stop Loss hit on {t.symbol}")
-        account_balance -= ((t.SL_val - t.entry_price) * t.position_size + t.SL_val * fee * t.position_size)  ## fee + stop loss
+        account_balance -= (
+                    (t.SL_val - t.entry_price) * t.position_size + t.SL_val * fee * t.position_size)  ## fee + stop loss
         t.trade_status = 3
 
     elif t.SL_val > Low and t.trade_direction == 1:
         if printing_on:
             print(f"Stop Loss hit on {t.symbol}")
-        account_balance -= ((t.entry_price - t.SL_val) * t.position_size + t.SL_val * fee * t.position_size)  ## fee + stop loss
+        account_balance -= (
+                    (t.entry_price - t.SL_val) * t.position_size + t.SL_val * fee * t.position_size)  ## fee + stop loss
         t.trade_status = 3
 
     return t, account_balance
@@ -597,6 +604,16 @@ def open_trade(symbol, Order_Notional, account_balance, Open, fee, OP, printing_
         if printing_on:
             print(f"Trade Opened Successfully on {symbol}")
     return order_qty, entry_price, account_balance
+
+
+def close_pos(t, account_balance, fee, Close):
+    if t.trade_direction == 0:
+        account_balance += ((t.entry_price - Close) * t.position_size + Close * fee * t.position_size)  ## fee + stop loss
+
+    elif t.trade_direction == 1:
+        account_balance += ((Close - t.entry_price) * t.position_size + Close * fee * t.position_size)  ## fee + stop loss
+
+    return t, account_balance
 
 
 def print_trades(active_trades: [Trade], trade_price, Date, account_balance, change_occurred, print_to_csv, csv_name):
@@ -639,6 +656,8 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
             trade_status_info.append('Take Profit Hit')
         elif trade_status_info_temp == 3:
             trade_status_info.append('Stop Loss Hit')
+        elif trade_status_info_temp == 4:
+            trade_status_info.append('Closed on Condition')
 
         if trade_highest_temp != -999999:
             trade_highest_info.append(trade_highest_temp)
@@ -653,7 +672,7 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
     trade_pnl = []
     for i in range(len(active_trades)):
         if active_trades[i].trade_direction == 0:
-            trade_pnl.append((entry_price_info[i] - trade_price[i])*(position_size_info[i]))
+            trade_pnl.append((entry_price_info[i] - trade_price[i]) * (position_size_info[i]))
         elif active_trades[i].trade_direction == 1:
             trade_pnl.append((trade_price[i] - entry_price_info[i]) * (position_size_info[i]))
     info['Symbol'] = symbol_info
@@ -676,8 +695,9 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
         if print_to_csv:
             with open(csv_name, 'a') as O:
                 for i in range(len(active_trades)):
-                    O.write(f'{Date},{account_balance[0]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
-                            f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
+                    O.write(
+                        f'{Date},{account_balance[0]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
+                        f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
         total_pnl = 0
         for x in trade_pnl:
             total_pnl += x
@@ -698,7 +718,8 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
         if print_to_csv:
             with open(csv_name, 'a') as O:
                 for i in range(len(active_trades)):
-                    O.write(f'{Date},{account_balance_info[i]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
-                            f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
+                    O.write(
+                        f'{Date},{account_balance_info[i]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
+                        f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
 
     return 0, 0, False

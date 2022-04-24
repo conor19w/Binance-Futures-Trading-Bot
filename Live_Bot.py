@@ -240,8 +240,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                                     TM.close_position(active_trades[trade_index].symbol,
                                                       active_trades[trade_index].trade_direction,
                                                       active_trades[trade_index].position_size)
-                                    print(
-                                        f"Closed Trade on {active_trades[trade_index].symbol} as SL would immediately trigger")
+                                    print(f"Closed Trade on {active_trades[trade_index].symbol} as SL would immediately trigger")
                                     pop_flag = 1
                                     break
                         if pop_flag:
@@ -307,8 +306,23 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                         else:
                             i += 1
 
-
                 if print_flag:
+                    i = 0
+                    while i < len(active_trades):
+                        if Bots[active_trades[i].index].use_close_pos:
+                            ## Check each interval if the close position was met
+                            close_pos = Bots[active_trades[i].index].check_close_pos(active_trades[i].trade_direction)
+                            if close_pos:
+                                TM.close_position(active_trades[i].symbol,
+                                                  active_trades[i].trade_direction,
+                                                  active_trades[i].position_size)
+                                close_pos = 0
+                                print(f"Closed Trade on {active_trades[i].symbol} as Close Position condition was met")
+                                active_trades.pop(i)
+                            else:
+                                i += 1
+                        else:
+                            break
                     print_flag = 0
                     temp_symbols = []
                     for t in active_trades:

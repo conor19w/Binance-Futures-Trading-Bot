@@ -7,14 +7,39 @@ from ta.trend import ema_indicator, macd_signal, macd, sma_indicator, adx, sma_i
 from ta.volatility import average_true_range, bollinger_pband, bollinger_hband, bollinger_lband, bollinger_mavg
 from ta.volume import ease_of_movement, on_balance_volume, force_index, money_flow_index
 from ta.momentum import tsi
+from ta.trend import stc
 import numpy as np
 import pandas as pd
+import pandas_ta as TA
 
+import STC_HALF_EMA
 import TradingStrats as TS
+from gritito import gritito
+
+
+def RSI(close):
+    down = 0
+    downcount = 0
+    up = 0
+    upcount = 0
+    RSIval = None
+    for i in range(1, len(close)):
+        if close[i] - close[i - 1] < 0:
+            down += abs(close[i] - close[i - 1])
+            downcount += 1
+        elif close[i] - close[i - 1] > 0:
+            up += abs(close[i] - close[i - 1])
+            upcount += 1
+    if upcount != 0 and downcount != 0 and up != 0 and down != 0:
+        AverageUp = up / upcount
+        AverageDown = down / downcount
+        RSIval = (100 - (100 / (1 + (AverageUp / AverageDown))))
+    return RSIval
 
 
 class Bot:
-    def __init__(self, symbol, Open, Close, High, Low, Volume, Date, OP, CP, index, generate_heikin_ashi, tick, backtesting = 0):
+    def __init__(self, symbol, Open, Close, High, Low, Volume, Date, OP, CP, index, generate_heikin_ashi, tick,
+                 backtesting=0):
         self.symbol = symbol
         self.Open = Open
         self.Close = Close
@@ -35,6 +60,8 @@ class Bot:
         self.tick_size = tick
         self.socket_failed = False
         self.backtesting = backtesting
+        self.use_close_pos = False
+
     def add_hist(self, Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp):
         if not self.backtesting:
             while 0 < len(self.Date):
@@ -136,16 +163,30 @@ class Bot:
         Trade_Direction = -99  ## Short (0), Long (1)
         stop_loss_val = -99  ##the margin of increase/decrease that would stop us out/ be our take profit, NOT the price target.
         take_profit_val = -99  # That is worked out later by adding or subtracting:
-
         ## Strategies found in TradingStrats.py:
         # Trade_Direction,stop_loss_val, take_profit_val = TS.StochRSIMACD(Trade_Direction, self.Close,self.High,self.Low)
         # Trade_Direction,stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close,self.High,self.Low,Trade_Direction)
-        Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMA(self.Close, self.High, self.Low, Trade_Direction)
+        # Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMA(self.Close, self.High, self.Low, Trade_Direction)
         # Trade_Direction, stop_loss_val, take_profit_val = TS.breakout(Trade_Direction,self.Close,self.Volume,self.High, self.Low)
         # Trade_Direction,stop_loss_val,take_profit_val = TS.stochBB(Trade_Direction,self.Close, self.High, self.Low)
         # Trade_Direction, stop_loss_val, take_profit_val = TS.goldenCross(Trade_Direction,self.Close, self.High, self.Low)
         # Trade_Direction , stop_loss_val, take_profit_val = TS.candle_wick(Trade_Direction,self.Close,self.Open,self.High,self.Low)
         # Trade_Direction,stop_loss_val,take_profit_val = TS.fibMACD(Trade_Direction, self.Close, self.Open,self.High,self.Low)
-        # Trade_Direction, stop_loss_val, take_profit_val, _ = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stoplossval, takeprofitval, CurrentPos, 0)
-        # Trade_Direction,stop_loss_val,take_profit_val,_ = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stoplossval,takeprofitval, CurrentPos, 0)
+
+
+        ## need to set self.use_close_pos = True if you want to use the close position on condition functionality of the strategies below
+        ##  And also need to uncomment the corresponding strategy below in check_close_pos()
+        #self.use_close_pos = True
+        # Trade_Direction, stop_loss_val, take_profit_val, _ = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stop_loss_val, take_profit_val, -99, 0)
+        #Trade_Direction,stop_loss_val,take_profit_val,_ = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stop_loss_val,take_profit_val, -99, 0)
         return Trade_Direction, stop_loss_val, take_profit_val
+
+    def check_close_pos(self, current_pos):
+        ## need to uncomment corresponding strategy in here too if using close position on condition functionality
+        close_pos = 0
+        Trade_Direction = -99  ## Short (0), Long (1)
+        stop_loss_val = -99  ##the margin of increase/decrease that would stop us out/ be our take profit, NOT the price target.
+        take_profit_val = -99  # That is worked out later by adding or subtracting:
+        #_, _, _, close_pos = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stop_loss_val, take_profit_val, current_pos, 0)
+        #_,_,_,close_pos = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stop_loss_val,take_profit_val, current_pos, 0)
+        return close_pos
