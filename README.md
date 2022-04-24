@@ -24,15 +24,16 @@ __Run strategies at your own risk I am not responsible for your trading decision
 ---
 __There is no set strategy, You can select one by uncommenting it in make_Decision() inside Bot_Class.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
 * Settings are in __Config_File.py__
-* Trade a single position at a time by setting __Max_Margin = 0__, to trade multiple coins just change this value to suit your desired Max Margin for your positions i.e. __Max_Margin = .15__ will allow the bot to open positions until you have used up 15% of your account as margin.
+* Trade a single position at a time by setting ```Number_Of_Trades = 1```, to trade multiple coins just increment this value.
 * Choose the Interval you want to trade and the buffer of candlesticks your strategy will need this will be dependent on indicators you need to ensure you have a sufficient buffer, or you will get errors.
 * Leverage and order_size should be changed according to your preference
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
-* __Trailing stop: set __use_trailing_stop__ to __1__ and change __trailing_stop_percent__ to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e. 5%). The trailing stop will be placed when the takeprofitval margin of increase/decrease is reached from your strategy__.
+* __Trailing stop: set ```use_trailing_stop = 1``` and change ```trailing_stop_percent``` to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e. 5%). The trailing stop will be placed when the take profit value margin of increase/decrease is reached from your strategy__.
+* To close a trade based off a condition check_close_pos() must return a close_pos flag, and you must ensure ```self.use_close_pos = True``` in Bot_Class also.
 ---
 #### Creating Custom Strategies:
 __Strategies are implemented in Bot_Class.py as a function named Make_decision() in the Bot class__
-* Make_decision() must return Trade_Direction,stop_loss_val,take_profit_val for the strategy to work properly
+* ```Make_decision()``` must return ```Trade_Direction, stop_loss_val, take_profit_val``` for the strategy to work properly
 * You might draw inspiration for a strategy from one in __TradingStrats.py__
 * I recommend using the backtester first.
 ---
@@ -42,17 +43,18 @@ __Strategies are implemented in Bot_Class.py as a function named Make_decision()
 ### Back test strategies in [Backtester.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtester.py)
 ---
 * Create a 'price_data' folder on the desktop and change the path variable in Helper.py to suit your machine. Data pulled from Binance will be stored in this folder and automatically loaded from memory in future.
-* Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. symbol = ['BTCUSDT' , 'ETHUSDT'] , this would run your strategy on BTC and ETH.
-Whereas symbol = ['BTCUSDT'] would run the strategy on BTC only.
+* Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. ```symbol = ['BTCUSDT' , 'ETHUSDT']``` , this would run your strategy on BTC and ETH.
+Whereas ```symbol = ['BTCUSDT']``` would run the strategy on BTC only.
 * Settings are found at the top of the script, __line 13__.
-* Trailing Stop (NOT FUNCTIONING CORRECTLY): turn the __use_trailing_stop__ flag on, specify the __trailing_stop_distance__ in decimal, now when a takeprofit margin target is hit the trailing stop will be placed and automatically & adjusted based off new Lows or Highs in price and the __trailing_stop_distance__ you've specified.
-* Next we want to choose our TA strategy, this is done in Bot_Class.py in Make_decision() , uncomment a strategy or call a new strategy you have written yourself here, the 'Trade_Direction' variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
+* Trailing Stop (NOT FUNCTIONING CORRECTLY): turn the ```use_trailing_stop``` flag on, specify the ```trailing_stop_distance``` in decimal, now when a take profit margin target is hit the trailing stop will be placed and automatically & adjusted based off new Lows or Highs in price and the ```trailing_stop_distance``` you've specified.
+* Next we want to choose our TA strategy, this is done in Bot_Class.py in Make_decision() , uncomment a strategy or call a new strategy you have written yourself here, the ```Trade_Direction``` variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 * Trade_All_Symbols flag will run the strategy on all the coins on binance if True.
 * Trade_Each_Coin_With_Separate_Accounts flag will run the strategy with isolated account Balances for each coin you list if True. (Useful to see which coins the strategy works on before combining the trades to a single account)
-* generate_heikin_ashi flag will make Heikin Ashi candles available to be consumed by your strategy make_decision() in the Bot Class.
-* Generate a csv file of all the trades taken over a backtest by setting __print_to_csv__ to True and setting csv_name to a unique name,
+* ```generate_heikin_ashi``` flag will make Heikin Ashi candles available to be consumed by your strategy ```make_decision()``` in the Bot Class.
+* Generate a csv file of all the trades taken over a backtest by setting ```print_to_csv``` to True and setting csv_name to a unique name,
 will throw an error if the file already exists.
+* To close a trade based off a condition ```check_close_pos()``` must return a close_pos flag, and you must ensure ```self.use_close_pos = True``` in Bot_Class also.
 ---
 ### __Back Test top performers:__
 ---
@@ -72,11 +74,11 @@ __Triple EMA 4hr candles__
 ![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMA/4hr%20candles%202%20months%20ago.png)
 ---
 ## To-Do list: (suggest something and I'll add it) 😃
-* Close a trade based off a condition instead of the TP value.
 * Fix trailing Stop in Back Tester, think its causing some floating point rounding errors (think I know a fix just need time to implement).
 * GUI if people were interested (could take a while I've no experience here)
 ---
 ## Latest Changes (if any):
+* Added feature which can close a position based on a condition, by returning a flag close_pos from a strategy. (24/04/22)
 * Added feature to trade each coin with an isolated account balance in Backtester, activated with new flag variable 'Trade_Each_Coin_With_Separate_Accounts'. (19/04/22)
 * Added option to create a csv file from a backtest __Line 33__. (19/04/22)
 * Updated Backtester to Open multiple positions, and Improved similarities to live Bot. (15/04/22)
