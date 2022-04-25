@@ -46,7 +46,7 @@ __Strategies are implemented in Bot_Class.py as a function named Make_decision()
 * Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. ```symbol = ['BTCUSDT' , 'ETHUSDT']``` , this would run your strategy on BTC and ETH.
 Whereas ```symbol = ['BTCUSDT']``` would run the strategy on BTC only.
 * Settings are found at the top of the script, __line 13__.
-* Trailing Stop (NOT FUNCTIONING CORRECTLY): turn the ```use_trailing_stop``` flag on, specify the ```trailing_stop_distance``` in decimal, now when a take profit margin target is hit the trailing stop will be placed and automatically & adjusted based off new Lows or Highs in price and the ```trailing_stop_distance``` you've specified.
+* Trailing Stop: turn the ```use_trailing_stop``` flag on, specify the ```trailing_stop_callback``` in decimal, now when a take profit margin target is hit the trailing stop will be placed and automatically & adjusted based off new Lows or Highs in price and the ```trailing_stop_callback``` you've specified.
 * Next we want to choose our TA strategy, this is done in Bot_Class.py in Make_decision() , uncomment a strategy or call a new strategy you have written yourself here, the ```Trade_Direction``` variable is used to tell the script to go short (0), go long (1), or go flat (-99). This should be returned by custom strategy functions/classes you write for the strategy to be executed correctly
 * Now just run the script and wait a few minutes for it to pull the data and begin backtesting
 * Trade_All_Symbols flag will run the strategy on all the coins on binance if True.
@@ -78,6 +78,7 @@ __Triple EMA 4hr candles__
 * GUI if people were interested (could take a while I've no experience here)
 ---
 ## Latest Changes (if any):
+* Added Trailing Stop into the backtester. (25/04/22)
 * Added feature which can close a position based on a condition, by returning a flag close_pos from a strategy. (24/04/22)
 * Added feature to trade each coin with an isolated account balance in Backtester, activated with new flag variable 'Trade_Each_Coin_With_Separate_Accounts'. (19/04/22)
 * Added option to create a csv file from a backtest __Line 33__. (19/04/22)
