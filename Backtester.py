@@ -17,19 +17,19 @@ order_Size = .1  ##percent of Effective account to risk ie. (leverage X Account 
 fee = .00036  ##binance fees for backtesting
 
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
-start = '01-03-22'  ##start of backtest dd/mm/yy
-end = '07-04-22'  ##end of backtest   dd/mm/yy
-TIME_INTERVAL = '1m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
+start = '24-04-22'  ##start of backtest dd/mm/yy
+end = '26-04-22'  ##end of backtest   dd/mm/yy
+TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
 Number_Of_Trades = 2  ## allowed to open 5 positions at a time
 
 generate_heikin_ashi = True  ## generate Heikin ashi candles that can be consumed by your strategy in Bot Class
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
 Trade_All_Symbols = False
-Trade_Each_Coin_With_Separate_Accounts = True ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
+Trade_Each_Coin_With_Separate_Accounts = False ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
 
 use_trailing_stop = 0  ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
-trailing_stop_distance = .01  ## 1% trailing stop activated by hitting the takeprofitval for a coin
+trailing_stop_callback = .003  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
 symbol = ['COTIUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 print_to_csv = False
@@ -46,6 +46,7 @@ if Trade_All_Symbols:
         symbol.append(y['symbol'])
     symbol = [x for x in symbol if 'USDT' in x]
     symbol = [x for x in symbol if not '_' in x]
+
 print(f"Coins Tradeable : {symbol}")
 winning_trades = []
 losing_trades = []
@@ -199,9 +200,9 @@ for i in range(301, len(Close_1min[0]) - 1):
         ##Check if TP Hit
         if t.trade_status == 1:
             if Trade_Each_Coin_With_Separate_Accounts:
-                t, account_balance[t.index] = Helper.check_TP(t, account_balance[t.index], High_1min[t.index][i], Low_1min[t.index][i], fee)
+                t, account_balance[t.index] = Helper.check_TP(t, account_balance[t.index], High_1min[t.index][i], Low_1min[t.index][i], fee, use_trailing_stop, trailing_stop_callback, Bots[t.index].CP)
             else:
-                t, account_balance[0] = Helper.check_TP(t, account_balance[0], High_1min[t.index][i], Low_1min[t.index][i], fee)
+                t, account_balance[0] = Helper.check_TP(t, account_balance[0], High_1min[t.index][i], Low_1min[t.index][i], fee, use_trailing_stop, trailing_stop_callback, Bots[t.index].CP)
             if t.trade_status != 1:
                 change_occurred = True
         if Bots[t.index].use_close_pos:

@@ -63,7 +63,7 @@ class Trade:
         self.trade_start = ''
         self.Highest_val = -999999
         self.Lowest_val = 999999
-
+        self.trail_activated = False
     def print_vals(self):
         return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status, self.Highest_val, self.Lowest_val
 
@@ -555,20 +555,60 @@ def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, D
     return Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol
 
 
-def check_TP(t: Trade, account_balance, High, Low, fee, printing_on=1):
-    if t.TP_val < High and t.trade_direction == 1:
-        if printing_on:
-            print(f"Take Profit hit on {t.symbol}")
-        account_balance += (
-                    (t.TP_val - t.entry_price) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
-        t.trade_status = 2
+def check_TP(t: Trade, account_balance, High, Low, fee, use_trailing_stop, trailing_stop_callback, CP, printing_on=1):
+    if not use_trailing_stop:
+        if t.TP_val < High and t.trade_direction == 1:
+            if printing_on:
+                print(f"Take Profit hit on {t.symbol}")
+            account_balance += ((t.TP_val - t.entry_price) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
+            t.trade_status = 2
 
-    elif t.TP_val > Low and t.trade_direction == 0:
-        if printing_on:
-            print(f"Take Profit hit on {t.symbol}")
-        account_balance += (
-                    (t.entry_price - t.TP_val) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
-        t.trade_status = 2
+        elif t.TP_val > Low and t.trade_direction == 0:
+            if printing_on:
+                print(f"Take Profit hit on {t.symbol}")
+            account_balance += ((t.entry_price - t.TP_val) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
+            t.trade_status = 2
+    else:
+        if t.trail_activated and t.trade_direction == 0 and High > t.TP_val:
+            if printing_on:
+                print(f"Trailing Stop hit on {t.symbol}")
+            account_balance += ((t.entry_price - t.TP_val) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
+            t.trade_status = 2
+        elif t.trail_activated and t.trade_direction == 1 and Low < t.TP_val:
+            if printing_on:
+                print(f"Trailing Stop hit on {t.symbol}")
+            account_balance += ((t.TP_val - t.entry_price) * t.position_size - t.TP_val * fee * t.position_size)  ## fee + profit
+            t.trade_status = 2
+        elif not t.trail_activated and t.trade_direction == 0 and Low < t.TP_val:
+            t.trail_activated = True
+            if CP == 0:
+                t.TP_val = round(Low * (1+trailing_stop_callback))
+            else:
+                t.TP_val = round(Low * (1 + trailing_stop_callback),CP)
+            if printing_on:
+                print(f"Trailing Stop updated on {t.symbol} to {t.TP_val}")
+        elif not t.trail_activated and t.trade_direction == 1 and High > t.TP_val:
+            t.trail_activated = True
+            if CP == 0:
+                t.TP_val = round(High * (1 - trailing_stop_callback))
+            else:
+                t.TP_val = round(High * (1 - trailing_stop_callback), CP)
+            if printing_on:
+                print(f"Trailing Stop updated on {t.symbol} to {t.TP_val}")
+        elif t.trail_activated and t.trade_direction == 0 and Low * (1 + trailing_stop_callback) < t.TP_val:
+            if CP == 0:
+                t.TP_val = round(Low * (1 + trailing_stop_callback))
+            else:
+                t.TP_val = round(Low * (1 + trailing_stop_callback), CP)
+            if printing_on:
+                print(f"Trailing Stop updated on {t.symbol} to {t.TP_val}")
+        elif t.trail_activated and t.trade_direction == 1 and High * (1 - trailing_stop_callback) > t.TP_val:
+            if CP == 0:
+                t.TP_val = round(High * (1 - trailing_stop_callback))
+            else:
+                t.TP_val = round(High * (1 - trailing_stop_callback), CP)
+            if printing_on:
+                print(f"Trailing Stop updated on {t.symbol} to {t.TP_val}")
 
     return t, account_balance
 
