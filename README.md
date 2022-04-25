@@ -5,7 +5,6 @@
 * Utilizes [python-Binance](https://python-binance.readthedocs.io/en/latest/) Client to execute orders and pull data from Binance
 * Utilizes [ta](https://technical-analysis-library-in-python.readthedocs.io/en/latest/) library for Technical indicators
 * Write your own functions/classes to implement your TA strategies.
-* There is no default Strategy implemented you must do this in Data_Set.py as specified below.
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
@@ -74,7 +73,6 @@ __Triple EMA 4hr candles__
 ![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMA/4hr%20candles%202%20months%20ago.png)
 ---
 ## To-Do list: (suggest something and I'll add it) 😃
-* Fix trailing Stop in Back Tester, think its causing some floating point rounding errors (think I know a fix just need time to implement).
 * GUI if people were interested (could take a while I've no experience here)
 ---
 ## Latest Changes (if any):
