@@ -17,22 +17,22 @@ order_Size = .1  ##percent of Effective account to risk ie. (leverage X Account 
 fee = .00036  ##binance fees for backtesting
 
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
-start = '01-04-22'  ##start of backtest dd/mm/yy
+start = '12-04-22'  ##start of backtest dd/mm/yy
 end = '26-04-22'  ##end of backtest   dd/mm/yy
-TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
+TIME_INTERVAL = '1h'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
 Number_Of_Trades = 2  ## allowed to open 5 positions at a time
 
 generate_heikin_ashi = True  ## generate Heikin ashi candles that can be consumed by your strategy in Bot Class
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
-Trade_All_Symbols = False
-Trade_Each_Coin_With_Separate_Accounts = False ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
+Trade_All_Symbols = True
+Trade_Each_Coin_With_Separate_Accounts = True ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
 
 use_trailing_stop = 1  ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
-trailing_stop_callback = .001  ## 1% trailing stop activated by hitting the takeprofitval for a coin
+trailing_stop_callback = .00001  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
 symbol = ['COTIUSDT']  ## If Above is false strategy will only trade the list of coins specified here
-print_to_csv = True
+print_to_csv = False
 csv_name = 'myFile.csv'
 ####################################################################################################
 if print_to_csv:
@@ -49,7 +49,7 @@ if Trade_All_Symbols:
 
 if trailing_stop_callback < .001:
     trailing_stop_callback = .001
-    print("Callback rate must be >= .001")
+    print("*********************************\nCallback rate must be >= .001, I have set callback rate to .001 for you\n*********************************")
 trailing_stop_callback = round(trailing_stop_callback,3) ##Traling stop can only be a multiple of .1% ie 3 decimals
 print(f"Coins Tradeable : {symbol}")
 winning_trades = []
