@@ -25,8 +25,6 @@ generate_heikin_ashi = True  ## generate Heikin ashi candles that can be consume
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
 Trade_All_Symbols = True
-
-
 Trade_Each_Coin_With_Separate_Accounts = True ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
 plot_graphs_to_folder = False ## If trading each coin with isolated balances we can create plots in the specified folder below
 path = 'C://Users//conor//Desktop//graphs//'  ## where you want to store the graphs
@@ -39,6 +37,9 @@ trailing_stop_callback = .001  ## 1% trailing stop activated by hitting the take
 symbol = ['BTCUSDT', 'COTIUSDT', 'ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 print_to_csv = False
 csv_name = 'myFile.csv'
+
+
+####################################################################################################
 ####################################################################################################
 if print_to_csv:
     with open(csv_name, 'x') as O:
@@ -51,7 +52,8 @@ if Trade_All_Symbols:
         symbol.append(y['symbol'])
     symbol = [x for x in symbol if 'USDT' in x]
     symbol = [x for x in symbol if not '_' in x]
-
+if plot_graphs_to_folder:
+    Trade_Each_Coin_With_Separate_Accounts = True
 if trailing_stop_callback < .001:
     trailing_stop_callback = .001
     print("*********************************\nCallback rate must be >= .001, I have set callback rate to .001 for you\n*********************************")
