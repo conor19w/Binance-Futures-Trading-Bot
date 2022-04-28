@@ -64,6 +64,7 @@ class Trade:
         self.Highest_val = -999999
         self.Lowest_val = 999999
         self.trail_activated = False
+
     def print_vals(self):
         return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status, self.Highest_val, self.Lowest_val
 
@@ -242,99 +243,125 @@ def get_TIME_INTERVAL(TIME_INTERVAL):
     return TIME_INTERVAL
 
 
-def get_Klines(TIME_INTERVAL, symbol, start_str, end_str, path):
+def get_Klines(symbol, start_str, end_str, path):
     ##Manipulate dates to american format:
     start_date = f'{start_str[3:5]}-{start_str[0:2]}-{start_str[6:]}'
     end_date = f'{end_str[3:5]}-{end_str[0:2]}-{end_str[6:]}'
-    # start_date = start_str
-    # end_date = end_str
-
     print(f"Downloading CandleStick Data for {symbol}...")
+    price_data = {'High_1m': [], 'Low_1m': [], 'Close_1m': [],
+                  'Open_1m': [], 'Date_1m': [],'Volume_1m': [],
+                  'High_3m': [], 'Low_3m': [], 'Close_3m': [],
+                  'Open_3m': [], 'Date_3m': [],'Volume_3m': [],
+                  'High_5m': [], 'Low_5m': [], 'Close_5m': [],
+                  'Open_5m': [], 'Date_5m': [],'Volume_5m': [],
+                  'High_15m': [], 'Low_15m': [], 'Close_15m': [],
+                  'Open_15m': [], 'Date_15m': [],'Volume_15m': [],
+                  'High_30m': [], 'Low_30m': [], 'Close_30m': [],
+                  'Open_30m': [], 'Date_30m': [],'Volume_30m': [],
+                  'High_1h': [], 'Low_1h': [], 'Close_1h': [],
+                  'Open_1h': [], 'Date_1h': [],'Volume_1h': [],
+                  'High_2h': [], 'Low_2h': [], 'Close_2h': [],
+                  'Open_2h': [], 'Date_2h': [],'Volume_2h': [],
+                  'High_4h': [], 'Low_4h': [], 'Close_4h': [],
+                  'Open_4h': [], 'Date_4h': [],'Volume_4h': [],
+                  'High_6h': [], 'Low_6h': [], 'Close_6h': [],
+                  'Open_6h': [], 'Date_6h': [],'Volume_6h': [],
+                  'High_8h': [], 'Low_8h': [], 'Close_8h': [],
+                  'Open_8h': [], 'Date_8h': [],'Volume_8h': [],
+                  'High_12h': [], 'Low_12h': [], 'Close_12h': [],
+                  'Open_12h': [], 'Date_12h': [],'Volume_12h': [],
+                  'High_1d': [], 'Low_1d': [], 'Close_1d': [],
+                  'Open_1d': [], 'Date_1d': [],'Volume_1d': []}
 
-    Date = []
-    Open = []
-    Close = []
-    High = []
-    Low = []
-    Volume = []
-    High_1min = []
-    Low_1min = []
-    Close_1min = []
-    Open_1min = []
-    Date_1min = []
-    ##klines for candlestick patterns and TA
-    for kline in client.futures_historical_klines(symbol, TIME_INTERVAL, start_str=start_date, end_str=end_date):
-        Date.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-        Open.append(float(kline[1]))
-        Close.append(float(kline[4]))
-        High.append(float(kline[2]))
-        Low.append(float(kline[3]))
-        Volume.append(float(kline[7]))
+    for kline in client.futures_historical_klines(symbol, '1m', start_str=start_date, end_str=end_date):
+        price_data['Date_1m'].append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
+        price_data['Open_1m'].append(float(kline[1]))
+        price_data['High_1m'].append(float(kline[2]))
+        price_data['Low_1m'].append(float(kline[3]))
+        price_data['Close_1m'].append(float(kline[4]))
+        price_data['Volume_1m'].append(float(kline[5]))
+        candle_close = datetime.utcfromtimestamp(round(kline[6] / 1000))
+        for unit in [3, 5, 15, 30]:
+            try:
+                ## Construct the 3m, 5m, 15m, and 30m candles
+                if int(str(price_data['Date_1m'][-1])[-5:-3]) % unit == 0:
+                    ##Candle open
+                    price_data[f'Date_{unit}m'].append(price_data['Date_1m'][-1])
+                    price_data[f'Open_{unit}m'].append(price_data['Open_1m'][-1])
+                    price_data[f'High_{unit}m'].append(price_data['High_1m'][-1])  ##initialize as highest
+                    price_data[f'Low_{unit}m'].append(price_data['Low_1m'][-1])  ##initialize as lowest
+                    price_data[f'Volume_{unit}m'].append(price_data['Volume_1m'][-1])  ##initialize
+                if int(str(candle_close)[-5:-3]) % unit == 0:
+                    ##Candle close time
+                    price_data[f'Close_{unit}m'].append(price_data['Close_1m'][-1])
+                    ##Check if higher high or lower low present:
+                    if price_data['High_1m'][-1] > price_data[f'High_{unit}m'][-1]:
+                        price_data[f'High_{unit}m'][-1] = price_data['High_1m'][-1]  ##update as highest
+                    if price_data['Low_1m'][-1] < price_data[f'Low_{unit}m'][-1]:
+                        price_data[f'Low_{unit}m'][-1] = price_data['Low_1m'][-1]  ##update as lowest
+                    price_data[f'Volume_{unit}m'][-1] += price_data['Volume_1m'][-1] ## add on volume
 
-    if TIME_INTERVAL != '1m':
-        for kline in client.futures_historical_klines(symbol, '1m', start_str=start_date, end_str=end_date):
-            # print(kline)
-            Date_1min.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
-            Open_1min.append(float(kline[1]))
-            High_1min.append(float(kline[2]))
-            Low_1min.append(float(kline[3]))
-            Close_1min.append(float(kline[4]))
-    else:
-        Date_1min = Date
-        Open_1min = Open
-        High_1min = High
-        Low_1min = Low
-        Close_1min = Close
+                else:
+                    ## Check for higher and lower candle inbetween:
+                    if price_data['High_1m'][-1] > price_data[f'High_{unit}m'][-1]:
+                        price_data[f'High_{unit}m'][-1] = price_data['High_1m'][-1]  ##update as highest
+                    if price_data['Low_1m'][-1] < price_data[f'Low_{unit}m'][-1]:
+                        price_data[f'Low_{unit}m'][-1] = price_data['Low_1m'][-1]  ##update as lowest
+                    price_data[f'Volume_{unit}m'][-1] += price_data['Volume_1m'][-1] ## add on volume
 
-    for i in range(len(Date)):
-        found_flag = 0
-        for j in range(len(Date_1min)):
-            if Date_1min[j] == Date[i]:
-                High_1min = High_1min[j:]
-                Low_1min = Low_1min[j:]
-                Date_1min = Date_1min[j:]
-                Close_1min = Close_1min[j:]
-                Open_1min = Open_1min[j:]
-                High = High[i:]
-                Low = Low[i:]
-                Date = Date[i:]
-                Close = Close[i:]
-                Open = Open[i:]
-                Volume = Volume[i:]
-                found_flag = 1
-                break
-        if found_flag:
-            break
-    for i in range(-1, -len(Date), -1):
-        found_flag = 0
-        for j in range(-1, -len(Date_1min), -1):
-            if Date_1min[j] == Date[i]:
-                High_1min = High_1min[:j]
-                Low_1min = Low_1min[:j]
-                Date_1min = Date_1min[:j]
-                Close_1min = Close_1min[:j]
-                Open_1min = Open_1min[:j]
-                High = High[:i]
-                Low = Low[:i]
-                Date = Date[:i]
-                Close = Close[:i]
-                Open = Open[:i]
-                Volume = Volume[:i]
-                found_flag = 1
-                break
-        if found_flag:
-            break
+            except Exception as e:
+                print(f"Error in {unit}m candles should be fine just for debugging purposes, {e}")
+        for unit in [1, 2, 4, 6, 8, 12]:
+            try:
+                ## Construct the 1h, 2h, 4h, 6h, 8h and 12h candles
+                if int(str(price_data['Date_1m'][-1])[-8:-6]) % unit == 0 and int(str(price_data['Date_1m'][-1])[-5:-3]) == 0:
+                    ##Candle open
+                    price_data[f'Date_{unit}h'].append(price_data['Date_1m'][-1])
+                    price_data[f'Open_{unit}h'].append(price_data['Open_1m'][-1])
+                    price_data[f'High_{unit}h'].append(price_data['High_1m'][-1])  ##initialize as highest
+                    price_data[f'Low_{unit}h'].append(price_data['Low_1m'][-1])  ##initialize as lowest
+                    price_data[f'Volume_{unit}h'].append(price_data['Volume_1m'][-1])  ##initialize
+                if int(str(candle_close)[-8:-6]) % unit == 0 and int(str(price_data['Date_1m'][-1])[-5:-3]) == 0:
+                    ##Candle close time
+                    price_data[f'Close_{unit}h'].append(price_data['Close_1m'][-1])
+                    ##Check if higher high or lower low present:
+                    if price_data['High_1m'][-1] > price_data[f'High_{unit}h'][-1]:
+                        price_data[f'High_{unit}h'][-1] = price_data['High_1m'][-1]  ##update as highest
+                    if price_data['Low_1m'][-1] < price_data[f'Low_{unit}h'][-1]:
+                        price_data[f'Low_{unit}h'][-1] = price_data['Low_1m'][-1]  ##update as lowest
+                    price_data[f'Volume_{unit}h'][-1] += price_data['Volume_1m'][-1]  ## add on volume
+                else:
+                    ## Check for higher and lower candle inbetween:
+                    if price_data['High_1m'][-1] > price_data[f'High_{unit}h'][-1]:
+                        price_data[f'High_{unit}h'][-1] = price_data['High_1m'][-1]  ##update as highest
+                    if price_data['Low_1m'][-1] < price_data[f'Low_{unit}h'][-1]:
+                        price_data[f'Low_{unit}h'][-1] = price_data['Low_1m'][-1]  ##update as lowest
+                    price_data[f'Volume_{unit}h'][-1] += price_data['Volume_1m'][-1]  ## add on volume
+            except Exception as e:
+                print(f"Error in {unit}h candles should be fine just for debugging purposes, {e}")
+    for unit in [3, 5, 15, 30]:
+        price_data[f'Open_{unit}m'].pop(-1) ## remove the last candle
+        price_data[f'High_{unit}m'].pop(-1) ## remove the last candle
+        price_data[f'Low_{unit}m'].pop(-1) ## remove the last candle
 
-    price_data = {'Date': Date, 'Open': Open, 'Close': Close, 'High': High, 'Low': Low,
-                  'Volume': Volume, 'High_1min': High_1min, 'Low_1min': Low_1min, 'Close_1min': Close_1min,
-                  'Open_1min': Open_1min, 'Date_1min': Date_1min}
+
+    try:
+        for kline in client.futures_historical_klines(symbol, '1d', start_str=start_date, end_str=end_date):
+            price_data['Date_1d'].append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
+            price_data['Open_1d'].append(float(kline[1]))
+            price_data['High_1d'].append(float(kline[2]))
+            price_data['Low_1d'].append(float(kline[3]))
+            price_data['Close_1d'].append(float(kline[4]))
+    except Exception as e:
+        print("Error downloading daily candles:",e)
+
     try:
         print("Saving Price data")
         dump(price_data, path)  ## address of where you will keep the data,
     except:
         print("Failed to save data")
 
-    return Date, Open, Close, High, Low, Volume, High_1min, Low_1min, Close_1min, Open_1min, Date_1min
+    return price_data
 
 
 def get_historical(symbol, start_string, Interval):
@@ -487,37 +514,36 @@ def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, D
     print("Loading Price Data")
     i = 0
     while i < len(symbol):
-        path = f"{desktop_path}\\price_data\\{symbol[i]}_{TIME_INTERVAL}_{start}_{end}.joblib"
+        path = f"{desktop_path}\\price_data\\{symbol[i]}_{start}_{end}.joblib"
         try:
             price_data = load(path)
-            Date.append(price_data['Date'])
-            Open.append(price_data['Open'])
-            Close.append(price_data['Close'])
-            High.append(price_data['High'])
-            Low.append(price_data['Low'])
-            Volume.append(price_data['Volume'])
-            High_1min.append(price_data['High_1min'])
-            Low_1min.append(price_data['Low_1min'])
-            Close_1min.append(price_data['Close_1min'])
-            Open_1min.append(price_data['Open_1min'])
-            Date_1min.append(price_data['Date_1min'])
+            Date.append(price_data[f'Date_{TIME_INTERVAL}'])
+            Open.append(price_data[f'Open_{TIME_INTERVAL}'])
+            Close.append(price_data[f'Close_{TIME_INTERVAL}'])
+            High.append(price_data[f'High_{TIME_INTERVAL}'])
+            Low.append(price_data[f'Low_{TIME_INTERVAL}'])
+            Volume.append(price_data[f'Volume_{TIME_INTERVAL}'])
+            High_1min.append(price_data['High_1m'])
+            Low_1min.append(price_data['Low_1m'])
+            Close_1min.append(price_data['Close_1m'])
+            Open_1min.append(price_data['Open_1m'])
+            Date_1min.append(price_data['Date_1m'])
             i += 1
         except:
             try:
                 print(f"Data doesnt exist in path: {path}, Downloading Data to specified path now...")
-                get_Klines(TIME_INTERVAL, symbol[i], start, end, path)
-                price_data = load(path)
-                Date.append(price_data['Date'])
-                Open.append(price_data['Open'])
-                Close.append(price_data['Close'])
-                High.append(price_data['High'])
-                Low.append(price_data['Low'])
-                Volume.append(price_data['Volume'])
-                High_1min.append(price_data['High_1min'])
-                Low_1min.append(price_data['Low_1min'])
-                Close_1min.append(price_data['Close_1min'])
-                Open_1min.append(price_data['Open_1min'])
-                Date_1min.append(price_data['Date_1min'])
+                price_data = get_Klines(symbol[i], start, end, path)
+                Date.append(price_data[f'Date_{TIME_INTERVAL}'])
+                Open.append(price_data[f'Open_{TIME_INTERVAL}'])
+                Close.append(price_data[f'Close_{TIME_INTERVAL}'])
+                High.append(price_data[f'High_{TIME_INTERVAL}'])
+                Low.append(price_data[f'Low_{TIME_INTERVAL}'])
+                Volume.append(price_data[f'Volume_{TIME_INTERVAL}'])
+                High_1min.append(price_data['High_1m'])
+                Low_1min.append(price_data['Low_1m'])
+                Close_1min.append(price_data['Close_1m'])
+                Open_1min.append(price_data['Open_1m'])
+                Date_1min.append(price_data['Date_1m'])
                 print("Download Successful, Loading Data now")
                 i += 1
             except BinanceAPIException as e:
@@ -582,9 +608,9 @@ def check_TP(t: Trade, account_balance, High, Low, fee, use_trailing_stop, trail
         elif not t.trail_activated and t.trade_direction == 0 and Low < t.TP_val:
             t.trail_activated = True
             if CP == 0:
-                t.TP_val = round(Low * (1+trailing_stop_callback))
+                t.TP_val = round(Low * (1 + trailing_stop_callback))
             else:
-                t.TP_val = round(Low * (1 + trailing_stop_callback),CP)
+                t.TP_val = round(Low * (1 + trailing_stop_callback), CP)
             if printing_on:
                 print(f"Trailing Stop updated on {t.symbol} to {t.TP_val}")
         elif not t.trail_activated and t.trade_direction == 1 and High > t.TP_val:
@@ -617,15 +643,13 @@ def check_SL(t: Trade, account_balance, High, Low, fee, printing_on=1):
     if t.SL_val < High and t.trade_direction == 0:
         if printing_on:
             print(f"Stop Loss hit on {t.symbol}")
-        account_balance -= (
-                    (t.SL_val - t.entry_price) * t.position_size + t.SL_val * fee * t.position_size)  ## fee + stop loss
+        account_balance -= ((t.SL_val - t.entry_price) * t.position_size + t.SL_val * fee * t.position_size)  ## fee + stop loss
         t.trade_status = 3
 
     elif t.SL_val > Low and t.trade_direction == 1:
         if printing_on:
             print(f"Stop Loss hit on {t.symbol}")
-        account_balance -= (
-                    (t.entry_price - t.SL_val) * t.position_size + t.SL_val * fee * t.position_size)  ## fee + stop loss
+        account_balance -= ((t.entry_price - t.SL_val) * t.position_size + t.SL_val * fee * t.position_size)  ## fee + stop loss
         t.trade_status = 3
 
     return t, account_balance

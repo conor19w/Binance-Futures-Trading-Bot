@@ -9,7 +9,7 @@ import Helper
 from Bot_Class import Bot
 from Config_File import API_KEY, API_SECRET
 from Helper import Trade
-
+import matplotlib
 ####################### Settings #####################################
 account_balance_start = 1000  ##Starting Account Balance
 leverage = 10  ##leverage we want to use on the account, *Check valid leverages for coins*
@@ -17,21 +17,26 @@ order_Size = .1  ##percent of Effective account to risk ie. (leverage X Account 
 fee = .00036  ##binance fees for backtesting
 
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
-start = '12-04-22'  ##start of backtest dd/mm/yy
-end = '26-04-22'  ##end of backtest   dd/mm/yy
-TIME_INTERVAL = '1h'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1hr,2hr,4ht,6hr,8hr,12hr,1d,3d,1w,1M I think...
+start = '01-04-22'  ##start of backtest dd/mm/yy
+end = '28-04-22'  ##end of backtest   dd/mm/yy
+TIME_INTERVAL = '15m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
 Number_Of_Trades = 2  ## allowed to open 5 positions at a time
-
 generate_heikin_ashi = True  ## generate Heikin ashi candles that can be consumed by your strategy in Bot Class
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
 Trade_All_Symbols = True
+
+
 Trade_Each_Coin_With_Separate_Accounts = True ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
+plot_graphs_to_folder = False ## If trading each coin with isolated balances we can create plots in the specified folder below
+path = 'C://Users//conor//Desktop//graphs//'  ## where you want to store the graphs
+plot_strategy_name = 'TripleEMA'
 
-use_trailing_stop = 1  ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
-trailing_stop_callback = .00001  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
-symbol = ['COTIUSDT']  ## If Above is false strategy will only trade the list of coins specified here
+use_trailing_stop = 0  ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
+trailing_stop_callback = .001  ## 1% trailing stop activated by hitting the takeprofitval for a coin
+
+symbol = ['BTCUSDT', 'COTIUSDT', 'ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 print_to_csv = False
 csv_name = 'myFile.csv'
 ####################################################################################################
@@ -339,6 +344,8 @@ if not Trade_Each_Coin_With_Separate_Accounts:
     plt.show()
 
 else:
+    ## Top of script:
+    matplotlib.use("Agg")
     num_wins_total = 0
     for j in range(len(symbol)):
         average = 0
@@ -378,11 +385,16 @@ else:
         print("Calmar Ratio:", round(calmar_ratio, 4))
         print(f"Max Drawdown: {round(max_dd, 4)}%")
         print(f"Average Win: {round(average * 100, 4)}%\n")
-        # plt.plot(profitgraph)
-        # plt.title(f"All coins: {original_time_interval} from {start} to {end}")
-        # plt.ylabel('Account Balance')
-        # plt.xlabel('Number of Trades')
-        # plt.show()
+
+
+        if plot_graphs_to_folder:
+            plt.plot(profitgraph[j])
+            plt.title(f"All coins: {original_time_interval} from {start} to {end}")
+            plt.ylabel('Account Balance')
+            plt.xlabel('Number of Trades')
+            name_of_plot = f'{symbol[j]}_{plot_strategy_name}_INTERVAL_{original_time_interval}_{start}_{end}'  ## Name of the graph, will overwrite if it already exists
+            plt.savefig(f'{path}{name_of_plot}.png', dpi=300, bbox_inches='tight')
+            plt.close()
 
     print("\nSettings:")
     print('leverage:', leverage)
