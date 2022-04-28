@@ -53,6 +53,7 @@ Whereas ```symbol = ['BTCUSDT']``` would run the strategy on BTC only.
 * ```generate_heikin_ashi``` flag will make Heikin Ashi candles available to be consumed by your strategy ```make_decision()``` in the Bot Class.
 * Generate a csv file of all the trades taken over a backtest by setting ```print_to_csv``` to True and setting csv_name to a unique name,
 will throw an error if the file already exists.
+* Flag variable ```plot_graphs_to_folder```, When active the equity curves will be plotted to a folder instead of displayed.
 * To close a trade based off a condition ```check_close_pos()``` must return a close_pos flag, and you must ensure ```self.use_close_pos = True``` in Bot_Class also.
 ---
 ### __Back Test top performers:__
@@ -76,18 +77,15 @@ __Triple EMA 4hr candles__
 * GUI if people were interested (could take a while I've no experience here)
 ---
 ## Latest Changes (if any):
+* Changed the Data structure (making old data obsolete apologies), new structure will have faster downloads and Now all candles are constructed 
+from the 1m candles so if you run a backtest over a period you will now have data for all candles over that same period.(28/04/22)
+* New flag ```plot_graphs_to_folder```, When active the equity curves will be plotted to a folder instead of displayed. (28/04/22)
 * Added Trailing Stop into the backtester. (25/04/22)
 * Added feature which can close a position based on a condition, by returning a flag close_pos from a strategy. (24/04/22)
 * Added feature to trade each coin with an isolated account balance in Backtester, activated with new flag variable 'Trade_Each_Coin_With_Separate_Accounts'. (19/04/22)
 * Added option to create a csv file from a backtest __Line 33__. (19/04/22)
 * Updated Backtester to Open multiple positions, and Improved similarities to live Bot. (15/04/22)
 * Added a check that removes trades that the user manually closed by the user. (15/04/22)
-* Added Functionality for opening and managing multiple positions. (20/03/22)
-* Simplified the system to be more user friendly, removed code that was obsolete. (11/03/22)
-* Added support in the live Bot environment for some of the strategies in Trading_strats.py , To make use of a strategy in Bot.py just uncomment it inside Make_Decision() inside Data_set.py (11/02/2022).
-* Added support for Heikin Ashi candles in Bot.py, there is now a switch in settings use_heikin_ashi. If switched on you may reference self.Open_H, self.Close_H etc. from make_Decision() in Data_set.py (17/01/22).
-* Updated Backtester to make it more user friendly & changed naming convention for saved data (14/01/22).
-* At the end of a backtest you can see the date & time that every trade was taken. So you can debug strategies by checking on tradingview/binance (07/01/22).
 ---
 ## Binance Setup
 ---
