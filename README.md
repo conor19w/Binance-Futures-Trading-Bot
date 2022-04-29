@@ -2,7 +2,7 @@
 ---
 ## Technical Analysis driven Crypto Trading bot on Binance Futures 📈 ₿ 🚀 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 [__Join My public Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
-* Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this and join & I'll get in touch to get you set up 😃
+* Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this join & I'll get in touch to get you set up 😃
 * Utilizes [python-Binance](https://python-binance.readthedocs.io/en/latest/) Client to execute orders and pull data from Binance
 * Utilizes [ta](https://technical-analysis-library-in-python.readthedocs.io/en/latest/) library for Technical indicators
 * Write your own functions/classes to implement your TA strategies.
@@ -30,7 +30,7 @@ __There is no set strategy, You can select one by uncommenting it in make_Decisi
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
 * __Trailing stop: set ```use_trailing_stop = 1``` and change ```trailing_stop_percent``` to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e. 5%). The trailing stop will be placed when the take profit value margin of increase/decrease is reached from your strategy__.
 * To close a trade based off a condition check_close_pos() must return a close_pos flag, and you must ensure ```self.use_close_pos = True``` in Bot_Class also.
-* Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this and join & I'll get in touch to get you set up 😃
+* Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this join & I'll get in touch to get you set up 😃
 ---
 #### Creating Custom Strategies:
 __Strategies are implemented in Bot_Class.py as a function named Make_decision() in the Bot class__
@@ -57,7 +57,7 @@ Whereas ```symbol = ['BTCUSDT']``` would run the strategy on BTC only.
 will throw an error if the file already exists.
 * Flag variable ```plot_graphs_to_folder```, When active the equity curves will be plotted to a folder instead of displayed.
 * To close a trade based off a condition ```check_close_pos()``` must return a close_pos flag, and you must ensure ```self.use_close_pos = True``` in Bot_Class also.
-* Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this and join & I'll get in touch to get you set up 😃
+* Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this join & I'll get in touch to get you set up 😃
 ---
 ### __Back Test top performers:__
 ---
@@ -105,5 +105,5 @@ from the 1m candles so if you run a backtest over a period you will now have dat
 * If you have any querys about anything, or need me to explain any blocks of code please reach out to me at wconor539@gmail.com.
 * If you have any suggestions or requests please reach out to me as well.  
 [__Join My public Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
-* Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this and join & I'll get in touch to get you set up 😃
+* Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this join & I'll get in touch to get you set up 😃
 
