@@ -66,12 +66,13 @@ __Not indicative of future returns__
 * All of the strategies can be improved on but this is just a good place to start.
 * Try removing some coins from the list traded, the tests below were on all coins available at the time. 
 ---
+__Triple EMA RUNEUSDT 01-04-22 to 28-04-22 (labelling is wrong)__
+---
+![](https://github.com/conor19w/Crypto-Bot/blob/main/Recent%20Backtests/TripleEMA/3m/RUNEUSDT_TripleEMA_INTERVAL_3m_01-04-22_28-04-22.png)  
+---
 __Golden Cross 15m candles__  
 ---
 ![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/goldenCross/15m%20candles%202%20months%20ago.png)  
-__Triple EMA Stochastic RSI 15m candles__
----
-![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMAStochasticRSIATR/15m%20candles%202%20months%20ago.png)  
 __Triple EMA 4hr candles__
 ---
 ![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMA/4hr%20candles%202%20months%20ago.png)
