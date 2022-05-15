@@ -136,6 +136,7 @@ class Trade_Manager:
                         timeInForce=TIME_IN_FORCE_GTC,
                         reduceOnly='true',
                         quantity=TP[1])
+                    TP_ID = order['orderId']
                 else:
                     order = self.client.futures_create_order(
                         symbol=symbol,
@@ -144,7 +145,7 @@ class Trade_Manager:
                         ActivationPrice=TP_val,
                         callbackRate=self.trailing_stop_callback,
                         quantity=TP[1])
-                TP_ID = order['orderId']
+                    TP_ID = order['orderId']
 
             except BinanceAPIException as e:
                 print("\nError in place_TP(), Error: ", e)
