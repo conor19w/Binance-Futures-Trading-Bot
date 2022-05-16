@@ -17,6 +17,7 @@ leverage = 10  ##leverage we want to use on the account, *Check valid leverages 
 order_Size = .1  ##percent of Effective account to risk ie. (leverage X Account Balance) X order_size
 fee = .00036  ##binance fees for backtesting
 
+
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
 start = '01-03-22'  ##start of backtest dd/mm/yy
 end = '14-05-22'  ##end of backtest   dd/mm/yy
