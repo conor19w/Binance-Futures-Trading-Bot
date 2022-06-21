@@ -19,24 +19,23 @@ fee = .00036  ##binance fees for backtesting
 
 
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
-start = '01-03-22'  ##start of backtest dd/mm/yy
-end = '14-05-22'  ##end of backtest   dd/mm/yy
+start = '19-06-22'  ##start of backtest dd/mm/yy
+end = '22-06-22'  ##end of backtest   dd/mm/yy
 TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
 Number_Of_Trades = 1  ## allowed to open 5 positions at a time
-generate_heikin_ashi = True  ## generate Heikin ashi candles that can be consumed by your strategy in Bot Class
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
 Trade_All_Symbols = False
-Trade_Each_Coin_With_Separate_Accounts = False ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
-plot_graphs_to_folder = False ## If trading each coin with isolated balances we can create plots in the specified folder below
+Trade_Each_Coin_With_Separate_Accounts = True  ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
+plot_graphs_to_folder = False  ## If trading each coin with isolated balances we can create plots in the specified folder below
 plot_strategy_name = 'tripleEMAStochasticRSIATR'
 graph_folder_location = 'C://Users//conor//Desktop//graphs//'
 path = f'{graph_folder_location}{plot_strategy_name}_{start}_{end}//'  ## where you want to store the graphs
 
-use_trailing_stop = 0  ##(NOT IN USE Causing rounding error I think)  flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
+use_trailing_stop = 0  ##flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_callback = .005  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
-symbol = ['ETHUSDT', 'BTCUSDT'] #['ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
+symbol = ['ETHUSDT']#, 'BTCUSDT'] #['ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
           #'CTSIUSDT','ICPUSDT','KNCUSDT','LINAUSDT','RAYUSDT']  #, 'COTIUSDT', 'ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 print_to_csv = False
 csv_name = 'myFile.csv'
@@ -62,7 +61,7 @@ if plot_graphs_to_folder:
 if trailing_stop_callback < .001:
     trailing_stop_callback = .001
     print("*********************************\nCallback rate must be >= .001, I have set callback rate to .001 for you\n*********************************")
-trailing_stop_callback = round(trailing_stop_callback,3) ##Traling stop can only be a multiple of .1% ie 3 decimals
+trailing_stop_callback = round(trailing_stop_callback, 3) ##Traling stop can only be a multiple of .1% ie 3 decimals
 print(f"Coins Tradeable : {symbol}")
 winning_trades = []
 losing_trades = []
@@ -75,7 +74,6 @@ if Trade_Each_Coin_With_Separate_Accounts:
     Number_Of_Trades = len(symbol)
 Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = \
     Helper.get_aligned_candles([], [], [], [], [], [], [], [], [], [], [], symbol, TIME_INTERVAL, start, end)
-
 print(symbol)
 account_balance = []
 Daily_return = []
@@ -89,6 +87,7 @@ day_start_equity = account_balance
 if printing_on:
     print(f"{TIME_INTERVAL} OHLC Candle Sticks from {start} to {end}")
 
+generate_heikin_ashi = True  ## generate Heikin ashi candles that can be consumed by your strategy in Bot Class
 Bots: [Bot] = []
 y = client.futures_exchange_info()['symbols']
 coin_info = []
@@ -123,7 +122,7 @@ active_trades: [Trade] = []
 new_trades = []
 if printing_on:
     print("Account Balance: ", account_balance[0])
-for i in range(301, len(Close_1min[0]) - 1):
+for i in range(300*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
     if account_balance[0] < 0 and not Trade_Each_Coin_With_Separate_Accounts:
         if printing_on:
             print("Negative Balance")
@@ -231,7 +230,7 @@ for i in range(301, len(Close_1min[0]) - 1):
                     t, account_balance[0] = Helper.close_pos(t, account_balance[0], fee, Close_1min[t.index][i])
                 close_pos = 0
                 print(f"Closing Trade on {t.symbol} as Close Position condition was met")
-                t.trade_status = 4 ## Closed on condition
+                t.trade_status = 4  ## Closed on condition
                 change_occurred = True
 
 
@@ -245,7 +244,7 @@ for i in range(301, len(Close_1min[0]) - 1):
                                                                               account_balance, change_occurred, print_to_csv, csv_name)
         else:
             pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][i],
-                                                                              [account_balance[0]], change_occurred,print_to_csv, csv_name)
+                                                                              [account_balance[0]], change_occurred, print_to_csv, csv_name)
         if negative_balance_flag and not Trade_Each_Coin_With_Separate_Accounts:
             print("**************** You have been liquidated *******************")
             profitgraph[0].append(0)
@@ -418,4 +417,3 @@ else:
     print(f"Winning Trades:\n {num_wins_total}")
     print(f"Losing Trades:\n {tradeNO - num_wins_total}")
     print(f"Trades Closed on Condition:\n {closed_on_condition}")
-
