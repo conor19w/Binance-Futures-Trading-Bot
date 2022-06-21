@@ -11,28 +11,6 @@ from ta.trend import stc
 import numpy as np
 import pandas as pd
 import TradingStrats as TS
-
-
-def RSI(close):
-    down = 0
-    downcount = 0
-    up = 0
-    upcount = 0
-    RSIval = None
-    for i in range(1, len(close)):
-        if close[i] - close[i - 1] < 0:
-            down += abs(close[i] - close[i - 1])
-            downcount += 1
-        elif close[i] - close[i - 1] > 0:
-            up += abs(close[i] - close[i - 1])
-            upcount += 1
-    if upcount != 0 and downcount != 0 and up != 0 and down != 0:
-        AverageUp = up / upcount
-        AverageDown = down / downcount
-        RSIval = (100 - (100 / (1 + (AverageUp / AverageDown))))
-    return RSIval
-
-
 class Bot:
     def __init__(self, symbol, Open, Close, High, Low, Volume, Date, OP, CP, index, generate_heikin_ashi, tick,
                  backtesting=0):
@@ -113,7 +91,7 @@ class Bot:
                     self.Open.pop(0)
                     if self.generate_heikin_ashi:
                         self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
-                        self.Open_H.append((self.Open_H[-2] + self.Close_H[-2]) / 2)
+                        self.Open_H.append((self.Open_H[-1] + self.Close_H[-2]) / 2)
                         self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
                         self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
                         self.Open_H.pop(0)
@@ -137,7 +115,7 @@ class Bot:
                     self.Open.pop(0)
                     if self.generate_heikin_ashi:
                         self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
-                        self.Open_H.append((self.Open_H[-2] + self.Close_H[-2]) / 2)
+                        self.Open_H.append((self.Open_H[-1] + self.Close_H[-2]) / 2)
                         self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
                         self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
                         self.Open_H.pop(0)
@@ -161,14 +139,14 @@ class Bot:
         take_profit_val = -99  # That is worked out later by adding or subtracting:
         ## Strategies found in TradingStrats.py:
         # Trade_Direction,stop_loss_val, take_profit_val = TS.StochRSIMACD(Trade_Direction, self.Close,self.High,self.Low)
-        # Trade_Direction,stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close,self.High,self.Low,Trade_Direction)
+        Trade_Direction,stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close,self.High,self.Low,Trade_Direction)
         # Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMA(self.Close, self.High, self.Low, Trade_Direction)
         # Trade_Direction, stop_loss_val, take_profit_val = TS.breakout(Trade_Direction,self.Close,self.Volume,self.High, self.Low)
         # Trade_Direction,stop_loss_val,take_profit_val = TS.stochBB(Trade_Direction,self.Close, self.High, self.Low)
         # Trade_Direction, stop_loss_val, take_profit_val = TS.goldenCross(Trade_Direction,self.Close, self.High, self.Low)
         # Trade_Direction , stop_loss_val, take_profit_val = TS.candle_wick(Trade_Direction,self.Close,self.Open,self.High,self.Low)
         # Trade_Direction,stop_loss_val,take_profit_val = TS.fibMACD(Trade_Direction, self.Close, self.Open,self.High,self.Low)
-
+        #Trade_Direction, stop_loss_val, take_profit_val = TS.EMA_cross(Trade_Direction, self.Close, self.High, self.Low)
 
         ## need to set self.use_close_pos = True if you want to use the close position on condition functionality of the strategies below
         ##  And also need to uncomment the corresponding strategy below in check_close_pos()
