@@ -80,6 +80,9 @@ __Triple EMA 4hr candles__
 ---
 ## To-Do list: (suggest something and I'll add it) 😃
 * GUI if people were interested (could take a while I've no experience here)
+* Data Cleaning task to run every x amount of minutes, ensuring the Live Bot hasn't lost any candles
+* Option to give config in shell flags (Not sure yet but this was requested)
+* Refactor happening soon to make the bot easier to use, and update the README
 ---
 ## Latest Changes (if any):
 * Changed the Data structure (making old data obsolete apologies), new structure will have faster downloads and Now all candles are constructed 
