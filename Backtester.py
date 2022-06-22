@@ -417,5 +417,5 @@ else:
     print(f"Winning Trades:\n {num_wins_total}")
     print(f"Losing Trades:\n {tradeNO - num_wins_total}")
     print(f"Trades Closed on Condition:\n {closed_on_condition}")
-for i in range(len(Bots[0].Date)):
-    print(f"Date: {Bots[0].Date[i]}, Open_H: {Bots[0].Open_H[i]}, High_H: {Bots[0].High_H[i]}, Low_H: {Bots[0].Low_H[i]}, Close_H: {Bots[0].Close_H[i]}")
+#for i in range(len(Bots[0].Date)):
+#    print(f"Date: {Bots[0].Date[i]}, Open_H: {Bots[0].Open_H[i]}, High_H: {Bots[0].High_H[i]}, Low_H: {Bots[0].Low_H[i]}, Close_H: {Bots[0].Close_H[i]}")
