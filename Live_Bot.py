@@ -160,12 +160,24 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                         Bot.handle_socket_message(Data[Bot.symbol])
                     print_flag = 1
                     new_candle_flag = 0
+
+                    ##Ensure Bot doesn't interfere with positions opened manually by the user
+                    open_trades = []
+                    position_info = client.futures_position_information()
+                    for position in position_info:
+                        if float(position['notional']) != 0.0:
+                            open_trades.append(position['symbol'])
+
                     for i in range(len(Bots)):
                         trade_flag = 0
                         for t in active_trades:
                             if t.index == i:
                                 trade_flag = 1
                                 break
+                            for s in open_trades:
+                                if s == t.symbol:
+                                    trade_flag = 1
+                                    break
                         if trade_flag == 0:
                             temp_dec = Bots[i].Make_decision()
                             # print(Data[i].symbol,temp_dec)
@@ -187,8 +199,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                                                                       Bots[index].OP)
 
                     ##Add on the trade which we will later Check on
-                    active_trades.append(
-                        Trade(index, position_size_temp, take_profit, stop_loss, trade_direction, order_id_temp,
+                    active_trades.append(Trade(index, position_size_temp, take_profit, stop_loss, trade_direction, order_id_temp,
                               Bots[index].symbol))
                     if len(active_trades) >= Max_Number_Of_Trades:
                         new_trades = []  ##Don't Open any new positions
