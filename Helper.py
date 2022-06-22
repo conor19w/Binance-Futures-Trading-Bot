@@ -64,6 +64,7 @@ class Trade:
         self.Highest_val = -999999
         self.Lowest_val = 999999
         self.trail_activated = False
+        self.same_candle = True
 
     def print_vals(self):
         return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status, self.Highest_val, self.Lowest_val

@@ -320,7 +320,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                 if print_flag:
                     i = 0
                     while i < len(active_trades):
-                        if Bots[active_trades[i].index].use_close_pos:
+                        if Bots[active_trades[i].index].use_close_pos and not active_trades[i].same_candle:
                             ## Check each interval if the close position was met
                             close_pos = Bots[active_trades[i].index].check_close_pos(active_trades[i].trade_direction)
                             if close_pos:
@@ -333,6 +333,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                             else:
                                 i += 1
                         else:
+                            active_trades[i].same_candle = False
                             break
                     print_flag = 0
                     temp_symbols = []
