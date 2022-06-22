@@ -68,10 +68,12 @@ class Bot:
                     self.High_H.append(self.High[i])
                     self.Low_H.append(self.Low[i])
                 else:
-                    self.Open_H.append((self.Open_H[i - 1] + self.Close_H[i - 1]) / 2)
+                    self.Open_H.append((self.Open_H[i - 1] + self.Close_H[i - 2]) / 2)
                     self.High_H.append(max(self.High[i], self.Open_H[i], self.Close_H[i]))
                     self.Low_H.append(min(self.Low[i], self.Open_H[i], self.Close_H[i]))
         self.add_hist_complete = 1
+        #for i in range(len(self.Date)):
+        #    print(f"Date: {self.Date[i]}, Open_H: {self.Open_H[i]}, Close_H: {self.Close_H[i]}, High_H: {self.High_H[i]}, Low_H: {self.Low_H[i]}")
 
     def handle_socket_message(self, Data, Date=0, Close=0, Volume=0, Open=0, High=0, Low=0):
         try:

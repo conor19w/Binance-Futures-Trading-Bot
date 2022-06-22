@@ -20,8 +20,8 @@ fee = .00036  ##binance fees for backtesting
 
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
 start = '19-06-22'  ##start of backtest dd/mm/yy
-end = '22-06-22'  ##end of backtest   dd/mm/yy
-TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
+end = '23-06-22'  ##end of backtest   dd/mm/yy
+TIME_INTERVAL = '1m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
 Number_Of_Trades = 1  ## allowed to open 5 positions at a time
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
@@ -122,7 +122,7 @@ active_trades: [Trade] = []
 new_trades = []
 if printing_on:
     print("Account Balance: ", account_balance[0])
-for i in range(300*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
+for i in range(300*TIME_INTERVAL, len(Close_1min[0]) - 1):
     if account_balance[0] < 0 and not Trade_Each_Coin_With_Separate_Accounts:
         if printing_on:
             print("Negative Balance")
@@ -417,3 +417,5 @@ else:
     print(f"Winning Trades:\n {num_wins_total}")
     print(f"Losing Trades:\n {tradeNO - num_wins_total}")
     print(f"Trades Closed on Condition:\n {closed_on_condition}")
+#for i in range(len(Bots[0].Date)):
+    #print(f"Date: {Bots[0].Date[i]}, Open_H: {Bots[0].Open_H[i]}, High_H: {Bots[0].High_H[i]}, Low_H: {Bots[0].Low_H[i]}, Close_H: {Bots[0].Close_H[i]}")
