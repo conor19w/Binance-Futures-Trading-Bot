@@ -395,8 +395,6 @@ def heikin_ashi_ema2(CloseStream,OpenStream_H,HighStream_H,LowStream_H,CloseStre
                                 if fastd[-r] > long_threshold or fastk[-r] > long_threshold:
                                     flag = 0
                             if flag:
-                                print("Fastk: ",fastk[-j:0])
-                                print("Fastd: ",fastd[-j:0])
                                 ##Open a trade
                                 Trade_Direction = 1
                                 stoplossval = SL_percent * CloseStream[-1]
@@ -511,7 +509,7 @@ def tripleEMAStochasticRSIATR(CloseStream,HighStream, LowStream,Trade_Direction)
     elif (Close[-1]<EMA8[-1]<EMA14[-1]<EMA50[-1]) and ((fastk[-1]<fastd[-1]) and (fastk[-2]>fastd[-2])) : #and (fastk[-1]>20 and fastd[-1]>20):
         Trade_Direction=0
 
-    stoplossval, takeprofitval = SetSLTP(-99, -99, CloseStream, HighStream, LowStream, Trade_Direction, Type=1)
+    stoplossval, takeprofitval = SetSLTP(-99, -99, CloseStream, HighStream, LowStream, Trade_Direction, Type=7)
     return  Trade_Direction, stoplossval, takeprofitval
 
 ##############################################################################################################################
@@ -795,26 +793,26 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
 
     ## Closest Swing High/Low
     elif Type==3:
-        highswing = CloseStream[-2]
-        Lowswing = CloseStream[-2]
-        highflag = 0
-        lowflag = 0
-        for j in range(-3, -50, -1):
-            if CloseStream[j] > highswing and CloseStream[j] > CloseStream[j - 1] and CloseStream[j] > CloseStream[j - 2] and highflag == 0:
-                highswing = CloseStream[j]
-                highflag = 1
-            if CloseStream[j] < Lowswing and CloseStream[j] < CloseStream[j - 1] and CloseStream[j] < CloseStream[j - 2] and lowflag == 0:
-                Lowswing = CloseStream[j]
-                lowflag = 1
+        highswing = -999999
+        Lowswing = 999999
+        highflag = 1
+        lowflag = 1
+        for j in range(2,100):
+            if HighStream[-j+1] > highswing and HighStream[-j] < HighStream[-j - 1] and HighStream[-j-1] > HighStream[-j - 2] and highflag and Trade_Direction == 0:
+                highswing = HighStream[-j]
+                highflag = 0
+            if LowStream[-j+1] < Lowswing and LowStream[-j] > LowStream[-j - 1] and LowStream[-j-1] < LowStream[-j - 2] and lowflag and Trade_Direction:
+                Lowswing = LowStream[-j]
+                lowflag = 0
 
         if Trade_Direction == 0:
-            stoplossval = (highswing - CloseStream[-1])*1.25
+            stoplossval = (highswing - CloseStream[-1])
             if stoplossval < 0:
                 stoplossval *= -1
             takeprofitval = stoplossval * 2
 
         elif Trade_Direction == 1:
-            stoplossval = (CloseStream[-1] - Lowswing)*1.25
+            stoplossval = (CloseStream[-1] - Lowswing)
             if stoplossval < 0:
                 stoplossval *= -1
             takeprofitval = stoplossval * 2
@@ -885,8 +883,8 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
             takeprofitval = 3 * abs(ATR[-1])
 
     elif Type==7:
-        stoplossval = .007*CloseStream[-1]
-        takeprofitval = .01*CloseStream[-1]
+        stoplossval = .03*CloseStream[-1]
+        takeprofitval = .02*CloseStream[-1]
 
     elif Type==8:
         ATR = np.array(average_true_range(pd.Series(HighStream[:-1]), pd.Series(LowStream[:-1]), pd.Series(CloseStream[:-1]),window=25))
@@ -906,3 +904,24 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
             takeprofitval = TP * abs(ATR[-1])
     return stoplossval,takeprofitval
 
+
+def EMA_cross(Trade_Direction, Close, High, Low):
+    EMA_short = np.array(ema_indicator(pd.Series(Close), window=5))
+    EMA_long = np.array(ema_indicator(pd.Series(Close), window=20))
+
+    if EMA_short[-5] > EMA_long[-5] \
+            and EMA_short[-4] > EMA_long[-4] \
+            and EMA_short[-3] > EMA_long[-3] \
+            and EMA_short[-2] > EMA_long[-2] \
+            and EMA_short[-1] < EMA_long[-1]:
+        Trade_Direction = 0
+
+    if EMA_short[-5] < EMA_long[-5]  \
+            and EMA_short[-4] < EMA_long[-4] \
+            and EMA_short[-3] < EMA_long[-3] \
+            and EMA_short[-2] < EMA_long[-2]  \
+            and EMA_short[-1] > EMA_long[-1]:
+        Trade_Direction = 1
+
+    stop_loss, take_profit = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, Type=2)
+    return Trade_Direction, stop_loss, take_profit
