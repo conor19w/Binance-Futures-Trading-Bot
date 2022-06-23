@@ -21,12 +21,13 @@ fee = .00036  ##binance fees for backtesting
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
 start = '01-04-22'  ##start of backtest dd/mm/yy
 end = '01-05-22'  ##end of backtest   dd/mm/yy
-TIME_INTERVAL = '1m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
+TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
 Number_Of_Trades = 1  ## allowed to open 5 positions at a time
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
-Trade_All_Symbols = False
-Trade_Each_Coin_With_Separate_Accounts = False  ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
+Trade_All_Symbols = True
+Trade_Each_Coin_With_Separate_Accounts = True  ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
+only_show_profitable_coins = True  ## only works with Flag 'Trade_Each_Coin_With_Separate_Accounts' = True
 plot_graphs_to_folder = False  ## If trading each coin with isolated balances we can create plots in the specified folder below
 plot_strategy_name = 'tripleEMAStochasticRSIATR'
 graph_folder_location = 'C://Users//conor//Desktop//graphs//'
@@ -220,7 +221,7 @@ for i in range(299*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
                 t, account_balance[0] = Helper.check_TP(t, account_balance[0], High_1min[t.index][i], Low_1min[t.index][i], fee, use_trailing_stop, trailing_stop_callback, Bots[t.index].CP)
             if t.trade_status != 1:
                 change_occurred = True
-        if Bots[t.index].use_close_pos and t.trade_status == 1:
+        if Bots[t.index].use_close_pos and t.trade_status == 1 and (i % TIME_INTERVAL == 0 or TIME_INTERVAL == 1):
             ## Check each interval if the close position was met
             close_pos = Bots[t.index].check_close_pos(t.trade_direction)
             if close_pos:
@@ -358,55 +359,56 @@ else:
     if not os.path.exists(path+f'{original_time_interval}'):
         os.makedirs(path+f'{original_time_interval}')
     for j in range(len(symbol)):
-        average = 0
-        num_wins = 0
-        for i in range(1, len(profitgraph[j])):
-            if profitgraph[j][i] > profitgraph[j][i - 1]:
-                num_wins += 1
-                average += (profitgraph[j][i] - profitgraph[j][i - 1]) / profitgraph[j][i]
-        if num_wins != 0:
-            average /= num_wins
-        num_wins_total += num_wins
-        risk_free_rate = 1.41  ##10 year treasury rate
-        try:
-            df = pd.DataFrame({'Account_Balance': Daily_return[j]})
-            df['daily_return'] = df['Account_Balance'].pct_change()
-            df['cum_return'] = (1 + df['daily_return']).cumprod()
-            df['cum_roll_max'] = df['cum_return'].cummax()
-            df['drawdown'] = df['cum_roll_max'] - df['cum_return']
-            df['drawdown %'] = df['drawdown'] / df['cum_roll_max']
-            max_dd = df['drawdown %'].max() * 100
+        if (only_show_profitable_coins and account_balance[j] > originalBalance[j]) or (not only_show_profitable_coins):
+            average = 0
+            num_wins = 0
+            for i in range(1, len(profitgraph[j])):
+                if profitgraph[j][i] > profitgraph[j][i - 1]:
+                    num_wins += 1
+                    average += (profitgraph[j][i] - profitgraph[j][i - 1]) / profitgraph[j][i]
+            if num_wins != 0:
+                average /= num_wins
+            num_wins_total += num_wins
+            risk_free_rate = 1.41  ##10 year treasury rate
+            try:
+                df = pd.DataFrame({'Account_Balance': Daily_return[j]})
+                df['daily_return'] = df['Account_Balance'].pct_change()
+                df['cum_return'] = (1 + df['daily_return']).cumprod()
+                df['cum_roll_max'] = df['cum_return'].cummax()
+                df['drawdown'] = df['cum_roll_max'] - df['cum_return']
+                df['drawdown %'] = df['drawdown'] / df['cum_roll_max']
+                max_dd = df['drawdown %'].max() * 100
 
-            # cum_ret = np.array(df['cum_return'])
-            CAGR = ((df['cum_return'].iloc[-1]) ** (
-                        1 / time_CAGR) - 1) * 100  # ((df['cum_return'].iloc[-1])**(1/time_CAGR)-1)*100
-            vol = (df['daily_return'].std() * np.sqrt(365)) * 100
-            neg_vol = (df[df['daily_return'] < 0]['daily_return'].std() * np.sqrt(365)) * 100
-            Sharpe_ratio = (CAGR - risk_free_rate) / vol
-            sortino_ratio = (CAGR - risk_free_rate) / neg_vol
-            calmar_ratio = CAGR / max_dd
-            print("Symbol:", symbol[j], "fee:", fee)
-            print(f"{original_time_interval} OHLC Candle Sticks from {start} to {end}")
-            print("Account Balance:", account_balance[j])
-            print("% Gain on Account:", ((account_balance[j] - originalBalance[j]) * 100) / originalBalance[j])
-            print("Total Returns:", account_balance[j] - originalBalance[j])
-            print(f"Annualized Volatility: {round(vol, 4)}%")
-            print(f"CAGR: {round(CAGR, 4)}%")
-            print("Sharpe Ratio:", round(Sharpe_ratio, 4))
-            print("Sortino Ratio:", round(sortino_ratio, 4))
-            print("Calmar Ratio:", round(calmar_ratio, 4))
-            print(f"Max Drawdown: {round(max_dd, 4)}%")
-            print(f"Average Win: {round(average * 100, 4)}%\n")
-            if plot_graphs_to_folder:
-                plt.plot(profitgraph[j])
-                plt.title(f"{symbol[j]}: {original_time_interval} from {start} to {end}")
-                plt.ylabel('Account Balance')
-                plt.xlabel('Number of Trades')
-                name_of_plot = f'{symbol[j]}_{plot_strategy_name}'  ## Name of the graph, will overwrite if it already exists
-                plt.savefig(f'{path}{original_time_interval}//{name_of_plot}.png', dpi=300, bbox_inches='tight')
-                plt.close()
-        except:
-            pass
+                # cum_ret = np.array(df['cum_return'])
+                CAGR = ((df['cum_return'].iloc[-1]) ** (
+                            1 / time_CAGR) - 1) * 100  # ((df['cum_return'].iloc[-1])**(1/time_CAGR)-1)*100
+                vol = (df['daily_return'].std() * np.sqrt(365)) * 100
+                neg_vol = (df[df['daily_return'] < 0]['daily_return'].std() * np.sqrt(365)) * 100
+                Sharpe_ratio = (CAGR - risk_free_rate) / vol
+                sortino_ratio = (CAGR - risk_free_rate) / neg_vol
+                calmar_ratio = CAGR / max_dd
+                print("Symbol:", symbol[j], "fee:", fee)
+                print(f"{original_time_interval} OHLC Candle Sticks from {start} to {end}")
+                print("Account Balance:", account_balance[j])
+                print("% Gain on Account:", ((account_balance[j] - originalBalance[j]) * 100) / originalBalance[j])
+                print("Total Returns:", account_balance[j] - originalBalance[j])
+                print(f"Annualized Volatility: {round(vol, 4)}%")
+                print(f"CAGR: {round(CAGR, 4)}%")
+                print("Sharpe Ratio:", round(Sharpe_ratio, 4))
+                print("Sortino Ratio:", round(sortino_ratio, 4))
+                print("Calmar Ratio:", round(calmar_ratio, 4))
+                print(f"Max Drawdown: {round(max_dd, 4)}%")
+                print(f"Average Win: {round(average * 100, 4)}%\n")
+                if plot_graphs_to_folder:
+                    plt.plot(profitgraph[j])
+                    plt.title(f"{symbol[j]}: {original_time_interval} from {start} to {end}")
+                    plt.ylabel('Account Balance')
+                    plt.xlabel('Number of Trades')
+                    name_of_plot = f'{symbol[j]}_{plot_strategy_name}'  ## Name of the graph, will overwrite if it already exists
+                    plt.savefig(f'{path}{original_time_interval}//{name_of_plot}.png', dpi=300, bbox_inches='tight')
+                    plt.close()
+            except:
+                pass
     print("\nSettings:")
     print('leverage:', leverage)
     print('order_Size:', order_Size)
