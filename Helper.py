@@ -151,6 +151,7 @@ class Trade_Manager:
             except BinanceAPIException as e:
                 print("\nError in place_TP(), Error: ", e)
                 print(f"symbol: {symbol} TP: {TP}\n")
+                return -1
         except Exception as e:
             print(e)
             exc_type, exc_obj, exc_tb = sys.exc_info()

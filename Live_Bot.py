@@ -247,11 +247,11 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                                 active_trades[trade_index].SL_id = TM.place_SL(active_trades[trade_index].symbol,stop_loss_val, active_trades[trade_index].trade_direction,
                                                                                Bots[active_trades[trade_index].index].CP,Bots[active_trades[trade_index].index].tick_size)
                                 ##Order would trigger immediately so close the position
-                                if active_trades[trade_index].SL_id == -1:
+                                if active_trades[trade_index].SL_id == -1 or active_trades[trade_index].TP_id == -1:
                                     TM.close_position(active_trades[trade_index].symbol,
                                                       active_trades[trade_index].trade_direction,
                                                       active_trades[trade_index].position_size)
-                                    print(f"Closed Trade on {active_trades[trade_index].symbol} as SL would immediately trigger")
+                                    print(f"Closed Trade on {active_trades[trade_index].symbol} as SL OR TP would have thrown a trigger immediately error")
                                     pop_flag = 1
                                     break
                         if pop_flag:
