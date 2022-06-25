@@ -21,7 +21,7 @@ fee = .00036  ##binance fees for backtesting
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
 start = '01-04-22'  ##start of backtest dd/mm/yy
 end = '01-05-22'  ##end of backtest   dd/mm/yy
-TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
+TIME_INTERVAL = '15m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
 Number_Of_Trades = 1  ## allowed to open 5 positions at a time
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
@@ -284,15 +284,15 @@ for i in range(299*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
                 active_trades[k].trade_status = 1
             k += 1
 
-    if i == len(Close[0]) - 2:
-        for x in Date:
+    if i == len(Close_1min[0]) - 2:
+        for x in Date_1min:
             print(f"Data Set Finished: {x[i]}")
     if i % 1440 == 0 and i != 0:
         for j in range(len(symbol)):
             Daily_return[j].append(account_balance[j])  # (day_return/day_start_equity)
         # day_return=0
         # day_start_equity=AccountBalance
-    elif i == len(Close[0]) - 1:
+    elif i == len(Close_1min[0]) - 1:
         for j in range(len(symbol)):
             Daily_return[j].append(account_balance[j])  # (day_return/day_start_equity)
 print("\n")
