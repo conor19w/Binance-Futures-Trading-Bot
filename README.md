@@ -39,6 +39,8 @@ __Strategies are implemented in Bot_Class.py as a function named Make_decision()
 * You might draw inspiration for a strategy from one in __TradingStrats.py__
 * I recommend using the backtester first.
 ---
+![](https://github.com/conor19w/Binance-Futures-Bot/blob/main/share_2022-07-01_11_43_38_769.jpeg_2022-07-01_11_43_38.jpg)
+---
 ### YouTube Channels with Strategy Ideas:
 [__Silicon Trader__](https://www.youtube.com/channel/UCVRGsC6JVsB8F6HE_xjLyJg) | [__Trade Pro__](https://www.youtube.com/channel/UCrXjzUN6EtlyhaaAerbPfkQ) | [__Strategy Testing__](https://www.youtube.com/c/TradingStrategyTesting) | [__Trading Journal__](https://www.youtube.com/c/TradingJournal1) |  [__The Moving Average__](https://www.youtube.com/channel/UCYFQzaZyTUzY-Tiytyv3HhA)  
 ---
@@ -78,6 +80,7 @@ __Triple EMA 4hr candles__
 ---
 ![](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtest%20results%20of%202%20month%20period/tripleEMA/4hr%20candles%202%20months%20ago.png)
 ---
+
 ## To-Do list: (suggest something and I'll add it) 😃
 * GUI if people were interested (could take a while I've no experience here)
 * Data Cleaning task to run every x amount of minutes, ensuring the Live Bot hasn't lost any candles
