@@ -342,10 +342,24 @@ def get_Klines(symbol, start_str, end_str, path):
                     price_data[f'Volume_{unit}h'][-1] += price_data['Volume_1m'][-1]  ## add on volume
             except Exception as e:
                 print(f"Error in {unit}h candles should be fine just for debugging purposes, {e}")
+    ## Clean up the extra candles
     for unit in [3, 5, 15, 30]:
-        price_data[f'Open_{unit}m'].pop(-1) ## remove the last candle
-        price_data[f'High_{unit}m'].pop(-1) ## remove the last candle
-        price_data[f'Low_{unit}m'].pop(-1) ## remove the last candle
+        price_data[f'Open_{unit}m'].pop(-1)  ## remove the last candle
+        price_data[f'High_{unit}m'].pop(-1)  ## remove the last candle
+        price_data[f'Low_{unit}m'].pop(-1)  ## remove the last candle
+        price_data[f'Date_{unit}m'].pop(-1)  ## remove the last candle
+        price_data[f'Volume_{unit}m'].pop(-1)  ## remove the last candle
+        if len(price_data[f'Date_{unit}m']) < len(price_data[f'Close_{unit}m']):
+            price_data[f'Close_{unit}m'].pop(-1)  ## remove the last candle
+
+    for unit in [1, 2, 4, 6, 8, 12]:
+        price_data[f'Open_{unit}h'].pop(-1)  ## remove the last candle
+        price_data[f'High_{unit}h'].pop(-1)  ## remove the last candle
+        price_data[f'Low_{unit}h'].pop(-1)  ## remove the last candle
+        price_data[f'Date_{unit}h'].pop(-1)  ## remove the last candle
+        price_data[f'Volume_{unit}h'].pop(-1)  ## remove the last candle
+        if len(price_data[f'Date_{unit}h']) < len(price_data[f'Close_{unit}h']):
+            price_data[f'Close_{unit}h'].pop(-1)  ## remove the last candle
 
 
     try:
