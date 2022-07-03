@@ -17,12 +17,18 @@ class Bot:
     def __init__(self, symbol, Open, Close, High, Low, Volume, Date, OP, CP, index, generate_heikin_ashi, tick, batch_size, buffer,
                  backtesting=0):
         self.symbol = symbol
-        self.Date = []
-        self.Close = []
-        self.Volume = []
-        self.Open = []
-        self.High = []
-        self.Low = []
+        # self.Date = []
+        # self.Close = []
+        # self.Volume = []
+        # self.Open = []
+        # self.High = []
+        # self.Low = []
+        self.Date = Date
+        self.Close = Close
+        self.Volume = Volume
+        self.Open = Open
+        self.High = High
+        self.Low = Low
         self.OP = OP
         self.CP = CP
         self.index = index
@@ -46,8 +52,8 @@ class Bot:
         self.current_index = buffer - 1  ## buffer of candles from initialization
         self.buffer = buffer
         self.batch_number = 0
-        self.Date_batches, self.Close_batches, self.Volume_batches, self.Open_batches, self.High_batches, self.Low_batches = \
-            self.get_batches(Date, Close, Volume, Open, High, Low, buffer, batch_size)
+        # self.Date_batches, self.Close_batches, self.Volume_batches, self.Open_batches, self.High_batches, self.Low_batches = \
+        #                  self.get_batches(Date, Close, Volume, Open, High, Low, buffer, batch_size)
         self.handle_batch_data()
 
     def add_hist(self, Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp):
@@ -155,7 +161,7 @@ class Bot:
         take_profit_val = -99  # That is worked out later by adding or subtracting:
         ## Strategies found in TradingStrats.py:
         # Trade_Direction,stop_loss_val, take_profit_val = TS.StochRSIMACD(Trade_Direction, self.Close,self.High,self.Low)
-        Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close, self.High, self.Low, self.EMA8, self.EMA14, self.EMA50, self.fastk, self.fastd, Trade_Direction)
+        Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close, self.High, self.Low, self.EMA8, self.EMA14, self.EMA50, self.fastk, self.fastd, self.current_index, Trade_Direction)
         # Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMA(self.Close, self.High, self.Low, Trade_Direction)
         # Trade_Direction, stop_loss_val, take_profit_val = TS.breakout(Trade_Direction,self.Close,self.Volume,self.High, self.Low)
         # Trade_Direction,stop_loss_val,take_profit_val = TS.stochBB(Trade_Direction,self.Close, self.High, self.Low)
@@ -195,7 +201,7 @@ class Bot:
         High_batches.append(HighStream[:buffer + batch_size])
         Low_batches.append(LowStream[:buffer + batch_size])
 
-        for i in range(buffer + batch_size + 1, len(DateStream), batch_size):
+        for i in range(buffer + batch_size, len(DateStream), batch_size):
             try:
                 Date_batches.append(DateStream[i: i + batch_size])
                 Close_batches.append(CloseStream[i: i + batch_size])
@@ -213,27 +219,27 @@ class Bot:
         return Date_batches, Close_batches, Volume_batches, Open_batches, High_batches, Low_batches
 
     def handle_batch_data(self):
-        if self.batch_number == 0:
-            ##For storing OHLC data
-            self.Date = self.Date_batches[self.batch_number]
-            self.Close = self.Close_batches[self.batch_number]
-            self.Volume = self.Volume_batches[self.batch_number]
-            self.Open = self.Open_batches[self.batch_number]
-            self.High = self.High_batches[self.batch_number]
-            self.Low = self.Low_batches[self.batch_number]
-            self.batch_number += 1
-        else:
-            self.Date = self.Date[-self.buffer:] + self.Date_batches[self.batch_number]
-            self.Close = self.Close[-self.buffer:] + self.Close_batches[self.batch_number]
-            self.Volume = self.Volume[-self.buffer:] + self.Volume_batches[self.batch_number]
-            self.Open = self.Open[-self.buffer:] + self.Open_batches[self.batch_number]
-            self.High = self.High[-self.buffer:] + self.High_batches[self.batch_number]
-            self.Low = self.Low[-self.buffer:] + self.Low_batches[self.batch_number]
-            self.batch_number += 1
+        # if self.batch_number == 0:
+        #     ##For storing OHLC data
+        #     self.Date = self.Date_batches[self.batch_number]
+        #     self.Close = self.Close_batches[self.batch_number]
+        #     self.Volume = self.Volume_batches[self.batch_number]
+        #     self.Open = self.Open_batches[self.batch_number]
+        #     self.High = self.High_batches[self.batch_number]
+        #     self.Low = self.Low_batches[self.batch_number]
+        #     self.batch_number += 1
+        # else:
+        #     self.Date = self.Date[-self.buffer:] + self.Date_batches[self.batch_number]
+        #     self.Close = self.Close[-self.buffer:] + self.Close_batches[self.batch_number]
+        #     self.Volume = self.Volume[-self.buffer:] + self.Volume_batches[self.batch_number]
+        #     self.Open = self.Open[-self.buffer:] + self.Open_batches[self.batch_number]
+        #     self.High = self.High[-self.buffer:] + self.High_batches[self.batch_number]
+        #     self.Low = self.Low[-self.buffer:] + self.Low_batches[self.batch_number]
+        #     self.batch_number += 1
+        #
+        # self.current_index = self.buffer - 1  ## buffer of candles from initialization
 
-        self.current_index = self.buffer - 1  ## buffer of candles from initialization
-        # print(len(self.Close), len(self.Volume))
-        # time.sleep(2)
+
         CloseS = pd.Series(self.Close)
         HighS = pd.Series(self.High)
         LowS = pd.Series(self.Low)

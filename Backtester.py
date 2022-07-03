@@ -22,12 +22,12 @@ fee = .00036  ##binance fees for backtesting
 start = '01-01-22'  ##start of backtest dd/mm/yy
 end = '17-06-22'  ##end of backtest   dd/mm/yy
 TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
-Number_Of_Trades = 1  ## allowed to open 5 positions at a time
+Number_Of_Trades = 5  ## allowed to open 5 positions at a time
 use_trailing_stop = 0  ##flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_callback = .005  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
 ## Data Flow variables:
-batch_size = 1000  ## How much data to load into bot Models at a time, its ram dependant the larger the number you pick the quicker a backtest.
+batch_size = 5000  ## (NOT IN USE) How much data to load into bot Models at a time, its ram dependant the larger the number you pick the quicker a backtest.
                    ## But you may run out of ram if this number is too large + Backtest is also over a long period of time + A lot of coins.
 buffer = 300  ## buffer of candles to give the bot
 
@@ -35,13 +35,13 @@ printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
 Trade_All_Symbols = False
 Trade_Each_Coin_With_Separate_Accounts = False  ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
-only_show_profitable_coins = False  ## only works with Flag 'Trade_Each_Coin_With_Separate_Accounts' = True
+only_show_profitable_coins = True  ## only works with Flag 'Trade_Each_Coin_With_Separate_Accounts' = True
 plot_graphs_to_folder = False  ## If trading each coin with isolated balances we can create plots in the specified folder below
 plot_strategy_name = 'tripleEMAStochasticRSIATR'
 graph_folder_location = 'C://Users//conor//Desktop//graphs//'
 path = f'{graph_folder_location}{plot_strategy_name}_{start}_{end}//'  ## where you want to store the graphs
 
-symbol = ['ETHUSDT']#, 'BTCUSDT']  #['ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
+symbol = ['ETHUSDT']#, 'BTCUSDT', 'ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
           #'CTSIUSDT','ICPUSDT','KNCUSDT','LINAUSDT','RAYUSDT']  #, 'COTIUSDT', 'ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 print_to_csv = False
 csv_name = 'myFile.csv'
@@ -106,8 +106,9 @@ TIME_INTERVAL = Helper.get_TIME_INTERVAL(TIME_INTERVAL)  ##Convert string to an 
 if len(Open[0]) < 300:
     print("Not Enough Candles Increase the period over which you are running a backtest")
     time.sleep(20)
-
-for k in range(len(symbol)):
+k = 0
+index = 0
+while k < len(Open):
     Coin_precision_temp = -99
     Order_precision_temp = -99
     tick_temp = -99
@@ -121,14 +122,21 @@ for k in range(len(symbol)):
             flag = 1
             break
     Bots.append(Bot(symbol[k], Open[k], Close[k], High[k], Low[k], Volume[k], Date[k],
-            Order_precision_temp, Coin_precision_temp, k, generate_heikin_ashi, tick_temp, batch_size, buffer, 1))
+            Order_precision_temp, Coin_precision_temp, index, generate_heikin_ashi, tick_temp, batch_size, buffer, 1))
     Bots[k].add_hist([], [], [], [], [], [])
+    Open.pop(k)
+    Close.pop(k)
+    High.pop(k)
+    Low.pop(k)
+    Volume.pop(k)
+    Date.pop(k)
+    index += 1
 tradeNO = 0  ##number of trades
 active_trades: [Trade] = []
 new_trades = []
 if printing_on:
     print("Account Balance: ", account_balance[0])
-for i in range(299*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
+for i in range(TIME_INTERVAL * (buffer - 1), len(Close_1min[0]) - 1):
     if account_balance[0] < 0 and not Trade_Each_Coin_With_Separate_Accounts:
         if printing_on:
             print("Negative Balance")
@@ -136,10 +144,10 @@ for i in range(299*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
     ##give each coin next piece of data
     if i % TIME_INTERVAL == 0 or TIME_INTERVAL == 1:
         for k in range(len(symbol)):
-            Bots[k].current_index += 1
-            if Bots[k].current_index == len(Bots[k].Close):
-                ##Get next batch of data
-                Bots[k].handle_batch_data()
+            Bots[k].current_index = int(i / TIME_INTERVAL) - 1
+            #if Bots[k].current_index == len(Bots[k].Close):
+                #Get next batch of data
+                #Bots[k].handle_batch_data()
 
         for k in range(len(Bots)):
             trade_flag = 0
@@ -156,7 +164,7 @@ for i in range(299*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
         new_trades = []
         ##Sort out new trades to be opened
     while len(new_trades) > 0 and len(active_trades) < Number_Of_Trades:
-        [index, [trade_direction, stop_loss, take_profit]] = new_trades.pop(0)
+        [index, [trade_direction, stop_loss_margin, take_profit_margin]] = new_trades.pop(0)
         order_qty = 0
         entry_price = 0
         if Trade_Each_Coin_With_Separate_Accounts:
@@ -167,19 +175,19 @@ for i in range(299*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
         else:
             Order_Notional = account_balance[0] * leverage * order_Size
             order_qty, entry_price, account_balance[0] = Helper.open_trade(Bots[index].symbol, Order_Notional,
-                                                                               account_balance[0],
-                                                                               Open_1min[index][i],
-                                                                               fee, Bots[index].OP)
+                                                                           account_balance[0],
+                                                                           Open_1min[index][i],
+                                                                           fee, Bots[index].OP)
 
         take_profit_val = -99
         stop_loss_val = -99
         ## Calculate the prices for TP and SL
         if trade_direction == 1:
-            take_profit_val = take_profit + entry_price
-            stop_loss_val = entry_price - stop_loss
+            take_profit_val = take_profit_margin + entry_price
+            stop_loss_val = entry_price - stop_loss_margin
         elif trade_direction == 0:
-            take_profit_val = entry_price - take_profit
-            stop_loss_val = entry_price + stop_loss
+            take_profit_val = entry_price - take_profit_margin
+            stop_loss_val = entry_price + stop_loss_margin
 
         ## Round to the coins specific coin precision
         if Bots[index].CP == 0:
@@ -219,9 +227,11 @@ for i in range(299*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
         ##Check if TP Hit
         if t.trade_status == 1:
             if Trade_Each_Coin_With_Separate_Accounts:
-                t, account_balance[t.index] = Helper.check_TP(t, account_balance[t.index], High_1min[t.index][i], Low_1min[t.index][i], fee, use_trailing_stop, trailing_stop_callback, Bots[t.index].CP)
+                t, account_balance[t.index] = \
+                    Helper.check_TP(t, account_balance[t.index], High_1min[t.index][i], Low_1min[t.index][i], fee, use_trailing_stop, trailing_stop_callback, Bots[t.index].CP)
             else:
-                t, account_balance[0] = Helper.check_TP(t, account_balance[0], High_1min[t.index][i], Low_1min[t.index][i], fee, use_trailing_stop, trailing_stop_callback, Bots[t.index].CP)
+                t, account_balance[0] = \
+                    Helper.check_TP(t, account_balance[0], High_1min[t.index][i], Low_1min[t.index][i], fee, use_trailing_stop, trailing_stop_callback, Bots[t.index].CP)
             if t.trade_status != 1:
                 change_occurred = True
         if Bots[t.index].use_close_pos and t.trade_status == 1 and (i % TIME_INTERVAL == 0 or TIME_INTERVAL == 1):
@@ -242,7 +252,7 @@ for i in range(299*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
     if printing_on:
         trade_price = []
         for t in active_trades:
-            trade_price.append(Bots[t.index].Close[-1])
+            trade_price.append(Bots[t.index].Close[Bots[t.index].current_index])
         if Trade_Each_Coin_With_Separate_Accounts:
             pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][i],
                                                                               account_balance, change_occurred, print_to_csv, csv_name)

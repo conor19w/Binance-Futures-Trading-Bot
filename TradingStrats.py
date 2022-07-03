@@ -548,17 +548,17 @@ def heikin_ashi_ema(CloseStream, OpenStream_H, CloseStream_H, Trade_Direction, s
     return Trade_Direction, stoplossval, takeprofitval, Close_pos
 
 
-def tripleEMAStochasticRSIATR(Close, High, Low, EMA8, EMA14, EMA50, fastk, fastd, Trade_Direction):
+def tripleEMAStochasticRSIATR(Close, High, Low, EMA8, EMA14, EMA50, fastk, fastd, current_index, Trade_Direction):
     stoplossval, takeprofitval = -99, -99
     ##buy signal
-    if (Close[-1] > EMA8[-1] > EMA14[-1] > EMA50[-1]) and (
-            (fastk[-1] > fastd[-1]) and (fastk[-2] < fastd[-2])):  # and (fastk[-1]<80 and fastd[-1]<80):
+    if (Close[current_index] > EMA8[current_index] > EMA14[current_index] > EMA50[current_index]) and (
+            (fastk[current_index] > fastd[current_index]) and (fastk[current_index - 1] < fastd[current_index - 1])):  # and (fastk[-1]<80 and fastd[-1]<80):
         Trade_Direction = 1
-        stoplossval, takeprofitval = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, Type=7)
-    elif (Close[-1] < EMA8[-1] < EMA14[-1] < EMA50[-1]) and (
-            (fastk[-1] < fastd[-1]) and (fastk[-2] > fastd[-2])):  # and (fastk[-1]>20 and fastd[-1]>20):
+        stoplossval, takeprofitval = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, current_index, Type=7)
+    elif (Close[current_index] < EMA8[current_index] < EMA14[current_index] < EMA50[current_index]) and (
+            (fastk[current_index] < fastd[current_index]) and (fastk[current_index - 1] > fastd[current_index - 1])):  # and (fastk[-1]>20 and fastd[-1]>20):
         Trade_Direction = 0
-        stoplossval, takeprofitval = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, Type=7)
+        stoplossval, takeprofitval = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, current_index, Type=7)
 
     return Trade_Direction, stoplossval, takeprofitval
 
@@ -811,7 +811,7 @@ def pairTrading_Crossover(Trade_Direction, Close1, Close2, CurrentPos, percent_S
 
 
 ##Function used to decide stoploss values and takeprofit values based off a type variable returned by specific strategies above
-def SetSLTP(stoplossval, takeprofitval, CloseStream, HighStream, LowStream, Trade_Direction, Type, SL=1, TP=1):
+def SetSLTP(stoplossval, takeprofitval, CloseStream, HighStream, LowStream, Trade_Direction, current_index, Type, SL=1, TP=1):
     ##Average True Range with multipliers
     if Type == 1:
         ATR = np.array(average_true_range(pd.Series(HighStream), pd.Series(LowStream), pd.Series(CloseStream)))
@@ -947,8 +947,8 @@ def SetSLTP(stoplossval, takeprofitval, CloseStream, HighStream, LowStream, Trad
             takeprofitval = 3 * abs(ATR[-1])
 
     elif Type == 7:
-        stoplossval = .02 * CloseStream[-1]
-        takeprofitval = .02 * CloseStream[-1]
+        stoplossval = .02 * CloseStream[current_index]
+        takeprofitval = .02 * CloseStream[current_index]
 
     elif Type == 8:
         ATR = np.array(
