@@ -19,24 +19,29 @@ fee = .00036  ##binance fees for backtesting
 
 
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
-start = '01-04-22'  ##start of backtest dd/mm/yy
-end = '01-05-22'  ##end of backtest   dd/mm/yy
-TIME_INTERVAL = '15m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
+start = '01-01-22'  ##start of backtest dd/mm/yy
+end = '17-06-22'  ##end of backtest   dd/mm/yy
+TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
 Number_Of_Trades = 1  ## allowed to open 5 positions at a time
+use_trailing_stop = 0  ##flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
+trailing_stop_callback = .005  ## 1% trailing stop activated by hitting the takeprofitval for a coin
+
+## Data Flow variables:
+batch_size = 1000  ## How much data to load into bot Models at a time, its ram dependant the larger the number you pick the quicker a backtest.
+                   ## But you may run out of ram if this number is too large + Backtest is also over a long period of time + A lot of coins.
+buffer = 300  ## buffer of candles to give the bot
+
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
-Trade_All_Symbols = True
-Trade_Each_Coin_With_Separate_Accounts = True  ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
-only_show_profitable_coins = True  ## only works with Flag 'Trade_Each_Coin_With_Separate_Accounts' = True
+Trade_All_Symbols = False
+Trade_Each_Coin_With_Separate_Accounts = False  ## If True we will trade all coins with separate balances, to evaluate whether the strategy works on each coin individually
+only_show_profitable_coins = False  ## only works with Flag 'Trade_Each_Coin_With_Separate_Accounts' = True
 plot_graphs_to_folder = False  ## If trading each coin with isolated balances we can create plots in the specified folder below
 plot_strategy_name = 'tripleEMAStochasticRSIATR'
 graph_folder_location = 'C://Users//conor//Desktop//graphs//'
 path = f'{graph_folder_location}{plot_strategy_name}_{start}_{end}//'  ## where you want to store the graphs
 
-use_trailing_stop = 0  ##flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
-trailing_stop_callback = .005  ## 1% trailing stop activated by hitting the takeprofitval for a coin
-
-symbol = ['ETHUSDT', 'BTCUSDT']  #['ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
+symbol = ['ETHUSDT']#, 'BTCUSDT']  #['ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
           #'CTSIUSDT','ICPUSDT','KNCUSDT','LINAUSDT','RAYUSDT']  #, 'COTIUSDT', 'ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 print_to_csv = False
 csv_name = 'myFile.csv'
@@ -115,8 +120,8 @@ for k in range(len(symbol)):
             min_price_temp = float(x[4])
             flag = 1
             break
-    Bots.append(Bot(symbol[k], Open[k][:300], Close[k][:300], High[k][:300], Low[k][:300], Volume[k][:300], Date[k][:300],
-            Order_precision_temp, Coin_precision_temp, k, generate_heikin_ashi, tick_temp, 1))
+    Bots.append(Bot(symbol[k], Open[k], Close[k], High[k], Low[k], Volume[k], Date[k],
+            Order_precision_temp, Coin_precision_temp, k, generate_heikin_ashi, tick_temp, batch_size, buffer, 1))
     Bots[k].add_hist([], [], [], [], [], [])
 tradeNO = 0  ##number of trades
 active_trades: [Trade] = []
@@ -131,12 +136,10 @@ for i in range(299*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
     ##give each coin next piece of data
     if i % TIME_INTERVAL == 0 or TIME_INTERVAL == 1:
         for k in range(len(symbol)):
-            Bots[k].handle_socket_message(-99, Date[k][int(i / TIME_INTERVAL) - 1],
-                                          float(Close[k][int(i / TIME_INTERVAL) - 1]),
-                                          float(Volume[k][int(i / TIME_INTERVAL) - 1]),
-                                          float(Open[k][int(i / TIME_INTERVAL) - 1]),
-                                          float(High[k][int(i / TIME_INTERVAL) - 1]),
-                                          float(Low[k][int(i / TIME_INTERVAL) - 1]))
+            Bots[k].current_index += 1
+            if Bots[k].current_index == len(Bots[k].Close):
+                ##Get next batch of data
+                Bots[k].handle_batch_data()
 
         for k in range(len(Bots)):
             trade_flag = 0
