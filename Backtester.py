@@ -32,7 +32,7 @@ plot_graphs_to_folder = False  ## If trading each coin with isolated balances we
 plot_strategy_name = 'tripleEMAStochasticRSIATR'
 graph_folder_location = 'C://Users//conor//Desktop//graphs//'
 path = f'{graph_folder_location}{plot_strategy_name}_{start}_{end}//'  ## where you want to store the graphs
-
+buffer = 300 ## buffer of candle sticks
 use_trailing_stop = 0  ##flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_callback = .005  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
@@ -115,7 +115,7 @@ for k in range(len(symbol)):
             min_price_temp = float(x[4])
             flag = 1
             break
-    Bots.append(Bot(symbol[k], Open[k][:300], Close[k][:300], High[k][:300], Low[k][:300], Volume[k][:300], Date[k][:300],
+    Bots.append(Bot(symbol[k], Open[k][:buffer], Close[k][:buffer], High[k][:buffer], Low[k][:buffer], Volume[k][:buffer], Date[k][:buffer],
             Order_precision_temp, Coin_precision_temp, k, generate_heikin_ashi, tick_temp, 1))
     Bots[k].add_hist([], [], [], [], [], [])
 tradeNO = 0  ##number of trades
@@ -123,7 +123,7 @@ active_trades: [Trade] = []
 new_trades = []
 if printing_on:
     print("Account Balance: ", account_balance[0])
-for i in range(299*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
+for i in range(buffer*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
     if account_balance[0] < 0 and not Trade_Each_Coin_With_Separate_Accounts:
         if printing_on:
             print("Negative Balance")
