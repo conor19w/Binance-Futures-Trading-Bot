@@ -1,5 +1,4 @@
 # Binance-Futures-Trading-Bot [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
----
 ## Technical Analysis driven Crypto Trading bot on Binance Futures 📈 ₿ 🚀 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin)
 [__Join My public Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
 * Create a [Binance Account](https://accounts.binance.com/en/register?ref=BKR8BMMP) (This link uses my referral which gives you 5% kickback on trades & would be greatly appreciated)
@@ -20,7 +19,6 @@ or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 ---
 
 ### Run strategies live on Binance from __Live_Bot.py__
----
 __Run strategies at your own risk I am not responsible for your trading decisions, futures are risky and proper risk management should be adhered to at all times, always have a stoploss__
 ---
 __There is no set strategy, You can select one by uncommenting it in make_Decision() inside Bot_Class.py , These Strategies are from Trading_Strats.py and should be backtested thoroughly/ Altered to make more profitable__
@@ -41,15 +39,6 @@ docker build --tag Live_Bot
 docker run -it --cpuset-cpus="0-5" Live_Bot
 ```
 ---
-__Docker container creation__ (Recommended for anyone having issues running the bot):
-* Navigate to the project directory in your terminal window
-* Run the following Command this will create a docker image with the current state of your Config.py and choice of strategy in Bot_Class.py:
-* --cpuset-cpu="0-5" will be different for each machine, you should get a prompt with your correct number of cores
-```shell
-docker build --tag Live_Bot
-docker run -it --cpuset-cpus="0-5" Live_Bot
-```
----
 #### Creating Custom Strategies:
 __Strategies are implemented in Bot_Class.py as a function named Make_decision() in the Bot class__
 * ```Make_decision()``` must return ```Trade_Direction, stop_loss_val, take_profit_val``` for the strategy to work properly
@@ -60,7 +49,6 @@ __Strategies are implemented in Bot_Class.py as a function named Make_decision()
 [__Silicon Trader__](https://www.youtube.com/channel/UCVRGsC6JVsB8F6HE_xjLyJg) | [__Trade Pro__](https://www.youtube.com/channel/UCrXjzUN6EtlyhaaAerbPfkQ) | [__Strategy Testing__](https://www.youtube.com/c/TradingStrategyTesting) | [__Trading Journal__](https://www.youtube.com/c/TradingJournal1) |  [__The Moving Average__](https://www.youtube.com/channel/UCYFQzaZyTUzY-Tiytyv3HhA)  
 ---
 ### Back test strategies in [Backtester.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/Backtester.py)
----
 * Create a 'price_data' folder on the desktop and change the path variable in Helper.py to suit your machine. Data pulled from Binance will be stored in this folder and automatically loaded from memory in future.
 * Create a list named 'symbol' of coin/coins you wish to run a strategy on ie. ```symbol = ['BTCUSDT' , 'ETHUSDT']``` , this would run your strategy on BTC and ETH.
 Whereas ```symbol = ['BTCUSDT']``` would run the strategy on BTC only.
@@ -78,7 +66,6 @@ will throw an error if the file already exists.
 * Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this join & I'll get in touch to get you set up 😃
 ---
 ### __Back Test top performers:__
----
 __Not indicative of future returns__
 * Check out the other backtests although results were poor on some that was due to transaction fees in many cases so maybe altering to take less trades or add confirmation could work.
 * All of the strategies can be improved on but this is just a good place to start.
@@ -114,7 +101,6 @@ from the 1m candles so if you run a backtest over a period you will now have dat
 * Added a check that removes trades that the user manually closed by the user. (15/04/22)
 ---
 ## Binance Setup
----
 * Create a [Binance Account](https://accounts.binance.com/en/register?ref=BKR8BMMP) (This link uses my referral which gives you 5% kickback on trades & would be greatly appreciated)
 * __Enable Two-factor Authentication in the security section to keep your crypto safe.__
 * Create a new API key under the API Management section.
