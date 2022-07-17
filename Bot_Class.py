@@ -11,16 +11,24 @@ from ta.trend import stc
 import numpy as np
 import pandas as pd
 import TradingStrats as TS
+
+
 class Bot:
-    def __init__(self, symbol, Open, Close, High, Low, Volume, Date, OP, CP, index, generate_heikin_ashi, tick,
+    def __init__(self, symbol, Open, Close, High, Low, Volume, Date, OP, CP, index, generate_heikin_ashi, tick, batch_size, buffer,
                  backtesting=0):
         self.symbol = symbol
-        self.Open = Open
+        # self.Date = []
+        # self.Close = []
+        # self.Volume = []
+        # self.Open = []
+        # self.High = []
+        # self.Low = []
+        self.Date = Date
         self.Close = Close
+        self.Volume = Volume
+        self.Open = Open
         self.High = High
         self.Low = Low
-        self.Volume = Volume
-        self.Date = Date
         self.OP = OP
         self.CP = CP
         self.index = index
@@ -35,6 +43,18 @@ class Bot:
         self.socket_failed = False
         self.backtesting = backtesting
         self.use_close_pos = False
+        self.EMA8 = []
+        self.EMA14 = []
+        self.EMA50 = []
+        self.fastk = []
+        self.fastd = []
+        self.batch_size = batch_size
+        self.current_index = buffer - 1  ## buffer of candles from initialization
+        self.buffer = buffer
+        self.batch_number = 0
+        # self.Date_batches, self.Close_batches, self.Volume_batches, self.Open_batches, self.High_batches, self.Low_batches = \
+        #                  self.get_batches(Date, Close, Volume, Open, High, Low, buffer, batch_size)
+        self.handle_batch_data()
 
     def add_hist(self, Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp):
         if not self.backtesting:
@@ -72,7 +92,7 @@ class Bot:
                     self.High_H.append(max(self.High[i], self.Open_H[i], self.Close_H[i]))
                     self.Low_H.append(min(self.Low[i], self.Open_H[i], self.Close_H[i]))
         self.add_hist_complete = 1
-        #for i in range(len(self.Date)):
+        # for i in range(len(self.Date)):
         #    print(f"Date: {self.Date[i]}, Open_H: {self.Open_H[i]}, Close_H: {self.Close_H[i]}, High_H: {self.High_H[i]}, Low_H: {self.Low_H[i]}")
 
     def handle_socket_message(self, Data, Date=0, Close=0, Volume=0, Open=0, High=0, Low=0):
@@ -141,20 +161,20 @@ class Bot:
         take_profit_val = -99  # That is worked out later by adding or subtracting:
         ## Strategies found in TradingStrats.py:
         # Trade_Direction,stop_loss_val, take_profit_val = TS.StochRSIMACD(Trade_Direction, self.Close,self.High,self.Low)
-        Trade_Direction,stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close,self.High,self.Low,Trade_Direction)
+        Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close, self.High, self.Low, self.EMA8, self.EMA14, self.EMA50, self.fastk, self.fastd, self.current_index, Trade_Direction)
         # Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMA(self.Close, self.High, self.Low, Trade_Direction)
         # Trade_Direction, stop_loss_val, take_profit_val = TS.breakout(Trade_Direction,self.Close,self.Volume,self.High, self.Low)
         # Trade_Direction,stop_loss_val,take_profit_val = TS.stochBB(Trade_Direction,self.Close, self.High, self.Low)
         # Trade_Direction, stop_loss_val, take_profit_val = TS.goldenCross(Trade_Direction,self.Close, self.High, self.Low)
         # Trade_Direction , stop_loss_val, take_profit_val = TS.candle_wick(Trade_Direction,self.Close,self.Open,self.High,self.Low)
         # Trade_Direction,stop_loss_val,take_profit_val = TS.fibMACD(Trade_Direction, self.Close, self.Open,self.High,self.Low)
-        #Trade_Direction, stop_loss_val, take_profit_val = TS.EMA_cross(Trade_Direction, self.Close, self.High, self.Low)
+        # Trade_Direction, stop_loss_val, take_profit_val = TS.EMA_cross(Trade_Direction, self.Close, self.High, self.Low)
 
         ## need to set self.use_close_pos = True if you want to use the close position on condition functionality of the strategies below
         ##  And also need to uncomment the corresponding strategy below in check_close_pos()
-        #self.use_close_pos = True
+        # self.use_close_pos = True
         # Trade_Direction, stop_loss_val, take_profit_val, _ = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stop_loss_val, take_profit_val, -99, 0)
-        #Trade_Direction,stop_loss_val,take_profit_val,_ = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stop_loss_val,take_profit_val, -99, 0)
+        # Trade_Direction,stop_loss_val,take_profit_val,_ = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stop_loss_val,take_profit_val, -99, 0)
         return Trade_Direction, stop_loss_val, take_profit_val
 
     def check_close_pos(self, current_pos):
@@ -163,6 +183,69 @@ class Bot:
         Trade_Direction = -99  ## Short (0), Long (1)
         stop_loss_val = -99  ##the margin of increase/decrease that would stop us out/ be our take profit, NOT the price target.
         take_profit_val = -99  # That is worked out later by adding or subtracting:
-        #_, _, _, close_pos = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stop_loss_val, take_profit_val, current_pos, 0)
-        #_,_,_,close_pos = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stop_loss_val,take_profit_val, current_pos, 0)
+        # _, _, _, close_pos = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stop_loss_val, take_profit_val, current_pos, 0)
+        # _,_,_,close_pos = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stop_loss_val,take_profit_val, current_pos, 0)
         return close_pos
+
+    def get_batches(self, DateStream, CloseStream, VolumeStream, OpenStream, HighStream, LowStream, buffer, batch_size):
+        Date_batches = []
+        Close_batches = []
+        Volume_batches = []
+        Open_batches = []
+        High_batches = []
+        Low_batches = []
+        Date_batches.append(DateStream[:buffer + batch_size])
+        Close_batches.append(CloseStream[:buffer + batch_size])
+        Volume_batches.append(VolumeStream[:buffer + batch_size])
+        Open_batches.append(OpenStream[:buffer + batch_size])
+        High_batches.append(HighStream[:buffer + batch_size])
+        Low_batches.append(LowStream[:buffer + batch_size])
+
+        for i in range(buffer + batch_size, len(DateStream), batch_size):
+            try:
+                Date_batches.append(DateStream[i: i + batch_size])
+                Close_batches.append(CloseStream[i: i + batch_size])
+                Volume_batches.append(VolumeStream[i: i + batch_size])
+                Open_batches.append(OpenStream[i: i + batch_size])
+                High_batches.append(HighStream[i: i + batch_size])
+                Low_batches.append(LowStream[i: i + batch_size])
+            except:
+                Date_batches.append(DateStream[i:])
+                Close_batches.append(CloseStream[i:])
+                Volume_batches.append(VolumeStream[i:])
+                Open_batches.append(OpenStream[i:])
+                High_batches.append(HighStream[i:])
+                Low_batches.append(LowStream[i:])
+        return Date_batches, Close_batches, Volume_batches, Open_batches, High_batches, Low_batches
+
+    def handle_batch_data(self):
+        # if self.batch_number == 0:
+        #     ##For storing OHLC data
+        #     self.Date = self.Date_batches[self.batch_number]
+        #     self.Close = self.Close_batches[self.batch_number]
+        #     self.Volume = self.Volume_batches[self.batch_number]
+        #     self.Open = self.Open_batches[self.batch_number]
+        #     self.High = self.High_batches[self.batch_number]
+        #     self.Low = self.Low_batches[self.batch_number]
+        #     self.batch_number += 1
+        # else:
+        #     self.Date = self.Date[-self.buffer:] + self.Date_batches[self.batch_number]
+        #     self.Close = self.Close[-self.buffer:] + self.Close_batches[self.batch_number]
+        #     self.Volume = self.Volume[-self.buffer:] + self.Volume_batches[self.batch_number]
+        #     self.Open = self.Open[-self.buffer:] + self.Open_batches[self.batch_number]
+        #     self.High = self.High[-self.buffer:] + self.High_batches[self.batch_number]
+        #     self.Low = self.Low[-self.buffer:] + self.Low_batches[self.batch_number]
+        #     self.batch_number += 1
+        #
+        # self.current_index = self.buffer - 1  ## buffer of candles from initialization
+
+
+        CloseS = pd.Series(self.Close)
+        HighS = pd.Series(self.High)
+        LowS = pd.Series(self.Low)
+        VolumeS = pd.Series(self.Volume)
+        self.EMA50 = np.array(ema_indicator(CloseS, window=50))
+        self.EMA14 = np.array(ema_indicator(CloseS, window=14))
+        self.EMA8 = np.array(ema_indicator(CloseS, window=8))
+        self.fastd = np.array(stochrsi_d(CloseS))
+        self.fastk = np.array(stochrsi_k(CloseS))

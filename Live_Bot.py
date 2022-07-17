@@ -12,6 +12,7 @@ import time
 import Bot_Class
 from Helper import Trade_Manager, get_historical, Trade, Trade_Stats, Data_Handler
 from Config_File import *
+from Config_File import symbol  #explicitly importing to remove a warning
 
 streams = []  ##store streams allowing the option to start and stop streams if needed
 new_candle_flag = 0

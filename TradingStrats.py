@@ -883,7 +883,7 @@ def SetSLTP(stoplossval, takeprofitval,CloseStream,HighStream,LowStream,Trade_Di
             takeprofitval = 3 * abs(ATR[-1])
 
     elif Type==7:
-        stoplossval = .02*CloseStream[-1]
+        stoplossval = .03*CloseStream[-1]
         takeprofitval = .02*CloseStream[-1]
 
     elif Type==8:
