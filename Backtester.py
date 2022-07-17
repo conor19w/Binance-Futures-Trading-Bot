@@ -20,9 +20,9 @@ fee = .00036  ##binance fees for backtesting
 
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
 start = '01-01-22'  ##start of backtest dd/mm/yy
-end = '17-06-22'  ##end of backtest   dd/mm/yy
-TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
-Number_Of_Trades = 1  ## allowed to open 5 positions at a time
+end = '01-02-22'  ##end of backtest   dd/mm/yy
+TIME_INTERVAL = '1h'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
+Number_Of_Trades = 10  ## allowed to open 5 positions at a time
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
 Trade_All_Symbols = False
@@ -36,7 +36,7 @@ buffer = 300 ## buffer of candle sticks
 use_trailing_stop = 0  ##flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_callback = .005  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
-symbol = ['ETHUSDT']#, 'BTCUSDT']  #['ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
+symbol = ['BTCUSDT']#, 'BTCUSDT', 'ADAUSDT', 'BNBUSDT', 'XRPUSDT', 'PEOPLEUSDT', 'NEARUSDT', 'DOGEUSDT', '1000SHIBUSDT']#, 'BTCUSDT']  #['ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
           #'CTSIUSDT','ICPUSDT','KNCUSDT','LINAUSDT','RAYUSDT']  #, 'COTIUSDT', 'ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 print_to_csv = False
 csv_name = 'myFile.csv'
@@ -123,20 +123,29 @@ active_trades: [Trade] = []
 new_trades = []
 if printing_on:
     print("Account Balance: ", account_balance[0])
-for i in range(buffer*TIME_INTERVAL+1, len(Close_1min[0]) - 1):
+for i in range((buffer - 1)*TIME_INTERVAL, len(Close_1min[0]) - 1):
     if account_balance[0] < 0 and not Trade_Each_Coin_With_Separate_Accounts:
         if printing_on:
             print("Negative Balance")
         break
     ##give each coin next piece of data
-    if i % TIME_INTERVAL == 0 or TIME_INTERVAL == 1:
+    if (i + 1) % TIME_INTERVAL == 0 or TIME_INTERVAL == 1:
         for k in range(len(symbol)):
-            Bots[k].handle_socket_message(-99, Date[k][int(i / TIME_INTERVAL) - 1],
-                                          float(Close[k][int(i / TIME_INTERVAL) - 1]),
-                                          float(Volume[k][int(i / TIME_INTERVAL) - 1]),
-                                          float(Open[k][int(i / TIME_INTERVAL) - 1]),
-                                          float(High[k][int(i / TIME_INTERVAL) - 1]),
-                                          float(Low[k][int(i / TIME_INTERVAL) - 1]))
+            try:
+                Bots[k].handle_socket_message(-99, Date[k][int(i / TIME_INTERVAL)],
+                                              float(Close[k][int(i / TIME_INTERVAL)]),
+                                              float(Volume[k][int(i / TIME_INTERVAL)]),
+                                              float(Open[k][int(i / TIME_INTERVAL)]),
+                                              float(High[k][int(i / TIME_INTERVAL)]),
+                                              float(Low[k][int(i / TIME_INTERVAL)]))
+                ## Checking the validity of the candles, ensuring proper alignment
+                print(Close_1min[k][i] == Close[k][int(i / TIME_INTERVAL)])
+                # print(str(High[k][int(i / TIME_INTERVAL)]) in [str(High_1min[k][i]),str(High_1min[k][i-1]),str(High_1min[k][i-2]),str(High_1min[k][i-3]),str(High_1min[k][i-4])])
+                # print(str(Low[k][int(i / TIME_INTERVAL)]) in [str(Low_1min[k][i]), str(Low_1min[k][i - 1]), str(Low_1min[k][i - 2]),
+                #       str(Low_1min[k][i - 3]), str(Low_1min[k][i - 4])])
+                print(str(Date_1min[k][i]) == str(Date[k][int(i / TIME_INTERVAL)]))
+            except:
+                pass
 
         for k in range(len(Bots)):
             trade_flag = 0
