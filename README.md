@@ -33,13 +33,20 @@ __There is no set strategy, You can select one by uncommenting it in make_Decisi
 * To close a trade based off a condition check_close_pos() must return a close_pos flag, and you must ensure ```self.use_close_pos = True``` in Bot_Class also.
 * Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this join & I'll get in touch to get you set up 😃
 ---
+__Docker container creation__ (Recommended for anyone having issues running the bot):
+* Navigate to the project directory in your terminal window
+* Run the following Command this will create a docker image with the current state of your Config.py and choice of strategy in Bot_Class.py:
+* --cpuset-cpu="0-5" will be different for each machine, you should get a prompt with your correct number of cores
+```shell
+docker build --tag Live_Bot
+docker run -it --cpuset-cpus="0-5" Live_Bot
+```
+---
 #### Creating Custom Strategies:
 __Strategies are implemented in Bot_Class.py as a function named Make_decision() in the Bot class__
 * ```Make_decision()``` must return ```Trade_Direction, stop_loss_val, take_profit_val``` for the strategy to work properly
 * You might draw inspiration for a strategy from one in __TradingStrats.py__
 * I recommend using the backtester first.
----
-![](https://github.com/conor19w/Binance-Futures-Bot/blob/main/share_2022-07-01_11_43_38_769.jpeg_2022-07-01_11_43_38.jpg)
 ---
 ### YouTube Channels with Strategy Ideas:
 [__Silicon Trader__](https://www.youtube.com/channel/UCVRGsC6JVsB8F6HE_xjLyJg) | [__Trade Pro__](https://www.youtube.com/channel/UCrXjzUN6EtlyhaaAerbPfkQ) | [__Strategy Testing__](https://www.youtube.com/c/TradingStrategyTesting) | [__Trading Journal__](https://www.youtube.com/c/TradingJournal1) |  [__The Moving Average__](https://www.youtube.com/channel/UCYFQzaZyTUzY-Tiytyv3HhA)  
