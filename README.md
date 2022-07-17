@@ -31,7 +31,6 @@ __There is no set strategy, You can select one by uncommenting it in make_Decisi
 * symbol[] is a list of the symbols you wish to trade, the default is all the coins on the exchange currently.
 * __Trailing stop: set ```use_trailing_stop = 1``` and change ```trailing_stop_percent``` to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e. 5%). The trailing stop will be placed when the take profit value margin of increase/decrease is reached from your strategy__.
 * To close a trade based off a condition check_close_pos() must return a close_pos flag, and you must ensure ```self.use_close_pos = True``` in Bot_Class also.
-* Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this join & I'll get in touch to get you set up 😃
 ---
 __Docker container creation__ (Recommended for anyone having issues running the bot):
 * Navigate to the project directory in your terminal window
@@ -111,7 +110,7 @@ from the 1m candles so if you run a backtest over a period you will now have dat
 * __Enable Two-factor Authentication in the security section to keep your crypto safe.__
 * Create a new API key under the API Management section.
 *  [✓] Read Info [✓] Enable Trading [✓] Enable Futures [X] Enable Withdrawals
-* Whitelist your IP address to further secure your account, and so that your API keys don't expire after 1 month.
+* Whitelist your IP address to further secure your account, and so that your API keys don't expire after 3 months.
 * Fill in your api keys into api_secret and api_key in __Config_File.py__
 * [Set up windows to sync time once a day](https://www.makeuseof.com/tag/synchronise-computer-time-internet-custom-schedule-windows-7/#:~:text=Go%20to%20%3E%20Start%20and%20type,on%20the%20right%20hand%20side) if you don't do this binance will eventually reject orders with a timestamp error.
 ---
