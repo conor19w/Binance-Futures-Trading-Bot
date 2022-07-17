@@ -33,11 +33,12 @@ __There is no set strategy, You can select one by uncommenting it in make_Decisi
 __Docker container creation__ (Recommended for anyone having issues running the bot):
 * Navigate to the project directory in your terminal window
 * Run the following Command this will create a docker image with the current state of your Config.py and choice of strategy in Bot_Class.py:
-* --cpuset-cpu="0-5" will be different for each machine, you should get a prompt with your correct number of cores
 ```shell
 docker build --tag Live_Bot
 docker run -it --cpuset-cpus="0-5" Live_Bot
-```
+``` 
+- Note: --cpuset-cpu="0-5" will be different for each machine, you should get a prompt with your correct number of cores
+---
 ---
 #### Creating Custom Strategies:
 __Strategies are implemented in Bot_Class.py as a function named Make_decision() in the Bot class__
