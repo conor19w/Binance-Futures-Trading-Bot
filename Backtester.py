@@ -19,9 +19,9 @@ fee = .00036  ##binance fees for backtesting
 
 
 ## WHEN PICKING START AND END ENSURE YOU HAVE AT LEAST 300 CANDLES OR ELSE YOU WILL GET AN ERROR
-start = '01-01-22'  ##start of backtest dd/mm/yy
-end = '01-02-22'  ##end of backtest   dd/mm/yy
-TIME_INTERVAL = '1h'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
+start = '01-04-22'  ##start of backtest dd/mm/yy
+end = '17-07-22'  ##end of backtest   dd/mm/yy
+TIME_INTERVAL = '5m'  ##Candlestick interval in minutes, valid options: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d
 Number_Of_Trades = 10  ## allowed to open 5 positions at a time
 printing_on = True
 add_delay = False  ## If true when printing we will sleep for 1 second to see the output clearer
@@ -36,7 +36,7 @@ buffer = 300 ## buffer of candle sticks
 use_trailing_stop = 0  ##flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_callback = .005  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
-symbol = ['BTCUSDT']#, 'BTCUSDT', 'ADAUSDT', 'BNBUSDT', 'XRPUSDT', 'PEOPLEUSDT', 'NEARUSDT', 'DOGEUSDT', '1000SHIBUSDT']#, 'BTCUSDT']  #['ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
+symbol = ['ETHUSDT', 'BTCUSDT', 'NEARUSDT', 'DOGEUSDT']#, '1000SHIBUSDT']#, 'BTCUSDT']  #['ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
           #'CTSIUSDT','ICPUSDT','KNCUSDT','LINAUSDT','RAYUSDT']  #, 'COTIUSDT', 'ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 print_to_csv = False
 csv_name = 'myFile.csv'
@@ -138,12 +138,12 @@ for i in range((buffer - 1)*TIME_INTERVAL, len(Close_1min[0]) - 1):
                                               float(Open[k][int(i / TIME_INTERVAL)]),
                                               float(High[k][int(i / TIME_INTERVAL)]),
                                               float(Low[k][int(i / TIME_INTERVAL)]))
-                ## Checking the validity of the candles, ensuring proper alignment
-                print(Close_1min[k][i] == Close[k][int(i / TIME_INTERVAL)])
+                ## Checking the validity of 5m candles, ensuring proper alignment
+                #print(Close_1min[k][i] == Close[k][int(i / TIME_INTERVAL)])
                 # print(str(High[k][int(i / TIME_INTERVAL)]) in [str(High_1min[k][i]),str(High_1min[k][i-1]),str(High_1min[k][i-2]),str(High_1min[k][i-3]),str(High_1min[k][i-4])])
                 # print(str(Low[k][int(i / TIME_INTERVAL)]) in [str(Low_1min[k][i]), str(Low_1min[k][i - 1]), str(Low_1min[k][i - 2]),
                 #       str(Low_1min[k][i - 3]), str(Low_1min[k][i - 4])])
-                print(str(Date_1min[k][i]) == str(Date[k][int(i / TIME_INTERVAL)]))
+                #print(str(Date_1min[k][i]) == str(Date[k][int(i / TIME_INTERVAL)]))
             except:
                 pass
 
@@ -350,9 +350,9 @@ if not Trade_Each_Coin_With_Separate_Accounts:
 
     print(f"Average Win: {round(average * 100, 4)}%")
     print("Trades Made: ", tradeNO)
-    print("Accuracy: ", f"{(num_wins / tradeNO) * 100}%", "\n")
-    print(f"Winning Trades:\n {num_wins}")
-    print(f"Losing Trades:\n {tradeNO - num_wins}")
+    print("Accuracy: ", f"{(len(winning_trades) / tradeNO) * 100}%", "\n")
+    print(f"Winning Trades:\n {len(winning_trades)}")
+    print(f"Losing Trades:\n {len(losing_trades)}")
     plt.plot(profitgraph[0])
     plt.title(f"All coins: {original_time_interval} from {start} to {end}")
     plt.ylabel('Account Balance')
@@ -424,9 +424,9 @@ else:
     print('fee:', fee)
     print("\nOverall Stats based on all coins")
     print("Trades Made: ", tradeNO)
-    print("Accuracy: ", f"{(num_wins_total / tradeNO) * 100}%", "\n")
-    print(f"Winning Trades:\n {num_wins_total}")
-    print(f"Losing Trades:\n {tradeNO - num_wins_total}")
+    print("Accuracy: ", f"{(len(winning_trades) / tradeNO) * 100}%", "\n")
+    print(f"Winning Trades:\n {len(winning_trades)}")
+    print(f"Losing Trades:\n {len(losing_trades)}")
     print(f"Trades Closed on Condition:\n {closed_on_condition}")
 #for i in range(len(Bots[0].Date)):
 #    print(f"Date: {Bots[0].Date[i]}, Open_H: {Bots[0].Open_H[i]}, High_H: {Bots[0].High_H[i]}, Low_H: {Bots[0].Low_H[i]}, Close_H: {Bots[0].Close_H[i]}")
