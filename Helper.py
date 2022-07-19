@@ -295,11 +295,9 @@ def get_Klines(symbol, start_str, end_str, path):
                     price_data[f'Low_{unit}m'].append(price_data['Low_1m'][-1])  ##initialize as lowest
                     price_data[f'Volume_{unit}m'].append(price_data['Volume_1m'][-1])  ##initialize
                 if int(str(price_data['Date_1m'][-1])[-5:-3]) % unit == 0:
-
                     ##Candle close time
                     price_data[f'Date_{unit}m'].append(price_data['Date_1m'][-1])
                     price_data[f'Close_{unit}m'].append(price_data['Close_1m'][-1])
-                    print(price_data[f'Date_{unit}m'][-1], price_data['Date_1m'][-1], unit)
                     ##Check if higher high or lower low present:
                     if price_data['High_1m'][-1] > price_data[f'High_{unit}m'][-1]:
                         price_data[f'High_{unit}m'][-1] = price_data['High_1m'][-1]  ##update as highest
@@ -523,7 +521,7 @@ def get_heikin_ashi(Open, Close, High, Low):
                 High_heikin[i].append(High[i][j])
                 Low_heikin[i].append(Low[i][j])
             else:
-                Open_heikin[i].append((Open_heikin[i][j - 1] + Close_heikin[i][j - 1]) / 2)
+                Open_heikin[i].append((Open_heikin[i][j - 1] + Close_heikin[i][j - 2]) / 2)
                 High_heikin[i].append(max(High[i][j], Open_heikin[i][j], Close_heikin[i][j]))
                 Low_heikin[i].append(min(Low[i][j], Open_heikin[i][j], Close_heikin[i][j]))
     return Open_heikin, Close_heikin, High_heikin, Low_heikin
