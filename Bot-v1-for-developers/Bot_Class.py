@@ -11,11 +11,9 @@ from ta.trend import stc
 import numpy as np
 import pandas as pd
 import TradingStrats as TS
-
-
 class Bot:
-    def __init__(self, symbol, Open, Close, High, Low, Volume, Date, OP, CP, index, tick,
-                 strategy, TP_choice, SL_choice, SL_mult, TP_mult, backtesting=0):
+    def __init__(self, symbol, Open, Close, High, Low, Volume, Date, OP, CP, index, generate_heikin_ashi, tick,
+                 backtesting=0):
         self.symbol = symbol
         self.Open = Open
         self.Close = Close
@@ -28,7 +26,7 @@ class Bot:
         self.index = index
         self.add_hist_complete = 0
         self.new_data = 0
-        self.generate_heikin_ashi = True
+        self.generate_heikin_ashi = generate_heikin_ashi
         self.Open_H = []
         self.Close_H = []
         self.High_H = []
@@ -37,11 +35,6 @@ class Bot:
         self.socket_failed = False
         self.backtesting = backtesting
         self.use_close_pos = False
-        self.strategy = strategy
-        self.TP_choice = TP_choice
-        self.SL_choice = SL_choice
-        self.SL_mult = SL_mult
-        self.TP_mult = TP_mult
 
     def add_hist(self, Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp):
         if not self.backtesting:
@@ -79,7 +72,7 @@ class Bot:
                     self.High_H.append(max(self.High[i], self.Open_H[i], self.Close_H[i]))
                     self.Low_H.append(min(self.Low[i], self.Open_H[i], self.Close_H[i]))
         self.add_hist_complete = 1
-        # for i in range(len(self.Date)):
+        #for i in range(len(self.Date)):
         #    print(f"Date: {self.Date[i]}, Open_H: {self.Open_H[i]}, Close_H: {self.Close_H[i]}, High_H: {self.High_H[i]}, Low_H: {self.Low_H[i]}")
 
     def handle_socket_message(self, Data, Date=0, Close=0, Volume=0, Open=0, High=0, Low=0):
@@ -147,72 +140,29 @@ class Bot:
         stop_loss_val = -99  ##the margin of increase/decrease that would stop us out/ be our take profit, NOT the price target.
         take_profit_val = -99  # That is worked out later by adding or subtracting:
         ## Strategies found in TradingStrats.py:
-        if self.strategy == 'StochRSIMACD':
-            Trade_Direction, stop_loss_val, take_profit_val = TS.StochRSIMACD(Trade_Direction, self.Close, self.High,
-                                                                              self.Low, self.SL_mult, self.TP_mult,
-                                                                              self.TP_choice, self.SL_choice)
-        elif self.strategy == 'tripleEMAStochasticRSIATR':
-            Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close, self.High,
-                                                                                           self.Low, Trade_Direction,
-                                                                                           self.SL_mult, self.TP_mult,
-                                                                                           self.TP_choice,
-                                                                                           self.SL_choice)
-        elif self.strategy == 'tripleEMA':
-            Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMA(self.Close, self.High, self.Low,
-                                                                           Trade_Direction, self.SL_mult, self.TP_mult,
-                                                                           self.TP_choice, self.SL_choice)
-        elif self.strategy == 'breakout':
-            Trade_Direction, stop_loss_val, take_profit_val = TS.breakout(Trade_Direction, self.Close, self.Volume,
-                                                                          self.High, self.Low, self.SL_mult, self.TP_mult,
-                                                                          self.TP_choice, self.SL_choice)
-        elif self.strategy == 'stochBB':
-            Trade_Direction, stop_loss_val, take_profit_val = TS.stochBB(Trade_Direction, self.Close, self.High,
-                                                                         self.Low, self.SL_mult, self.TP_mult,
-                                                                         self.TP_choice, self.SL_choice)
-        elif self.strategy == 'goldenCross':
-            Trade_Direction, stop_loss_val, take_profit_val = TS.goldenCross(Trade_Direction, self.Close, self.High,
-                                                                             self.Low, self.SL_mult, self.TP_mult,
-                                                                             self.TP_choice, self.SL_choice)
-        elif self.strategy == 'candle_wick':
-            Trade_Direction, stop_loss_val, take_profit_val = TS.candle_wick(Trade_Direction, self.Close, self.Open,
-                                                                             self.High, self.Low, self.SL_mult, self.TP_mult,
-                                                                             self.TP_choice, self.SL_choice)
-        elif self.strategy == 'fibMACD':
-            Trade_Direction, stop_loss_val, take_profit_val = TS.fibMACD(Trade_Direction, self.Close, self.Open,
-                                                                         self.High, self.Low)
-        elif self.strategy == 'EMA_cross':
-            Trade_Direction, stop_loss_val, take_profit_val = TS.EMA_cross(Trade_Direction, self.Close, self.High,
-                                                                           self.Low, self.SL_mult, self.TP_mult,
-                                                                           self.TP_choice, self.SL_choice)
+        # Trade_Direction,stop_loss_val, take_profit_val = TS.StochRSIMACD(Trade_Direction, self.Close,self.High,self.Low)
+        Trade_Direction,stop_loss_val, take_profit_val = TS.tripleEMAStochasticRSIATR(self.Close,self.High,self.Low,Trade_Direction)
+        # Trade_Direction, stop_loss_val, take_profit_val = TS.tripleEMA(self.Close, self.High, self.Low, Trade_Direction)
+        # Trade_Direction, stop_loss_val, take_profit_val = TS.breakout(Trade_Direction,self.Close,self.Volume,self.High, self.Low)
+        # Trade_Direction,stop_loss_val,take_profit_val = TS.stochBB(Trade_Direction,self.Close, self.High, self.Low)
+        # Trade_Direction, stop_loss_val, take_profit_val = TS.goldenCross(Trade_Direction,self.Close, self.High, self.Low)
+        # Trade_Direction , stop_loss_val, take_profit_val = TS.candle_wick(Trade_Direction,self.Close,self.Open,self.High,self.Low)
+        # Trade_Direction,stop_loss_val,take_profit_val = TS.fibMACD(Trade_Direction, self.Close, self.Open,self.High,self.Low)
+        #Trade_Direction, stop_loss_val, take_profit_val = TS.EMA_cross(Trade_Direction, self.Close, self.High, self.Low)
 
-        elif self.strategy == 'heikin_ashi_ema2':
-            self.use_close_pos = True
-            Trade_Direction, stop_loss_val, take_profit_val, _ = TS.heikin_ashi_ema2(self.Close, self.Open_H,
-                                                                                     self.High_H, self.Low_H,
-                                                                                     self.Close_H, self.High,
-                                                                                     self.Low, Trade_Direction,
-                                                                                     -99, 0, self.SL_mult, self.TP_mult,
-                                                                                    self.TP_choice, self.SL_choice)
-        elif self.strategy == 'heikin_ashi_ema':
-            self.use_close_pos = True
-            Trade_Direction, stop_loss_val, take_profit_val, _ = TS.heikin_ashi_ema(self.Close, self.Open_H,
-                                                                                    self.Close_H, Trade_Direction, -99,
-                                                                                    0, self.High, self.Low, self.SL_mult, self.TP_mult,
-                                                                                    self.TP_choice, self.SL_choice)
+        ## need to set self.use_close_pos = True if you want to use the close position on condition functionality of the strategies below
+        ##  And also need to uncomment the corresponding strategy below in check_close_pos()
+        #self.use_close_pos = True
+        # Trade_Direction, stop_loss_val, take_profit_val, _ = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stop_loss_val, take_profit_val, -99, 0)
+        #Trade_Direction,stop_loss_val,take_profit_val,_ = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stop_loss_val,take_profit_val, -99, 0)
         return Trade_Direction, stop_loss_val, take_profit_val
 
     def check_close_pos(self, current_pos):
+        ## need to uncomment corresponding strategy in here too if using close position on condition functionality
         close_pos = 0
         Trade_Direction = -99  ## Short (0), Long (1)
         stop_loss_val = -99  ##the margin of increase/decrease that would stop us out/ be our take profit, NOT the price target.
         take_profit_val = -99  # That is worked out later by adding or subtracting:
-        if self.strategy == 'heikin_ashi_ema2':
-            _, _, _, close_pos = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H,
-                                                     Trade_Direction, stop_loss_val, take_profit_val, current_pos, 0,
-                                                     self.SL_mult, self.TP_mult,
-                                                     self.TP_choice, self.SL_choice)
-        elif self.strategy == 'heikin_ashi_ema':
-            _, _, _, close_pos = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction,
-                                                    stop_loss_val, take_profit_val, current_pos, 0, self.SL_mult, self.TP_mult,
-                                                    self.TP_choice, self.SL_choice)
+        #_, _, _, close_pos = TS.heikin_ashi_ema2(self.Close, self.Open_H, self.High_H, self.Low_H, self.Close_H, Trade_Direction, stop_loss_val, take_profit_val, current_pos, 0)
+        #_,_,_,close_pos = TS.heikin_ashi_ema(self.Close, self.Open_H, self.Close_H, Trade_Direction, stop_loss_val,take_profit_val, current_pos, 0)
         return close_pos

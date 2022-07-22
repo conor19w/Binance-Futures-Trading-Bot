@@ -698,7 +698,7 @@ def close_pos(t, account_balance, fee, Close):
     return t, account_balance
 
 
-def print_trades(active_trades: [Trade], trade_price, Date, account_balance, change_occurred, print_to_csv, csv_name, path, csv_path):
+def print_trades(active_trades: [Trade], trade_price, Date, account_balance, change_occurred, print_to_csv, csv_name):
     ###########################################################################################################
     #####################               PRINT TRADE DETAILS                          ##########################
     ###########################################################################################################
@@ -775,7 +775,7 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
         print(f"Time: {Date} , Account Balance: {account_balance[0]}")
         print("------------------------------------------------------------\n")
         if print_to_csv:
-            with open(csv_path+csv_name, 'a') as O:
+            with open(csv_name, 'a') as O:
                 for i in range(len(active_trades)):
                     O.write(
                         f'{Date},{account_balance[0]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
@@ -798,7 +798,7 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
         print(f"Time: {Date}")
         print("------------------------------------------------------------\n")
         if print_to_csv:
-            with open(csv_path+csv_name, 'a') as O:
+            with open(csv_name, 'a') as O:
                 for i in range(len(active_trades)):
                     O.write(
                         f'{Date},{account_balance_info[i]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'

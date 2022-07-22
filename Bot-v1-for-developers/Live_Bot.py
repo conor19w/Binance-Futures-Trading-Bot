@@ -11,14 +11,23 @@ import time
 ##Local Imports
 import Bot_Class
 from Helper import Trade_Manager, get_historical, Trade, Trade_Stats, Data_Handler
+from Config_File import *
+from Config_File import symbol  #explicitly importing to remove a warning
 
-DH: [Data_Handler] = []
 streams = []  ##store streams allowing the option to start and stop streams if needed
 new_candle_flag = 0
 Data = {}
+client = Client(api_key=API_KEY, api_secret=API_SECRET)
 
-## If you are getting a rate limit error on startup this will add a delay for downloading candlesticks to start
-RATE_LIMIT_WAIT = False  ## It will not slow down the bot, it will only slow down the startup by about (4 x (number of coins you're trading)) seconds
+if Trade_All_Coins:
+    symbol = []
+    x = client.futures_ticker()
+    for y in x:
+        symbol.append(y['symbol'])
+    symbol = [x for x in symbol if 'USDT' in x]
+    symbol = [x for x in symbol if not '_' in x]
+
+DH: [Data_Handler] = []
 
 
 def listen_pipe(pipe: Pipe):
@@ -54,9 +63,8 @@ def web_soc_process(pipe: Pipe, twm: ThreadedWebsocketManager):
             pipe.send(Data)
 
 
-def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, Max_Number_Of_Trades, client: Client,
-                      use_trailing_stop, trailing_stop_callback, symbol, strategy, TP_choice, SL_choice, SL_mult, TP_mult):
-    global new_candle_flag, Data
+def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, client: Client, use_trailing_stop, trailing_stop_callback):
+    global new_candle_flag, symbol, Data
     pp = PrettyPrinter()  ## for printing json text cleanly (inspect binance API call returns)
     active_trades: [Trade] = []  ## List of active trades
     new_trades = []
@@ -89,7 +97,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                 break
         if flag == 1:
             Bots.append(Bot_Class.Bot(symbol[i], [], [], [], [], [], [], Order_precision_temp, Coin_precision_temp,
-                                      i, tick_temp, strategy, TP_choice, SL_choice, SL_mult, TP_mult))
+                                      i, use_heikin_ashi,tick=tick_temp))
             i += 1
         else:
             print(f"{symbol.pop(i)} no info found")
@@ -351,19 +359,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
             print(exc_type, fname, exc_tb.tb_lineno)
 
 
-def run_bot(API_KEY, API_SECRET, leverage, order_Size, start_string, Interval, Max_Number_Of_Trades,
-                 use_trailing_stop, trailing_stop_callback, symbol, strategy,
-                 TP_choice, SL_choice, SL_mult, TP_mult, Trade_All_Coins):
-    client = Client(api_key=API_KEY, api_secret=API_SECRET)
-
-    if Trade_All_Coins:
-        symbol = []
-        x = client.futures_ticker()
-        for y in x:
-            symbol.append(y['symbol'])
-        symbol = [x for x in symbol if 'USDT' in x]
-        symbol = [x for x in symbol if not '_' in x]
-
+if __name__ == '__main__':
     pp = PrettyPrinter()  ##for printing json text cleanly (inspect binance API call returns)
     twm = ThreadedWebsocketManager(api_key=API_KEY, api_secret=API_SECRET)
     twm.start()  ##start manager
@@ -386,26 +382,16 @@ def run_bot(API_KEY, API_SECRET, leverage, order_Size, start_string, Interval, M
     while i < len(symbol):
         try:
             DH.append(Data_Handler(symbol[i], i))
-            streams.append(twm.start_kline_futures_socket(callback=DH[i].handle_socket_message, symbol=symbol[i],
-                                                          interval=Interval))
+            streams.append(twm.start_kline_futures_socket(callback=DH[i].handle_socket_message, symbol=symbol[i], interval=Interval))
             i += 1
         except:
             symbol.pop(i)
+
 
     pipe1, pipe2 = Pipe()  ##pipe to communicate between processes
     _thread = Thread(target=web_soc_process, args=(pipe1, twm))
     _thread.start()
 
-    P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, start_string, Interval, Max_Number_Of_Trades, client, use_trailing_stop,
-                                                 trailing_stop_callback, symbol, strategy, TP_choice, SL_choice, SL_mult, TP_mult))
+    P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, Max_Number_Of_Trades, client, use_trailing_stop, trailing_stop_callback))
     P1.start()
     twm.join()  ##keep websockets running
-
-
-if __name__ == '__main__':
-    ## Still able to run from this script by configuring Config_File.py
-    from Config_File import *
-    from Config_File import symbol  # explicitly importing to remove a warning
-
-    run_bot(API_KEY, API_SECRET, leverage, order_Size, start_string, Interval, Max_Number_Of_Trades,
-            use_trailing_stop, trailing_stop_callback, symbol, strategy, TP_choice, SL_choice, SL_mult, TP_mult, Trade_All_Coins)
