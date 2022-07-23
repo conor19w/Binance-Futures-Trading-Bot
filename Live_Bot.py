@@ -12,6 +12,9 @@ import time
 import Bot_Class
 from Helper import Trade_Manager, get_historical, Trade, Trade_Stats, Data_Handler
 
+now = datetime.now()
+current_time = now.strftime("%H:%M:%S")
+csv_name = f"Logs_{current_time.replace(':','_')}.txt"
 DH: [Data_Handler] = []
 streams = []  ##store streams allowing the option to start and stop streams if needed
 new_candle_flag = 0
@@ -168,10 +171,10 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                             if t.index == i:
                                 trade_flag = 1
                                 break
-                            for s in open_trades:
-                                if s == t.symbol:
-                                    trade_flag = 1
-                                    break
+                        for s in open_trades:
+                            if s == Bots[i].symbol:
+                                trade_flag = 1
+                                break
                         if trade_flag == 0:
                             temp_dec = Bots[i].Make_decision()
                             # print(Data[i].symbol,temp_dec)
@@ -180,12 +183,10 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                 ##Sort out new trades to be opened
                 while len(new_trades) > 0 and len(active_trades) < Max_Number_Of_Trades:
                     account_balance = 0
-                    start_account_balance = 0
                     account_balance_info = client.futures_account_balance()
                     for item in account_balance_info:
                         if item['asset'] == 'USDT':
                             account_balance = float(item['balance'])
-                            start_account_balance = float(item['balance'])
                             break
                     [index, [trade_direction, stop_loss, take_profit]] = new_trades.pop(0)
                     order_qty = leverage * order_Size * account_balance / Bots[index].Close[-1]
@@ -312,6 +313,12 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                             i += 1
 
                 if print_flag:
+                    account_balance = 0
+                    account_balance_info = client.futures_account_balance()
+                    for item in account_balance_info:
+                        if item['asset'] == 'USDT':
+                            account_balance = float(item['balance'])
+                            break
                     i = 0
                     while i < len(active_trades):
                         if Bots[active_trades[i].index].use_close_pos and not active_trades[i].same_candle:
@@ -330,10 +337,8 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                             active_trades[i].same_candle = False
                             break
                     print_flag = 0
-                    temp_symbols = []
-                    for t in active_trades:
-                        temp_symbols.append(t.symbol)
                     print(f"Account Balance: {account_balance}, {Bots[0].Date[-1]}: Active Trades: {temp_symbols}")
+                    #Helper.log_info(active_trades, trade_prices, Dates, account_balance, csv_name, indicators)
                     try:
                         print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance},"
                               f" Average Trade Profit: ${(account_balance - startup_account_balance) / TS.total_number_of_trades}")
