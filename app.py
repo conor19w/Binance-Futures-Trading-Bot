@@ -22,7 +22,7 @@ if __name__ == "__main__":
     valid_symbols = [x for x in valid_symbols if not '_' in x]
 
     def go_to_github():
-        webbrowser.open_new(r"https://github.com/sponsors/conor19w?frequency=one-time&sponsor=conor19w")
+        webbrowser.open_new(r"https://github.com/sponsors/conor19w?frequency=recurring&sponsor=conor19w")
 
     def live_mode():
         global leverage, order_size, API_KEY, API_SECRET, buffer
