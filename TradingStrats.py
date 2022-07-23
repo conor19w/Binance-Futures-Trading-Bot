@@ -16,31 +16,30 @@ from copy import copy
 import time
 
 
-def candle_wick(Trade_Direction, Close, Open, High, Low, SL, TP, TP_choice, SL_choice):
-    if Close[-5] < Close[-4] < Close[-3] and Close[-2] < Open[-2] and (
-            High[-2] - Open[-2] + Close[-2] - Low[-2]) > 10 * (Open[-2] - Close[-2]) and Close[-1] < Close[-2]:
+def candle_wick(Trade_Direction, Close, Open, High, Low, SL, TP, TP_choice, SL_choice, index):
+    if Close[index - 4] < Close[index - 3] < Close[index - 2] and Close[index - 1] < Open[index - 1] and (
+            High[index - 1] - Open[index - 1] + Close[index - 1] - Low[index - 1]) > 10 * (Open[index - 1] - Close[index - 1]) and Close[index] < Close[index - 1]:
         ##3 green candles followed by a red candle with a huge wick
         Trade_Direction = 0
-    elif Close[-5] > Close[-4] > Close[-3] and Close[-2] > Open[-2] and (
-            High[-2] - Close[-2] + Open[-2] - Low[-2]) > 10 * (Close[-2] - Open[-2]) and Close[-1] > Close[-2]:
+    elif Close[index - 4] > Close[index - 3] > Close[index - 2] and Close[index - 1] > Open[index - 1] and (
+            High[index - 1] - Close[index - 1] + Open[index - 1] - Low[index - 1]) > 10 * (Close[index - 1] - Open[index - 1]) and Close[index] > Close[index - 1]:
         ##3 red candles followed by a green candle with a huge wick
         Trade_Direction = 1
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, stop_loss_val, take_profit_val
 
 
-def fibMACD(Trade_Direction, Close, Open, High, Low):
+def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, index):
     stop_loss_val = 0
     take_profit_val = 0
     period = 100  ##Record peaks and troughs in last period timesteps
-    MACD_signal = np.array(macd_signal(pd.Series(Close)))
-    MACD = np.array(macd(pd.Series(Close)))
+
     Close_peaks = []  ##Store peak values
     location_peaks = []  ##store index of peak value , used for debugging
     Close_troughs = []  ##store trough values
     location_troughs = []  ##store index of peak trough , used for debugging
     #####################Find peaks & troughs in Close ##############################
-    for i in range(len(High) - period, len(High) - 2):
+    for i in range(index - period, index - 2):
         if High[i] > High[i - 1] and High[i] > High[i + 1] and High[i] > High[i - 2] and High[i] > High[i + 2]:
             ##Weve found a peak:
             Close_peaks.append(High[i])
@@ -50,11 +49,11 @@ def fibMACD(Trade_Direction, Close, Open, High, Low):
             Close_troughs.append(Low[i])
             location_troughs.append(i)
 
-    EMA200 = np.array(sma_indicator(pd.Series(Close), window=200))
+
     trend = -99  ##indicate the direction of trend
-    if Close[-1] < EMA200[-1]:
+    if Close[index] < EMA200[index]:
         trend = 0
-    elif Close[-1] > EMA200[-1]:
+    elif Close[index] > EMA200[index]:
         trend = 1
     max_pos = -99
     min_pos = -99
@@ -100,71 +99,71 @@ def fibMACD(Trade_Direction, Close, Open, High, Low):
 
         ##Take profit targets, Don't think this is configured properly so maybe have a look at fibonacci extensions and fix here, Right hand side is ment to be the corresponding extension level
         fib_retracement_level_1 = fib_level_0 + 1.236 * (max_Close - min_Close) - Close[
-            -1]  ##target max_Close+1.236*(max_Close - min_Close)
-        fib_retracement_level_2 = fib_level_0 + 1.382 * (max_Close - min_Close) - Close[-1]
-        fib_retracement_level_3 = fib_level_0 + 1.5 * (max_Close - min_Close) - Close[-1]
-        fib_retracement_level_4 = fib_level_0 + 1.618 * (max_Close - min_Close) - Close[-1]
-        fib_retracement_level_5 = fib_level_0 + 1.786 * (max_Close - min_Close) - Close[-1]
-        fib_retracement_level_6 = fib_level_0 + 2 * (max_Close - min_Close) - Close[-1]
+            index]  ##target max_Close+1.236*(max_Close - min_Close)
+        fib_retracement_level_2 = fib_level_0 + 1.382 * (max_Close - min_Close) - Close[index]
+        fib_retracement_level_3 = fib_level_0 + 1.5 * (max_Close - min_Close) - Close[index]
+        fib_retracement_level_4 = fib_level_0 + 1.618 * (max_Close - min_Close) - Close[index]
+        fib_retracement_level_5 = fib_level_0 + 1.786 * (max_Close - min_Close) - Close[index]
+        fib_retracement_level_6 = fib_level_0 + 2 * (max_Close - min_Close) - Close[index]
 
-        ## fib_level_0>Low[-3]>fib_level_1: recent low was between two of our levels
-        ## Close[-4]>fib_level_1 and Close[-5]>fib_level_1 and Close[-6]>fib_level_1: Ensure the bottom level was respected  ie. no recent close below it
-        if fib_level_0 > Low[-3] > fib_level_1 and Close[-4] > fib_level_1 and Close[-5] > fib_level_1 and Close[
+        ## fib_level_0>Low[index - 2]>fib_level_1: recent low was between two of our levels
+        ## Close[index - 3]>fib_level_1 and Close[index - 4]>fib_level_1 and Close[-6]>fib_level_1: Ensure the bottom level was respected  ie. no recent close below it
+        if fib_level_0 > Low[index - 2] > fib_level_1 and Close[index - 3] > fib_level_1 and Close[index - 4] > fib_level_1 and Close[
             -6] > fib_level_1:
-            if Close[-3] < Open[-3] < Close[-2] < Close[-1] and (
-                    (MACD_signal[-2] < MACD[-2] or MACD_signal[-3] < MACD[-3]) and MACD_signal[-1] > MACD[
-                -1]):  ##Bullish Engulfing Candle and cross up on MACD
+            if Close[index - 2] < Open[index - 2] < Close[index - 1] < Close[index] and (
+                    (MACD_signal[index - 1] < MACD[index - 1] or MACD_signal[index - 2] < MACD[index - 2]) and MACD_signal[index] > MACD[
+                index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 1")
                 Trade_Direction = 1  ##signal a buy
                 take_profit_val = fib_retracement_level_1  ##target the corresponding extensiuon level
-                stop_loss_val = Close[-1] - fib_level_1 * 1.0001  ##stoploss below bottom level with a bit extra
-        elif fib_level_1 > Low[-3] > fib_level_2 and Close[-4] > fib_level_2 and Close[-5] > fib_level_2 and Close[
+                stop_loss_val = Close[index] - fib_level_1 * 1.0001  ##stoploss below bottom level with a bit extra
+        elif fib_level_1 > Low[index - 2] > fib_level_2 and Close[index - 3] > fib_level_2 and Close[index - 4] > fib_level_2 and Close[
             -6] > fib_level_2:
-            if Close[-3] < Open[-3] < Close[-2] < Close[-1] and (
-                    (MACD_signal[-2] < MACD[-2] or MACD_signal[-3] < MACD[-3]) and MACD_signal[-1] > MACD[
-                -1]):  ##Bullish Engulfing Candle and cross up on MACD
+            if Close[index - 2] < Open[index - 2] < Close[index - 1] < Close[index] and (
+                    (MACD_signal[index - 1] < MACD[index - 1] or MACD_signal[index - 2] < MACD[index - 2]) and MACD_signal[index] > MACD[
+                index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 1")
                 Trade_Direction = 1  ##signal a buy
                 take_profit_val = fib_retracement_level_2
-                stop_loss_val = Close[-1] - fib_level_2 * 1.0001
+                stop_loss_val = Close[index] - fib_level_2 * 1.0001
 
-        elif fib_level_2 > Low[-2] > fib_level_3 and Close[-3] > fib_level_3 and Close[-4] > fib_level_3 and Close[
-            -5] > fib_level_3:
-            if Close[-2] < Open[-2] < Close[-1] < Close[-1] and (
-                    (MACD_signal[-2] < MACD[-2] or MACD_signal[-3] < MACD[-3]) and MACD_signal[-1] > MACD[
-                -1]):  ##Bullish Engulfing Candle and cross up on MACD
+        elif fib_level_2 > Low[index - 1] > fib_level_3 and Close[index - 2] > fib_level_3 and Close[index - 3] > fib_level_3 and Close[
+            index - 4] > fib_level_3:
+            if Close[index - 1] < Open[index - 1] < Close[index] < Close[index] and (
+                    (MACD_signal[index - 1] < MACD[index - 1] or MACD_signal[index - 2] < MACD[index - 2]) and MACD_signal[index] > MACD[
+                index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 2")
                 Trade_Direction = 1  ##signal a buy
                 take_profit_val = fib_retracement_level_3
-                stop_loss_val = Close[-1] - fib_level_3 * 1.0001
+                stop_loss_val = Close[index] - fib_level_3 * 1.0001
 
-        elif fib_level_3 > Low[-2] > fib_level_4 and Close[-3] > fib_level_4 and Close[-4] > fib_level_4 and Close[
-            -5] > fib_level_4:
-            if Close[-2] < Open[-2] < Close[-1] < Close[-1] and (
-                    (MACD_signal[-2] < MACD[-2] or MACD_signal[-3] < MACD[-3]) and MACD_signal[-1] > MACD[
-                -1]):  ##Bullish Engulfing Candle and cross up on MACD
+        elif fib_level_3 > Low[index - 1] > fib_level_4 and Close[index - 2] > fib_level_4 and Close[index - 3] > fib_level_4 and Close[
+            index - 4] > fib_level_4:
+            if Close[index - 1] < Open[index - 1] < Close[index] < Close[index] and (
+                    (MACD_signal[index - 1] < MACD[index - 1] or MACD_signal[index - 2] < MACD[index - 2]) and MACD_signal[index] > MACD[
+                index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 3")
                 Trade_Direction = 1  ##signal a buy
                 take_profit_val = fib_retracement_level_4
-                stop_loss_val = Close[-1] - fib_level_4 * 1.0001
-        elif fib_level_4 > Low[-2] > fib_level_5 and Close[-3] > fib_level_5 and Close[-4] > fib_level_5 and Close[
-            -5] > fib_level_5:
-            if Close[-2] < Open[-2] < Close[-1] < Close[-1] and (
-                    (MACD_signal[-2] < MACD[-2] or MACD_signal[-3] < MACD[-3]) and MACD_signal[-1] > MACD[
-                -1]):  ##Bullish Engulfing Candle and cross up on MACD
+                stop_loss_val = Close[index] - fib_level_4 * 1.0001
+        elif fib_level_4 > Low[index - 1] > fib_level_5 and Close[index - 2] > fib_level_5 and Close[index - 3] > fib_level_5 and Close[
+            index - 4] > fib_level_5:
+            if Close[index - 1] < Open[index - 1] < Close[index] < Close[index] and (
+                    (MACD_signal[index - 1] < MACD[index - 1] or MACD_signal[index - 2] < MACD[index - 2]) and MACD_signal[index] > MACD[
+                index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 4")
                 Trade_Direction = 1  ##signal a buy
                 take_profit_val = fib_retracement_level_5
-                stop_loss_val = Close[-1] - fib_level_5 * 1.0001
-        elif fib_level_5 > Low[-2] > fib_level_6 and Close[-3] > fib_level_6 and Close[-4] > fib_level_6 and Close[
-            -5] > fib_level_6:
-            if Close[-2] < Open[-2] < Close[-1] < Close[-1] and (
-                    (MACD_signal[-2] < MACD[-2] or MACD_signal[-3] < MACD[-3]) and MACD_signal[-1] > MACD[
-                -1]):  ##Bullish Engulfing Candle and cross up on MACD
+                stop_loss_val = Close[index] - fib_level_5 * 1.0001
+        elif fib_level_5 > Low[index - 1] > fib_level_6 and Close[index - 2] > fib_level_6 and Close[index - 3] > fib_level_6 and Close[
+            index - 4] > fib_level_6:
+            if Close[index - 1] < Open[index - 1] < Close[index] < Close[index] and (
+                    (MACD_signal[index - 1] < MACD[index - 1] or MACD_signal[index - 2] < MACD[index - 2]) and MACD_signal[index] > MACD[
+                index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 5")
                 Trade_Direction = 1  ##signal a buy
                 take_profit_val = fib_retracement_level_6
-                stop_loss_val = Close[-1] - fib_level_6 * 1.0001
+                stop_loss_val = Close[index] - fib_level_6 * 1.0001
 
     elif trend == 0:
         ##Find the start and end of the pullback
@@ -208,122 +207,111 @@ def fibMACD(Trade_Direction, Close, Open, High, Low):
         fib_level_6 = max_Close
 
         ##Take profit targets, Don't think this is configured properly so maybe have a look at fibonacci extensions and fix here, Right hand side is ment to be the corresponding extension level
-        fib_retracement_level_1 = Close[-1] - (fib_level_0 + 1.236 * (max_Close - min_Close))
-        fib_retracement_level_2 = Close[-1] - (fib_level_0 + 1.382 * (max_Close - min_Close))
-        fib_retracement_level_3 = Close[-1] - (fib_level_0 + 1.5 * (max_Close - min_Close))
-        fib_retracement_level_4 = Close[-1] - (fib_level_0 + 1.618 * (max_Close - min_Close))
-        fib_retracement_level_5 = Close[-1] - (fib_level_0 + 1.786 * (max_Close - min_Close))
-        fib_retracement_level_6 = Close[-1] - (fib_level_0 + 2 * (max_Close - min_Close))
+        fib_retracement_level_1 = Close[index] - (fib_level_0 + 1.236 * (max_Close - min_Close))
+        fib_retracement_level_2 = Close[index] - (fib_level_0 + 1.382 * (max_Close - min_Close))
+        fib_retracement_level_3 = Close[index] - (fib_level_0 + 1.5 * (max_Close - min_Close))
+        fib_retracement_level_4 = Close[index] - (fib_level_0 + 1.618 * (max_Close - min_Close))
+        fib_retracement_level_5 = Close[index] - (fib_level_0 + 1.786 * (max_Close - min_Close))
+        fib_retracement_level_6 = Close[index] - (fib_level_0 + 2 * (max_Close - min_Close))
 
-        ## fib_level_0 < High[-3] < fib_level_1: recent low was between two of our levels
-        ## Close[-4] < fib_level_1 and Close[-5] < fib_level_1 and Close[-6] < fib_level_1: Ensure the Top level was respected, ie no recent close above it
-        if fib_level_0 < High[-3] < fib_level_1 and Close[-4] < fib_level_1 and Close[-5] < fib_level_1 and Close[
+        ## fib_level_0 < High[index - 2] < fib_level_1: recent low was between two of our levels
+        ## Close[index - 3] < fib_level_1 and Close[index - 4] < fib_level_1 and Close[-6] < fib_level_1: Ensure the Top level was respected, ie no recent close above it
+        if fib_level_0 < High[index - 2] < fib_level_1 and Close[index - 3] < fib_level_1 and Close[index - 4] < fib_level_1 and Close[
             -6] < fib_level_1:
-            if Close[-3] > Open[-3] > Close[-2] > Close[-1] and (
-                    (MACD_signal[-2] > MACD[-2] or MACD_signal[-3] > MACD[-3]) and MACD_signal[-1] < MACD[
-                -1]):  ##Bearish Engulfing Candle and cross down on MACD
+            if Close[index - 2] > Open[index - 2] > Close[index - 1] > Close[index] and (
+                    (MACD_signal[index - 1] > MACD[index - 1] or MACD_signal[index - 2] > MACD[index - 2]) and MACD_signal[index] < MACD[
+                index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
                 take_profit_val = fib_retracement_level_1  ##target corresponding extension level
-                stop_loss_val = fib_level_1 * 1.0001 - Close[-1]  ##stoploss above Top level with a bit extra
-        elif fib_level_1 < High[-3] < fib_level_2 and Close[-4] < fib_level_2 and Close[-5] < fib_level_2 and Close[
+                stop_loss_val = fib_level_1 * 1.0001 - Close[index]  ##stoploss above Top level with a bit extra
+        elif fib_level_1 < High[index - 2] < fib_level_2 and Close[index - 3] < fib_level_2 and Close[index - 4] < fib_level_2 and Close[
             -6] < fib_level_2:
-            if Close[-3] > Open[-3] > Close[-2] > Close[-1] and (
-                    (MACD_signal[-2] > MACD[-2] or MACD_signal[-3] > MACD[-3]) and MACD_signal[-1] < MACD[
-                -1]):  ##Bearish Engulfing Candle and cross down on MACD
+            if Close[index - 2] > Open[index - 2] > Close[index - 1] > Close[index] and (
+                    (MACD_signal[index - 1] > MACD[index - 1] or MACD_signal[index - 2] > MACD[index - 2]) and MACD_signal[index] < MACD[
+                index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
                 take_profit_val = fib_retracement_level_2
-                stop_loss_val = fib_level_2 * 1.0001 - Close[-1]
-        elif fib_level_2 < High[-3] < fib_level_3 and Close[-4] < fib_level_3 and Close[-5] < fib_level_3 and Close[
+                stop_loss_val = fib_level_2 * 1.0001 - Close[index]
+        elif fib_level_2 < High[index - 2] < fib_level_3 and Close[index - 3] < fib_level_3 and Close[index - 4] < fib_level_3 and Close[
             -6] < fib_level_3:
-            if Close[-3] > Open[-3] > Close[-2] > Close[-1] and (
-                    (MACD_signal[-2] > MACD[-2] or MACD_signal[-3] > MACD[-3]) and MACD_signal[-1] < MACD[
-                -1]):  ##Bearish Engulfing Candle and cross down on MACD
+            if Close[index - 2] > Open[index - 2] > Close[index - 1] > Close[index] and (
+                    (MACD_signal[index - 1] > MACD[index - 1] or MACD_signal[index - 2] > MACD[index - 2]) and MACD_signal[index] < MACD[
+                index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
                 take_profit_val = fib_retracement_level_3
-                stop_loss_val = fib_level_3 * 1.0001 - Close[-1]
-        elif fib_level_3 < High[-3] < fib_level_4 and Close[-4] < fib_level_4 and Close[-5] < fib_level_4 and Close[
+                stop_loss_val = fib_level_3 * 1.0001 - Close[index]
+        elif fib_level_3 < High[index - 2] < fib_level_4 and Close[index - 3] < fib_level_4 and Close[index - 4] < fib_level_4 and Close[
             -6] < fib_level_4:
-            if Close[-3] > Open[-3] > Close[-2] > Close[-1] and (
-                    (MACD_signal[-2] > MACD[-2] or MACD_signal[-3] > MACD[-3]) and MACD_signal[-1] < MACD[
-                -1]):  ##Bearish Engulfing Candle and cross down on MACD
+            if Close[index - 2] > Open[index - 2] > Close[index - 1] > Close[index] and (
+                    (MACD_signal[index - 1] > MACD[index - 1] or MACD_signal[index - 2] > MACD[index - 2]) and MACD_signal[index] < MACD[
+                index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
                 take_profit_val = fib_retracement_level_4
-                stop_loss_val = fib_level_4 * 1.0001 - Close[-1]
-        elif fib_level_4 < High[-3] < fib_level_5 and Close[-4] < fib_level_5 and Close[-5] < fib_level_5 and Close[
+                stop_loss_val = fib_level_4 * 1.0001 - Close[index]
+        elif fib_level_4 < High[index - 2] < fib_level_5 and Close[index - 3] < fib_level_5 and Close[index - 4] < fib_level_5 and Close[
             -6] < fib_level_5:
-            if Close[-3] > Open[-3] > Close[-2] > Close[-1] and (
-                    (MACD_signal[-2] > MACD[-2] or MACD_signal[-3] > MACD[-3]) and MACD_signal[-1] < MACD[
-                -1]):  ##Bearish Engulfing Candle and cross down on MACD
+            if Close[index - 2] > Open[index - 2] > Close[index - 1] > Close[index] and (
+                    (MACD_signal[index - 1] > MACD[index - 1] or MACD_signal[index - 2] > MACD[index - 2]) and MACD_signal[index] < MACD[
+                index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
                 take_profit_val = fib_retracement_level_5
-                stop_loss_val = fib_level_5 * 1.0001 - Close[-1]
-        elif fib_level_5 < High[-3] < fib_level_6 and Close[-4] < fib_level_6 and Close[-5] < fib_level_6 and Close[
+                stop_loss_val = fib_level_5 * 1.0001 - Close[index]
+        elif fib_level_5 < High[index - 2] < fib_level_6 and Close[index - 3] < fib_level_6 and Close[index - 4] < fib_level_6 and Close[
             -6] < fib_level_6:
-            if Close[-3] > Open[-3] > Close[-2] > Close[-1] and (
-                    (MACD_signal[-2] > MACD[-2] or MACD_signal[-3] > MACD[-3]) and MACD_signal[-1] < MACD[
-                -1]):  ##Bearish Engulfing Candle and cross down on MACD
+            if Close[index - 2] > Open[index - 2] > Close[index - 1] > Close[index] and (
+                    (MACD_signal[index - 1] > MACD[index - 1] or MACD_signal[index - 2] > MACD[index - 2]) and MACD_signal[index] < MACD[
+                index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
                 take_profit_val = fib_retracement_level_6
-                stop_loss_val = fib_level_6 * 1.0001 - Close[-1]
+                stop_loss_val = fib_level_6 * 1.0001 - Close[index]
 
     return Trade_Direction, stop_loss_val, take_profit_val
 
 
-def goldenCross(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice):
-    EMA100 = np.array(ema_indicator(pd.Series(Close), window=100))
-    EMA50 = np.array(ema_indicator(pd.Series(Close), window=50))
-    EMA20 = np.array(ema_indicator(pd.Series(Close), window=20))
-    RSI = np.array(rsi(pd.Series(Close)))
-    if Close[-1] > EMA100[-1] and RSI[-1] > 50:
+def goldenCross(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice, EMA100, EMA50, EMA20, RSI, index):
+    if Close[index] > EMA100[index] and RSI[index] > 50:
         ##looking for long entries
-        if (EMA20[-2] < EMA50[-2] and EMA20[-1] > EMA50[-1]) or (EMA20[-3] < EMA50[-3] and EMA20[-1] > EMA50[-1]) or (
-                EMA20[-4] < EMA50[-4] and EMA20[-1] > EMA50[-1]):
+        if (EMA20[index - 1] < EMA50[index - 1] and EMA20[index] > EMA50[index]) or (EMA20[index - 2] < EMA50[index - 2] and EMA20[index] > EMA50[index]) or (
+                EMA20[index - 3] < EMA50[index - 3] and EMA20[index] > EMA50[index]):
             ##Cross up occured
             Trade_Direction = 1  ##buy
-    elif Close[-1] < EMA100[-1] and RSI[-1] < 50:
+    elif Close[index] < EMA100[index] and RSI[index] < 50:
         ##looking for short entries
-        if (EMA20[-2] > EMA50[-2] and EMA20[-1] < EMA50[-1]) or (EMA20[-3] > EMA50[-3] and EMA20[-1] < EMA50[-1]) or (
-                EMA20[-4] > EMA50[-4] and EMA20[-1] < EMA50[-1]):
+        if (EMA20[index - 1] > EMA50[index - 1] and EMA20[index] < EMA50[index]) or (EMA20[index - 2] > EMA50[index - 2] and EMA20[index] < EMA50[index]) or (
+                EMA20[index - 3] > EMA50[index - 3] and EMA20[index] < EMA50[index]):
             ##Cross up occured
             Trade_Direction = 0  ##Sell
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, stop_loss_val, take_profit_val
 
 
-def StochRSIMACD(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice):
-    CloseS = pd.Series(Close)
-    HighS = pd.Series(High)
-    LowS = pd.Series(Low)
-    fastd = np.array(stoch(close=CloseS, high=HighS, low=LowS))
-    fastk = np.array(stoch_signal(close=CloseS, high=HighS, low=LowS))
-    RSI = np.array(rsi(CloseS))
-    MACD = np.array(macd(CloseS))
-    macdsignal = np.array(macd_signal(CloseS))
-    if ((fastd[-1] < 20 and fastk[-1] < 20 and RSI[-1] > 50 and MACD[-1] > macdsignal[-1] and MACD[-2] < macdsignal[
-        -2]) or
-            (fastd[-2] < 20 and fastk[-2] < 20 and RSI[-1] > 50 and MACD[-1] > macdsignal[-1] and MACD[-3] < macdsignal[
-                -3] and fastd[-1] < 80 and fastk[-1] < 80) or
-            (fastd[-3] < 20 and fastk[-3] < 20 and RSI[-1] > 50 and MACD[-1] > macdsignal[-1] and MACD[-2] < macdsignal[
-                -2] and fastd[-1] < 80 and fastk[-1] < 80) or
-            (fastd[-4] < 20 and fastk[-4] < 20 and RSI[-1] > 50 and MACD[-1] > macdsignal[-1] and MACD[-3] < macdsignal[
-                -3] and fastd[-1] < 80 and fastk[-1] < 80)):
+def StochRSIMACD(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice, fastd, fastk, RSI, MACD, macdsignal, index):
+
+    if ((fastd[index] < 20 and fastk[index] < 20 and RSI[index] > 50 and MACD[index] > macdsignal[index] and MACD[index - 1] < macdsignal[
+        index - 1]) or
+            (fastd[index - 1] < 20 and fastk[index - 1] < 20 and RSI[index] > 50 and MACD[index] > macdsignal[index] and MACD[index - 2] < macdsignal[
+                index - 2] and fastd[index] < 80 and fastk[index] < 80) or
+            (fastd[index - 2] < 20 and fastk[index - 2] < 20 and RSI[index] > 50 and MACD[index] > macdsignal[index] and MACD[index - 1] < macdsignal[
+                index - 1] and fastd[index] < 80 and fastk[index] < 80) or
+            (fastd[index - 3] < 20 and fastk[index - 3] < 20 and RSI[index] > 50 and MACD[index] > macdsignal[index] and MACD[index - 2] < macdsignal[
+                index - 2] and fastd[index] < 80 and fastk[index] < 80)):
         Trade_Direction = 1
-    elif ((fastd[-1] > 80 and fastk[-1] > 80 and RSI[-1] < 50 and MACD[-1] < macdsignal[-1] and MACD[-2] > macdsignal[
-        -2]) or
-          (fastd[-2] > 80 and fastk[-2] > 80 and RSI[-1] < 50 and MACD[-1] < macdsignal[-1] and MACD[-3] > macdsignal[
-              -3] and fastd[-1] > 20 and fastk[-1] > 20) or
-          (fastd[-3] > 80 and fastk[-3] > 80 and RSI[-1] < 50 and MACD[-1] < macdsignal[-1] and MACD[-2] > macdsignal[
-              -2] and fastd[-1] > 20 and fastk[-1] > 20) or
-          (fastd[-4] > 80 and fastk[-4] > 80 and RSI[-1] < 50 and MACD[-1] < macdsignal[-1] and MACD[-3] > macdsignal[
-              -3] and fastd[-1] > 20 and fastk[-1] > 20)):
+    elif ((fastd[index] > 80 and fastk[index] > 80 and RSI[index] < 50 and MACD[index] < macdsignal[index] and MACD[index - 1] > macdsignal[
+        index - 1]) or
+          (fastd[index - 1] > 80 and fastk[index - 1] > 80 and RSI[index] < 50 and MACD[index] < macdsignal[index] and MACD[index - 2] > macdsignal[
+              index - 2] and fastd[index] > 20 and fastk[index] > 20) or
+          (fastd[index - 2] > 80 and fastk[index - 2] > 80 and RSI[index] < 50 and MACD[index] < macdsignal[index] and MACD[index - 1] > macdsignal[
+              index - 1] and fastd[index] > 20 and fastk[index] > 20) or
+          (fastd[index - 3] > 80 and fastk[index - 3] > 80 and RSI[index] < 50 and MACD[index] < macdsignal[index] and MACD[index - 2] > macdsignal[
+              index - 2] and fastd[index] > 20 and fastk[index] > 20)):
         Trade_Direction = 0
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, stop_loss_val, take_profit_val
 
 
@@ -332,40 +320,33 @@ def StochRSIMACD(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice
 ##############################################################################################################################
 
 
-def tripleEMA(Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice):
-    EMA3 = np.array(ema_indicator(pd.Series(Close), window=5))
-    EMA6 = np.array(ema_indicator(pd.Series(Close), window=20))
-    EMA9 = np.array(ema_indicator(pd.Series(Close), window=50))
+def tripleEMA(Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, EMA3, EMA6, EMA9, index):
 
-    if EMA3[-5] > EMA6[-5] and EMA3[-5] > EMA9[-5] \
-            and EMA3[-4] > EMA6[-4] and EMA3[-4] > EMA9[-4] \
-            and EMA3[-3] > EMA6[-3] and EMA3[-3] > EMA9[-3] \
-            and EMA3[-2] > EMA6[-2] and EMA3[-2] > EMA9[-2] \
-            and EMA3[-1] < EMA6[-1] and EMA3[-1] < EMA9[-1]:
+    if EMA3[index - 4] > EMA6[index - 4] and EMA3[index - 4] > EMA9[index - 4] \
+            and EMA3[index - 3] > EMA6[index - 3] and EMA3[index - 3] > EMA9[index - 3] \
+            and EMA3[index - 2] > EMA6[index - 2] and EMA3[index - 2] > EMA9[index - 2] \
+            and EMA3[index - 1] > EMA6[index - 1] and EMA3[index - 1] > EMA9[index - 1] \
+            and EMA3[index] < EMA6[index] and EMA3[index] < EMA9[index]:
         Trade_Direction = 0
-    if EMA3[-5] < EMA6[-5] and EMA3[-5] < EMA9[-5] \
-            and EMA3[-4] < EMA6[-4] and EMA3[-4] < EMA9[-4] \
-            and EMA3[-3] < EMA6[-3] and EMA3[-3] < EMA9[-3] \
-            and EMA3[-2] < EMA6[-2] and EMA3[-2] < EMA9[-2] \
-            and EMA3[-1] > EMA6[-1] and EMA3[-1] > EMA9[-1]:
+    if EMA3[index - 4] < EMA6[index - 4] and EMA3[index - 4] < EMA9[index - 4] \
+            and EMA3[index - 3] < EMA6[index - 3] and EMA3[index - 3] < EMA9[index - 3] \
+            and EMA3[index - 2] < EMA6[index - 2] and EMA3[index - 2] < EMA9[index - 2] \
+            and EMA3[index - 1] < EMA6[index - 1] and EMA3[index - 1] < EMA9[index - 1] \
+            and EMA3[index] > EMA6[index] and EMA3[index] > EMA9[index]:
         Trade_Direction = 1
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, stop_loss_val, take_profit_val
 
 
 def heikin_ashi_ema2(Close, OpenStream_H, High_H, Low_H, Close_H, High, Low, Trade_Direction, CurrentPos, Close_pos, SL,
-                     TP, TP_choice, SL_choice):
+                     TP, TP_choice, SL_choice, fastd, fastk, EMA200, index):
     if CurrentPos == -99:
         Trade_Direction = -99
-        fastd = np.array(stochrsi_d(pd.Series(Close)))
-        fastk = np.array(stochrsi_k(pd.Series(Close)))
-        EMA200 = np.array(ema_indicator(pd.Series(Close), window=200))
-
         short_threshold = .7  ##If RSI falls below this don't open any shorts
         long_threshold = .3  ##If RSI goes above this don't open any longs
 
         ##Check Most recent Candles to see if we got a cross down and we are below 200EMA
-        if fastk[-2] > fastd[-2] and fastk[-1] < fastd[-1] and Close_H[-1] < EMA200[-1]:
+        if fastk[index - 1] > fastd[index - 1] and fastk[index] < fastd[index] and Close_H[index] < EMA200[index]:
             for i in range(10, 2, -1):
                 ##Find Bearish Meta Candle
                 if Close_H[-i] < OpenStream_H[-i] and OpenStream_H[-i] == High_H[-i]:
@@ -385,7 +366,7 @@ def heikin_ashi_ema2(Close, OpenStream_H, High_H, Low_H, Close_H, High, Low, Tra
                     if Trade_Direction == 0:
                         break
         ##Check Most recent Candles to see if we got a cross up and we are above 200EMA
-        elif fastk[-2] < fastd[-2] and fastk[-1] > fastd[-1] and Close_H[-1] > EMA200[-1]:
+        elif fastk[index - 1] < fastd[index - 1] and fastk[index] > fastd[index] and Close_H[index] > EMA200[index]:
             for i in range(10, 2, -1):
                 ##Find Bullish Meta Candle
                 if Close_H[-i] > OpenStream_H[-i] and OpenStream_H[-i] == Low_H[-i]:
@@ -405,28 +386,25 @@ def heikin_ashi_ema2(Close, OpenStream_H, High_H, Low_H, Close_H, High, Low, Tra
                     if Trade_Direction == 1:
                         break
 
-    elif CurrentPos == 1 and Close_H[-1] < OpenStream_H[-1]:
+    elif CurrentPos == 1 and Close_H[index] < OpenStream_H[index]:
         Close_pos = 1
-    elif CurrentPos == 0 and Close_H[-1] > OpenStream_H[-1]:
+    elif CurrentPos == 0 and Close_H[index] > OpenStream_H[index]:
         Close_pos = 1
     else:
         Close_pos = 0
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, stop_loss_val, take_profit_val, Close_pos
 
 
 def heikin_ashi_ema(Close, OpenStream_H, Close_H, Trade_Direction, CurrentPos, Close_pos, High, Low, SL, TP, TP_choice,
-                    SL_choice):
+                    SL_choice, fastd, fastk, EMA200, index):
     if CurrentPos == -99:
         Trade_Direction = -99
-        fastd = np.array(stochrsi_d(pd.Series(Close)))
-        fastk = np.array(stochrsi_k(pd.Series(Close)))
-        EMA200 = np.array(ema_indicator(pd.Series(Close), window=200))
 
         short_threshold = .8  ##If RSI falls below this don't open any shorts
         long_threshold = .2  ##If RSI goes above this don't open any longs
         ##look for shorts
-        if fastk[-1] > short_threshold and fastd[-1] > short_threshold:
+        if fastk[index] > short_threshold and fastd[index] > short_threshold:
             ##Check last 10 candles, a bit overkill
             for i in range(10, 2, -1):
                 if fastd[-i] >= .8 and fastk[-i] >= .8:
@@ -441,9 +419,9 @@ def heikin_ashi_ema(Close, OpenStream_H, Close_H, Trade_Direction, CurrentPos, C
                                     flag = 0
                                     break
                             ##Cross down on the k and d lines, look for the candle stick pattern
-                            if Close_H[-3] > EMA200[-3] and Close_H[-2] < EMA200[-2] and flag:
+                            if Close_H[index - 2] > EMA200[index - 2] and Close_H[index - 1] < EMA200[index - 1] and flag:
                                 ##closed below 200EMA
-                                if Close_H[-1] < OpenStream_H[-1]:
+                                if Close_H[index] < OpenStream_H[index]:
                                     ##bearish candle
                                     ##all conditions met so open a short
                                     Trade_Direction = 0
@@ -452,15 +430,15 @@ def heikin_ashi_ema(Close, OpenStream_H, Close_H, Trade_Direction, CurrentPos, C
                             else:
                                 break  ##break out of the current for loop
         ##Look for longs
-        elif fastk[-1] < long_threshold and fastd[-1] < long_threshold:
+        elif fastk[index] < long_threshold and fastd[index] < long_threshold:
             ##Check last 10 candles, a bit overkill
             for i in range(10, 2, -1):
                 if fastd[-i] <= .2 and fastk[-i] <= .2:
                     ##both oscillators in the overbought position
                     for j in range(i, 2, -1):
                         ##now check if we get a cross on the in the next few candles
-                        if fastk[-j] < fastd[-j] and fastk[-j + 1] > fastd[-j + 1] and fastk[-1] < long_threshold and \
-                                fastd[-1] < long_threshold:
+                        if fastk[-j] < fastd[-j] and fastk[-j + 1] > fastd[-j + 1] and fastk[index] < long_threshold and \
+                                fastd[index] < long_threshold:
                             flag = 1
                             for r in range(j, 2, -1):
                                 ##we passed the threshold
@@ -469,9 +447,9 @@ def heikin_ashi_ema(Close, OpenStream_H, Close_H, Trade_Direction, CurrentPos, C
                                     break
                             ##Cross up on the k and d lines, look for the candle stick pattern
                             ##candle crosses 200EMA
-                            if Close_H[-3] < EMA200[-3] and Close_H[-2] > EMA200[-2] and flag:
+                            if Close_H[index - 2] < EMA200[index - 2] and Close_H[index - 1] > EMA200[index - 1] and flag:
                                 ##closed above 200EMA
-                                if Close_H[-1] > OpenStream_H[-1]:
+                                if Close_H[index] > OpenStream_H[index]:
                                     ##bullish candle
                                     ##all conditions met so open a long
                                     Trade_Direction = 1
@@ -479,32 +457,26 @@ def heikin_ashi_ema(Close, OpenStream_H, Close_H, Trade_Direction, CurrentPos, C
                                     break  ##break out of the current for loop
                             else:
                                 break  ##break out of the current for loop
-    elif CurrentPos == 1 and Close_H[-1] < OpenStream_H[-1]:
+    elif CurrentPos == 1 and Close_H[index] < OpenStream_H[index]:
         Close_pos = 1
-    elif CurrentPos == 0 and Close_H[-1] > OpenStream_H[-1]:
+    elif CurrentPos == 0 and Close_H[index] > OpenStream_H[index]:
         Close_pos = 1
     else:
         Close_pos = 0
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, stop_loss_val, take_profit_val, Close_pos
 
 
-def tripleEMAStochasticRSIATR(Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice):
-    Close = np.array(Close)
-    EMA50 = np.array(ema_indicator(pd.Series(Close), window=50))
-    EMA14 = np.array(ema_indicator(pd.Series(Close), window=14))
-    EMA8 = np.array(ema_indicator(pd.Series(Close), window=8))
-    fastd = np.array(stochrsi_d(pd.Series(Close)))
-    fastk = np.array(stochrsi_k(pd.Series(Close)))
+def tripleEMAStochasticRSIATR(Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, EMA50, EMA14, EMA8, fastd, fastk, index):
     ##buy signal
-    if (Close[-1] > EMA8[-1] > EMA14[-1] > EMA50[-1]) and (
-            (fastk[-1] > fastd[-1]) and (fastk[-2] < fastd[-2])):  # and (fastk[-1]<80 and fastd[-1]<80):
+    if (Close[index] > EMA8[index] > EMA14[index] > EMA50[index]) and \
+            ((fastk[index] > fastd[index]) and (fastk[index - 1] < fastd[index - 1])):  # and (fastk[index]<80 and fastd[index]<80):
         Trade_Direction = 1
-    elif (Close[-1] < EMA8[-1] < EMA14[-1] < EMA50[-1]) and (
-            (fastk[-1] < fastd[-1]) and (fastk[-2] > fastd[-2])):  # and (fastk[-1]>20 and fastd[-1]>20):
+    elif (Close[index] < EMA8[index] < EMA14[index] < EMA50[index]) and\
+            ((fastk[index] < fastd[index]) and (fastk[index - 1] > fastd[index - 1])):  # and (fastk[index]>20 and fastd[index]>20):
         Trade_Direction = 0
 
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, stop_loss_val, take_profit_val
 
 
@@ -554,8 +526,8 @@ def RSIStochEMA(Trade_Direction, Close, High, Low, signal1, currentPos, SL, TP, 
         for i in range(length - 1):
             if i < len(peaks_RSI):
                 ##Check for hidden Bearish Divergence
-                if peaks_RSI[i] < peaks_RSI[-1] and corresponding_Close_peaks[i] > corresponding_Close_peaks[-1] and \
-                        peaks_RSI[-1] - peaks_RSI[i] > 1:
+                if peaks_RSI[i] < peaks_RSI[index] and corresponding_Close_peaks[i] > corresponding_Close_peaks[index] and \
+                        peaks_RSI[index] - peaks_RSI[i] > 1:
                     for j in range(i + 1, len(peaks_RSI) - 1):
                         if peaks_RSI[j] > peaks_RSI[i]:
                             break
@@ -564,8 +536,8 @@ def RSIStochEMA(Trade_Direction, Close, High, Low, signal1, currentPos, SL, TP, 
 
             if i < len(troughs_RSI):
                 ##Check for hidden Bullish Divergence
-                if troughs_RSI[i] > troughs_RSI[-1] and corresponding_Close_troughs[i] < corresponding_Close_troughs[
-                    -1] and troughs_RSI[i] - troughs_RSI[-1] > 1:
+                if troughs_RSI[i] > troughs_RSI[index] and corresponding_Close_troughs[i] < corresponding_Close_troughs[
+                    index] and troughs_RSI[i] - troughs_RSI[index] > 1:
                     for j in range(i + 1, len(troughs_RSI) - 1):
                         if troughs_RSI[j] < troughs_RSI[i]:
                             break
@@ -583,68 +555,56 @@ def RSIStochEMA(Trade_Direction, Close, High, Low, signal1, currentPos, SL, TP, 
             signal1=-99'''
 
     ##Bullish Divergence
-    if signal1 == 1 and (fastk[-1] > fastd[-1] and (fastk[-2] < fastd[-2] or fastk[-3] < fastd[-3])) and Close[-1] > \
-            EMA200[-1]:
+    if signal1 == 1 and (fastk[index] > fastd[index] and (fastk[index - 1] < fastd[index - 1] or fastk[index - 2] < fastd[index - 2])) and Close[index] > \
+            EMA200[index]:
         Trade_Direction = 1
         signal1 = -99
 
     ##Bearish Divergence
-    elif signal1 == 0 and (fastk[-1] < fastd[-1] and (fastk[-2] > fastd[-2] or fastk[-3] > fastd[-3])) and Close[-1] < \
-            EMA200[-1]:
+    elif signal1 == 0 and (fastk[index] < fastd[index] and (fastk[index - 1] > fastd[index - 1] or fastk[index - 2] > fastd[index - 2])) and Close[index] < \
+            EMA200[index]:
         Trade_Direction = 0
         signal1 = -99
 
     if currentPos != -99:
         signal1 = -99
         Trade_Direction = -99
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, signal1, stop_loss_val, take_profit_val
 
 
 ##############################################################################################################
 
-def stochBB(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice):
-    fastd = np.array(stochrsi_d(pd.Series(Close)))
-    fastk = np.array(stochrsi_k(pd.Series(Close)))
-
-    # print(fastd[-1],fastk[-1])
-    percent_B = np.array(bollinger_pband(pd.Series(Close)))
-    percent_B1 = percent_B[-1]
-    percent_B2 = percent_B[-2]
-    percent_B3 = percent_B[-3]
+def stochBB(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice, fastd, fastk, percent_B, index):
+    percent_B1 = percent_B[index]
+    percent_B2 = percent_B[index - 1]
+    percent_B3 = percent_B[index - 2]
     # print(percent_B)
 
-    if fastk[-1] < .2 and fastd[-1] < .2 and (fastk[-1] > fastd[-1] and fastk[-2] < fastd[-2]) and (
+    if fastk[index] < .2 and fastd[index] < .2 and (fastk[index] > fastd[index] and fastk[index - 1] < fastd[index - 1]) and (
             percent_B1 < 0 or percent_B2 < 0 or percent_B3 < 0):  # or percent_B3<0):# or percent_B2<.05):
         Trade_Direction = 1
-    elif fastk[-1] > .8 and fastd[-1] > .8 and (fastk[-1] < fastd[-1] and fastk[-2] > fastd[-2]) and (
+    elif fastk[index] > .8 and fastd[index] > .8 and (fastk[index] < fastd[index] and fastk[index - 1] > fastd[index - 1]) and (
             percent_B1 > 1 or percent_B2 > 1 or percent_B3 > 1):  # or percent_B3>1):# or percent_B2>1):
         Trade_Direction = 0
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, stop_loss_val, take_profit_val
 
 
-def breakout(Trade_Direction, Close, VolumeStream, High, Low, SL, TP, TP_choice, SL_choice):
+def breakout(Trade_Direction, Close, VolumeStream, High, Low, SL, TP, TP_choice, SL_choice, max_Close, min_Close, max_Vol, index):
     invert = 0  ## switch shorts and longs, basically fakeout instead of breakout
-    # if symbol=='BTCUSDT' or symbol=='ETHUSDT':
-    #    invert=0
-    CloseS = pd.Series(Close).pct_change()
-    Volume = pd.Series(VolumeStream[:-1])
-    max_Close = CloseS.iloc[:-1].rolling(10).max()
-    min_Close = CloseS.iloc[:-1].rolling(10).min()
-    max_Vol = Volume.rolling(10).max()
     if invert:
-        if CloseS.iloc[-1] > max_Close.iloc[-1] and VolumeStream[-1] > max_Vol.iloc[-1]:
+        if Close[index] >= max_Close.iloc[index] and VolumeStream[index] >= max_Vol.iloc[index]:
             Trade_Direction = 0
-        elif CloseS.iloc[-1] < min_Close.iloc[-1] and VolumeStream[-1] > max_Vol.iloc[-1]:
+        elif Close[index] <= min_Close.iloc[index] and VolumeStream[index] >= max_Vol.iloc[index]:
             Trade_Direction = 1
     else:
-        if CloseS.iloc[-1] > max_Close.iloc[-1] and VolumeStream[-1] > max_Vol.iloc[-1]:
+        if Close[index] >= max_Close.iloc[index] and VolumeStream[index] >= max_Vol.iloc[index]:
             Trade_Direction = 1
-        elif CloseS.iloc[-1] < min_Close.iloc[-1] and VolumeStream[-1] > max_Vol.iloc[-1]:
+        elif Close[index] <= min_Close.iloc[index] and VolumeStream[index] >= max_Vol.iloc[index]:
             Trade_Direction = 0
 
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, stop_loss_val, take_profit_val
 
 
@@ -653,43 +613,40 @@ def fakeout(Trade_Direction, Close, VolumeStream, High, Low, SL, TP, TP_choice, 
     # if symbol == 'BTCUSDT' or symbol == 'ETHUSDT':
     #    invert = 0
     Close = pd.Series(Close)  # .pct_change() ##get size of bars in a percentage
-    Volume = pd.Series(VolumeStream[:-1])
-    max_Close = Close.iloc[:-1].rolling(15).max()
-    min_Close = Close.iloc[:-1].rolling(15).min()
+    Volume = pd.Series(VolumeStream[:index])
+    max_Close = Close.iloc[:index].rolling(15).max()
+    min_Close = Close.iloc[:index].rolling(15).min()
     max_Vol = Volume.rolling(15).max()
     if invert:
-        if Close.iloc[-1] > max_Close.iloc[-1] and VolumeStream[-1] < max_Vol.iloc[-1]:
+        if Close.iloc[index] > max_Close.iloc[index] and VolumeStream[index] < max_Vol.iloc[index]:
             Trade_Direction = 0
-        elif Close.iloc[-1] < min_Close.iloc[-1] and VolumeStream[-1] < max_Vol.iloc[-1]:
+        elif Close.iloc[index] < min_Close.iloc[index] and VolumeStream[index] < max_Vol.iloc[index]:
             Trade_Direction = 1
     else:
-        if Close.iloc[-1] > max_Close.iloc[-1] and VolumeStream[-1] < max_Vol.iloc[-1]:
+        if Close.iloc[index] > max_Close.iloc[index] and VolumeStream[index] < max_Vol.iloc[index]:
             Trade_Direction = 1
-        elif Close.iloc[-1] < min_Close.iloc[-1] and VolumeStream[-1] < max_Vol.iloc[-1]:
+        elif Close.iloc[index] < min_Close.iloc[index] and VolumeStream[index] < max_Vol.iloc[index]:
             Trade_Direction = 0
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, stop_loss_val, take_profit_val
 
 
-def EMA_cross(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice):
-    EMA_short = np.array(ema_indicator(pd.Series(Close), window=5))
-    EMA_long = np.array(ema_indicator(pd.Series(Close), window=20))
-
-    if EMA_short[-5] > EMA_long[-5] \
-            and EMA_short[-4] > EMA_long[-4] \
-            and EMA_short[-3] > EMA_long[-3] \
-            and EMA_short[-2] > EMA_long[-2] \
-            and EMA_short[-1] < EMA_long[-1]:
+def EMA_cross(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice, EMA_short, EMA_long, index):
+    if EMA_short[index - 4] > EMA_long[index - 4] \
+            and EMA_short[index - 3] > EMA_long[index - 3] \
+            and EMA_short[index - 2] > EMA_long[index - 2] \
+            and EMA_short[index - 1] > EMA_long[index - 1] \
+            and EMA_short[index] < EMA_long[index]:
         Trade_Direction = 0
 
-    if EMA_short[-5] < EMA_long[-5] \
-            and EMA_short[-4] < EMA_long[-4] \
-            and EMA_short[-3] < EMA_long[-3] \
-            and EMA_short[-2] < EMA_long[-2] \
-            and EMA_short[-1] > EMA_long[-1]:
+    if EMA_short[index - 4] < EMA_long[index - 4] \
+            and EMA_short[index - 3] < EMA_long[index - 3] \
+            and EMA_short[index - 2] < EMA_long[index - 2] \
+            and EMA_short[index - 1] < EMA_long[index - 1] \
+            and EMA_short[index] > EMA_long[index]:
         Trade_Direction = 1
 
-    stop_loss, take_profit = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice)
+    stop_loss, take_profit = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index)
     return Trade_Direction, stop_loss, take_profit
 
 
@@ -699,12 +656,12 @@ def EMA_cross(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice):
     #multiplier = Close1[0]/Close2[0]
     if not log:
         multiplier = (sm.OLS(Close1, Close2).fit()).params[0]
-        for i in range(len(Close1)-30,len(Close1)):
+        for i in range(len(Close1)index - 20,len(Close1)):
             new_Close.append(Close1[i]-multiplier*Close2[i])
     else:
         log_close1 = []
         log_close2 = []
-        for i in range(len(Close1)-30,len(Close1)):
+        for i in range(len(Close1)index - 20,len(Close1)):
             log_close1.append(math.log(Close1[i]))
             log_close2.append(math.log(Close2[i]))
         multiplier = (sm.OLS(log_close1, log_close2).fit()).params[0]
@@ -714,11 +671,11 @@ def EMA_cross(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice):
     #BB1 = np.array(bollinger_hband(pd.Series(new_Close),window_dev=3))
     #BB2 = np.array(bollinger_lband(pd.Series(new_Close), window_dev=3))
     #SMA20 = np.array(bollinger_mavg(pd.Series(new_Close)))
-    #print(BB[-1])
-    if BB[-1]>1:
+    #print(BB[index])
+    if BB[index]>1:
         Trade_Direction = [0,1]  # [1,0]
         
-    elif BB[-1]<0:
+    elif BB[index]<0:
         Trade_Direction = [1,0] # [0,1]
         
     return Trade_Direction,[9,9] #,Close1_TP,Close2_TP,Close1_SL,Close2_SL
@@ -730,46 +687,46 @@ def pairTrading_Crossover(Trade_Direction, Close1, Close2, CurrentPos, percent_S
     Close1_SL = 0
     Close2_SL = 0
     multiplier = (sm.OLS(Close1, Close2).fit()).params[0]
-    for i in range(len(Close1)-30,len(Close1)):
+    for i in range(len(Close1)index - 20,len(Close1)):
         new_Close.append(Close1[i]-multiplier*Close2[i])
     BB =np.array(bollinger_pband(pd.Series(new_Close),window_dev=3))
     SMA20 = np.array(bollinger_mavg(pd.Series(new_Close)))
-    if BB[-1]>1:
+    if BB[index]>1:
         Trade_Direction = [0,1]
-        Close1_SL = Close1[-1] * percent_SL
-        Close2_SL = Close2[-1] * percent_SL
-    elif BB[-1]<0:
+        Close1_SL = Close1[index] * percent_SL
+        Close2_SL = Close2[index] * percent_SL
+    elif BB[index]<0:
         Trade_Direction = [1,0]
-        Close1_SL = Close1[-1] * percent_SL
-        Close2_SL = Close2[-1] * percent_SL
+        Close1_SL = Close1[index] * percent_SL
+        Close2_SL = Close2[index] * percent_SL
     if CurrentPos!=-99:
-        if (new_Close[-1]>SMA20[-1] and (new_Close[-2]<SMA20[-2] or new_Close[-3]<SMA20[-3])) or (new_Close[-1]<SMA20[-1] and (new_Close[-2]>SMA20[-2] or new_Close[-3]>SMA20[-3])):
+        if (new_Close[index]>SMA20[index] and (new_Close[index - 1]<SMA20[index - 1] or new_Close[index - 2]<SMA20[index - 2])) or (new_Close[index]<SMA20[index] and (new_Close[index - 1]>SMA20[index - 1] or new_Close[index - 2]>SMA20[index - 2])):
             ##Price has crossed up or down over the Moving average so close the position
             Close_pos=1
     return Trade_Direction,Close1_SL,Close2_SL,Close_pos'''
 
 
-def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice):
+def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, index):
     if TP_choice == '%':
-        take_profit_val = (TP / 100) * Close[-1]
+        take_profit_val = (TP / 100) * Close[index]
     if SL_choice == '%':
-        stop_loss_val = (SL / 100) * Close[-1]
+        stop_loss_val = (SL / 100) * Close[index]
 
     if TP_choice == 'x (ATR)':
         ATR = np.array(average_true_range(pd.Series(High), pd.Series(Low), pd.Series(Close)))
-        take_profit_val = TP * abs(ATR[-1])
+        take_profit_val = TP * abs(ATR[index])
 
     if SL_choice == 'x (ATR)':
         ATR = np.array(average_true_range(pd.Series(High), pd.Series(Low), pd.Series(Close)))
-        stop_loss_val = SL * abs(ATR[-1])
+        stop_loss_val = SL * abs(ATR[index])
 
     if TP_choice == 'x (Swing High/Low) level 1':
-        high_swing = High[-1]
-        Low_swing = Low[-1]
+        high_swing = High[index]
+        Low_swing = Low[index]
         high_flag = 0
         low_flag = 0
-        j = -2
-        while j > -len(High) + 1:
+        j = index - 1
+        while j > -1:
             if High[j] > high_swing and high_flag == 0:
                 high_swing = High[j]
                 if High[j - 1] < High[j] > High[j + 1]:
@@ -785,17 +742,17 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            take_profit_val = TP * (Close[-1] - Low_swing)
+            take_profit_val = TP * (Close[index] - Low_swing)
         elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[-1])
+            take_profit_val = TP * (high_swing - Close[index])
 
     if SL_choice == 'x (Swing High/Low) level 1':
-        high_swing = High[-1]
-        Low_swing = Low[-1]
+        high_swing = High[index]
+        Low_swing = Low[index]
         high_flag = 0
         low_flag = 0
-        j = -2
-        while j > -len(High) + 1:
+        j = index - 1
+        while j > -1:
             if High[j] > high_swing and high_flag == 0:
                 high_swing = High[j]
                 if High[j - 1] < High[j] > High[j + 1]:
@@ -811,17 +768,17 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            stop_loss_val = SL * (high_swing - Close[-1])
+            stop_loss_val = SL * (high_swing - Close[index])
         elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[-1] - Low_swing)
+            stop_loss_val = SL * (Close[index] - Low_swing)
 
     if TP_choice == 'x (Swing High/Low) level 2':
-        high_swing = High[-1]
-        Low_swing = Low[-1]
+        high_swing = High[index]
+        Low_swing = Low[index]
         high_flag = 0
         low_flag = 0
-        j = -3
-        while j > -len(High) + 2:
+        j = index - 2
+        while j > -1:
             if High[j] > high_swing and high_flag == 0:
                 high_swing = High[j]
                 if High[j - 1] < High[j] > High[j + 1] and High[j - 2] < High[j] > High[j + 2]:
@@ -837,17 +794,17 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            take_profit_val = TP * (Close[-1] - Low_swing)
+            take_profit_val = TP * (Close[index] - Low_swing)
         elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[-1])
+            take_profit_val = TP * (high_swing - Close[index])
 
     if SL_choice == 'x (Swing High/Low) level 2':
-        high_swing = High[-1]
-        Low_swing = Low[-1]
+        high_swing = High[index]
+        Low_swing = Low[index]
         high_flag = 0
         low_flag = 0
-        j = -3
-        while j > -len(High) + 2:
+        j = index - 2
+        while j > -1:
             if High[j] > high_swing and high_flag == 0:
                 high_swing = High[j]
                 if High[j - 1] < High[j] > High[j + 1] and High[j - 2] < High[j] > \
@@ -865,17 +822,17 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            stop_loss_val = SL * (high_swing - Close[-1])
+            stop_loss_val = SL * (high_swing - Close[index])
         elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[-1] - Low_swing)
+            stop_loss_val = SL * (Close[index] - Low_swing)
 
     if TP_choice == 'x (Swing High/Low) level 3':
-        high_swing = High[-1]
-        Low_swing = Low[-1]
+        high_swing = High[index]
+        Low_swing = Low[index]
         high_flag = 0
         low_flag = 0
-        j = -4
-        while j > -len(High) + 3:
+        j = index - 3
+        while j > -1:
             if High[j] > high_swing and high_flag == 0:
                 high_swing = High[j]
                 if High[j - 1] < High[j] > High[j + 1] and High[j - 2] < High[j] > \
@@ -895,17 +852,17 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            take_profit_val = TP * (Close[-1] - Low_swing)
+            take_profit_val = TP * (Close[index] - Low_swing)
         elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[-1])
+            take_profit_val = TP * (high_swing - Close[index])
 
     if SL_choice == 'x (Swing High/Low) level 3':
-        high_swing = High[-1]
-        Low_swing = Low[-1]
+        high_swing = High[index]
+        Low_swing = Low[index]
         high_flag = 0
         low_flag = 0
-        j = -4
-        while j > -len(High) + 3:
+        j = index - 3
+        while j > -1:
             if High[j] > high_swing and high_flag == 0:
                 high_swing = High[j]
                 if High[j - 1] < High[j] > High[j + 1] and High[j - 2] < High[j] > \
@@ -925,17 +882,17 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            stop_loss_val = SL * (high_swing - Close[-1])
+            stop_loss_val = SL * (high_swing - Close[index])
         elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[-1] - Low_swing)
+            stop_loss_val = SL * (Close[index] - Low_swing)
 
     if TP_choice == 'x (Swing Close) level 1':
-        high_swing = Close[-1]
-        Low_swing = Close[-1]
+        high_swing = Close[index]
+        Low_swing = Close[index]
         high_flag = 0
         low_flag = 0
-        j = -2
-        while j > -len(Close) + 1:
+        j = index - 1
+        while j > -1:
             if Close[j] > high_swing and high_flag == 0:
                 high_swing = Close[j]
                 if Close[j - 1] < Close[j] > Close[j + 1]:
@@ -951,17 +908,17 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            take_profit_val = TP * (Close[-1] - Low_swing)
+            take_profit_val = TP * (Close[index] - Low_swing)
         elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[-1])
+            take_profit_val = TP * (high_swing - Close[index])
 
     if SL_choice == 'x (Swing Close) level 1':
-        high_swing = Close[-1]
-        Low_swing = Close[-1]
+        high_swing = Close[index]
+        Low_swing = Close[index]
         high_flag = 0
         low_flag = 0
-        j = -2
-        while j > -len(Close) + 1:
+        j = index - 1
+        while j > -1:
             if Close[j] > high_swing and high_flag == 0:
                 high_swing = Close[j]
                 if Close[j - 1] < Close[j] > Close[j + 1]:
@@ -977,17 +934,17 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            stop_loss_val = SL * (high_swing - Close[-1])
+            stop_loss_val = SL * (high_swing - Close[index])
         elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[-1] - Low_swing)
+            stop_loss_val = SL * (Close[index] - Low_swing)
 
     if TP_choice == 'x (Swing Close) level 2':
-        high_swing = Close[-1]
-        Low_swing = Close[-1]
+        high_swing = Close[index]
+        Low_swing = Close[index]
         high_flag = 0
         low_flag = 0
-        j = -3
-        while j > -len(Close) + 2:
+        j = index - 2
+        while j > -1:
             if Close[j] > high_swing and high_flag == 0:
                 high_swing = Close[j]
                 if Close[j - 1] < Close[j] > Close[j + 1] and Close[j - 2] < Close[j] > \
@@ -1005,17 +962,17 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            take_profit_val = TP * (Close[-1] - Low_swing)
+            take_profit_val = TP * (Close[index] - Low_swing)
         elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[-1])
+            take_profit_val = TP * (high_swing - Close[index])
 
     if SL_choice == 'x (Swing Close) level 2':
-        high_swing = Close[-1]
-        Low_swing = Close[-1]
+        high_swing = Close[index]
+        Low_swing = Close[index]
         high_flag = 0
         low_flag = 0
-        j = -3
-        while j > -len(Close) + 2:
+        j = index - 2
+        while j > -1:
             if Close[j] > high_swing and high_flag == 0:
                 high_swing = Close[j]
                 if Close[j - 1] < Close[j] > Close[j + 1] and Close[j - 2] < Close[j] > \
@@ -1033,17 +990,17 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            stop_loss_val = SL * (high_swing - Close[-1])
+            stop_loss_val = SL * (high_swing - Close[index])
         elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[-1] - Low_swing)
+            stop_loss_val = SL * (Close[index] - Low_swing)
 
     if TP_choice == 'x (Swing Close) level 3':
-        high_swing = Close[-1]
-        Low_swing = Close[-1]
+        high_swing = Close[index]
+        Low_swing = Close[index]
         high_flag = 0
         low_flag = 0
-        j = -4
-        while j > -len(Close) + 3:
+        j = index - 3
+        while j > -1:
             if Close[j] > high_swing and high_flag == 0:
                 high_swing = Close[j]
                 if Close[j - 1] < Close[j] > Close[j + 1] and Close[j - 2] < Close[j] > \
@@ -1063,17 +1020,17 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            take_profit_val = TP * (Close[-1] - Low_swing)
+            take_profit_val = TP * (Close[index] - Low_swing)
         elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[-1])
+            take_profit_val = TP * (high_swing - Close[index])
 
     if SL_choice == 'x (Swing Close) level 3':
-        high_swing = Close[-1]
-        Low_swing = Close[-1]
+        high_swing = Close[index]
+        Low_swing = Close[index]
         high_flag = 0
         low_flag = 0
-        j = -4
-        while j > -len(Close) + 3:
+        j = index - 3
+        while j > -1:
             if Close[j] > high_swing and high_flag == 0:
                 high_swing = Close[j]
                 if Close[j - 1] < Close[j] > Close[j + 1] and Close[j - 2] < Close[j] > \
@@ -1093,8 +1050,8 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
             j -= 1
 
         if Trade_Direction == 0:
-            stop_loss_val = SL * (high_swing - Close[-1])
+            stop_loss_val = SL * (high_swing - Close[index])
         elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[-1] - Low_swing)
+            stop_loss_val = SL * (Close[index] - Low_swing)
 
     return stop_loss_val, take_profit_val

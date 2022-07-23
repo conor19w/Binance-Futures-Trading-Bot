@@ -101,7 +101,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 min_price_temp = float(x[4])
                 flag = 1
                 break
-        Bots.append(Bot(symbol[k], Open[k][:buffer], Close[k][:buffer], High[k][:buffer], Low[k][:buffer], Volume[k][:buffer], Date[k][:buffer],
+        Bots.append(Bot(symbol[k], Open[k], Close[k], High[k], Low[k], Volume[k], Date[k],
                 Order_precision_temp, Coin_precision_temp, k, tick_temp, strategy, TP_choice, SL_choice, SL_mult, TP_mult, 1))
         Bots[k].add_hist([], [], [], [], [], [])
     tradeNO = 0  ##number of trades
@@ -118,18 +118,8 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         if (i + 1) % TIME_INTERVAL == 0 or TIME_INTERVAL == 1:
             for k in range(len(symbol)):
                 try:
-                    Bots[k].handle_socket_message(-99, Date[k][int(i / TIME_INTERVAL)],
-                                                  float(Close[k][int(i / TIME_INTERVAL)]),
-                                                  float(Volume[k][int(i / TIME_INTERVAL)]),
-                                                  float(Open[k][int(i / TIME_INTERVAL)]),
-                                                  float(High[k][int(i / TIME_INTERVAL)]),
-                                                  float(Low[k][int(i / TIME_INTERVAL)]))
-                    ## Checking the validity of 5m candles, ensuring proper alignment
-                    #print(Close_1min[k][i] == Close[k][int(i / TIME_INTERVAL)])
-                    # print(str(High[k][int(i / TIME_INTERVAL)]) in [str(High_1min[k][i]),str(High_1min[k][i-1]),str(High_1min[k][i-2]),str(High_1min[k][i-3]),str(High_1min[k][i-4])])
-                    # print(str(Low[k][int(i / TIME_INTERVAL)]) in [str(Low_1min[k][i]), str(Low_1min[k][i - 1]), str(Low_1min[k][i - 2]),
-                    #       str(Low_1min[k][i - 3]), str(Low_1min[k][i - 4])])
-                    #print(str(Date_1min[k][i]) == str(Date[k][int(i / TIME_INTERVAL)]))
+                    temp = Close[k][int(i / TIME_INTERVAL)]  ## make sure we don't have an index out of bounds error
+                    Bots[k].current_index = int(i / TIME_INTERVAL)
                 except:
                     pass
 
@@ -139,7 +129,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     if t.index == k:
                         trade_flag = 1
                         break
-                if trade_flag == 0 and Bots[k].Date[-1] != 'Data Set hasn\'t started yet':
+                if trade_flag == 0 and Bots[k].Date[Bots[k].current_index] != 'Data Set hasn\'t started yet':
                     temp_dec = Bots[k].Make_decision()
                     if temp_dec[0] != -99:
                         new_trades.append([k, temp_dec])
@@ -234,7 +224,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         if printing_on:
             trade_price = []
             for t in active_trades:
-                trade_price.append(Bots[t.index].Close[-1])
+                trade_price.append(Bots[t.index].Close[Bots[t.index].current_index])
             if Trade_Each_Coin_With_Separate_Accounts:
                 pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][i],
                                                                                   account_balance, change_occurred, print_to_csv, csv_name, path, csv_path)

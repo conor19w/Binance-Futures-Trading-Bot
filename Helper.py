@@ -805,3 +805,61 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
                         f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
 
     return 0, 0, False
+
+
+def log_info(active_trades: [Trade], trade_price, Dates, account_balance, csv_name, indicators):
+    ###########################################################################################################
+    #####################               Log Details                          ##########################
+    ###########################################################################################################
+
+    info = {}
+    symbol_info = []
+    entry_price_info = []
+    position_size_info = []
+    TP_vals_info = []
+    SL_val_info = []
+    trade_direction_info = []
+    for k in range(len(active_trades)):
+        symbol_info_temp, entry_price_info_temp, position_size_info_temp, TP_vals_info_temp, SL_val_info_temp, \
+            trade_direction_info_temp, trade_status_info_temp, trade_highest_temp, trade_lowest_temp = \
+            active_trades[k].print_vals()
+        symbol_info.append(symbol_info_temp)
+        entry_price_info.append(entry_price_info_temp)
+        position_size_info.append(position_size_info_temp)
+        TP_vals_info.append(TP_vals_info_temp)
+        SL_val_info.append(SL_val_info_temp)
+
+        if trade_direction_info_temp == 0:
+            trade_direction_info.append('Short')
+        elif trade_direction_info_temp == 1:
+            trade_direction_info.append('Long')
+        elif trade_direction_info_temp == -99:
+            trade_direction_info.append('Closed')
+
+    trade_pnl = []
+    for i in range(len(active_trades)):
+        if active_trades[i].trade_direction == 0:
+            trade_pnl.append((entry_price_info[i] - trade_price[i]) * (position_size_info[i]))
+        elif active_trades[i].trade_direction == 1:
+            trade_pnl.append((trade_price[i] - entry_price_info[i]) * (position_size_info[i]))
+    info['Date'] = Dates
+    info['Symbol'] = symbol_info
+    info['Direction'] = trade_direction_info
+    info['Entry'] = entry_price_info
+    info['Close'] = trade_price
+    info['Size'] = position_size_info
+    info['TP'] = TP_vals_info
+    info['SL'] = SL_val_info
+    info['PNL'] = trade_pnl
+    for x in indicators:
+        info[f'{x[0]}'] = x[1]
+
+
+    print(f"\nAccount Balance: {account_balance}")
+    print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
+    print(f"Account Balance: {account_balance}")
+    print("------------------------------------------------------------\n")
+
+    with open(csv_name, 'a') as O:
+        for i in range(len(active_trades)):
+            O.write(f"Account Balance: {account_balance}" + "\n" + tabulate(info, headers='keys', tablefmt='fancy_grid') + "\n")
