@@ -401,7 +401,7 @@ def run_bot(API_KEY, API_SECRET, leverage, order_Size, start_string, Interval, M
     _thread = Thread(target=web_soc_process, args=(pipe1, twm))
     _thread.start()
 
-    P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, start_string, Interval, Max_Number_Of_Trades, client, use_trailing_stop,
+    P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, buffer, Interval, Max_Number_Of_Trades, client, use_trailing_stop,
                                                  trailing_stop_callback, symbol, strategy, TP_choice, SL_choice, SL_mult, TP_mult))
     P1.start()
     twm.join()  ##keep websockets running
@@ -412,5 +412,5 @@ if __name__ == '__main__':
     from Config_File import *
     from Config_File import symbol  # explicitly importing to remove a warning
 
-    run_bot(API_KEY, API_SECRET, leverage, order_Size, start_string, Interval, Max_Number_Of_Trades,
+    run_bot(API_KEY, API_SECRET, leverage, order_Size, buffer, Interval, Max_Number_Of_Trades,
             use_trailing_stop, trailing_stop_callback, symbol, strategy, TP_choice, SL_choice, SL_mult, TP_mult, Trade_All_Coins)

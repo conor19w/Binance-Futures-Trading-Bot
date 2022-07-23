@@ -123,6 +123,9 @@ class Bot:
             self.fastd = np.array(stochrsi_d(pd.Series(self.Close)))
             self.fastk = np.array(stochrsi_k(pd.Series(self.Close)))
             self.EMA200 = np.array(ema_indicator(pd.Series(self.Close), window=200))
+        elif self.strategy == 'ema_crossover':
+            self.EMA_short = np.array(ema_indicator(pd.Series(self.Close), window=10))
+            self.EMA_long = np.array(ema_indicator(pd.Series(self.Close), window=20))
 
     def add_hist(self, Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp):
         if not self.backtesting:
@@ -305,6 +308,11 @@ class Bot:
                                                                                     self.TP_choice, self.SL_choice,
                                                                                     self.fastd, self.fastk, self.EMA200,
                                                                                     self.current_index)
+        elif self.strategy == 'ema_crossover':
+            Trade_Direction, stop_loss_val, take_profit_val = ema_crossover(self.Trade_Direction, self.Close, self.High, self.Low,
+                                                                            self.SL, self.TP, self.TP_choice, self.SL_choice,
+                                                                            self.current_index, self.EMA_short, self.EMA_long)
+
         return Trade_Direction, stop_loss_val, take_profit_val
 
     def check_close_pos(self, current_pos):

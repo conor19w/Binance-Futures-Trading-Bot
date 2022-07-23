@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
         isolated_test = BooleanVar()
         isolated_test_checkbox = Checkbutton(frame,
-                                             text="Isolated Test: (If on strategy will be evaluated on each coin with a separate balance.\n Good for finding coins that have good signals from the strategy)",
+                                             text="Isolated Test: (If on strategy will be evaluated on each coin with a separate balance.\n Good for finding coins that get good signals from the strategy)",
                                              variable=isolated_test, bg="light blue", activebackground="light blue")
         isolated_test_checkbox.place(relx=.01, rely=.305)
 
@@ -279,7 +279,7 @@ if __name__ == "__main__":
     label4 = tk.Label(root, text="Strategy:", bg="light blue")
     label4.place(relx=.55, rely=.1)
     strategy_options = ["StochRSIMACD", "tripleEMAStochasticRSIATR", "tripleEMA", "breakout", "stochBB", "goldenCross",
-                        "candle_wick", "fibMACD", "EMA_cross", "heikin_ashi_ema2", "heikin_ashi_ema"]
+                        "candle_wick", "fibMACD", "EMA_cross", "heikin_ashi_ema2", "heikin_ashi_ema", "ema_crossover"]
     strategy = StringVar()
     strategy.set("StochRSIMACD")
     strategy_options_dropdown = tk.OptionMenu(root, strategy, *strategy_options)
