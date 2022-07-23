@@ -177,7 +177,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                                 trade_flag = 1
                                 break
                         for s in open_trades:
-                            if s == t.symbol:
+                            if s == Bots[i].symbol:
                                 trade_flag = 1
                                 break
                         if trade_flag == 0:
