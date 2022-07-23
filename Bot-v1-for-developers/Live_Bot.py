@@ -176,10 +176,10 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                             if t.index == i:
                                 trade_flag = 1
                                 break
-                            for s in open_trades:
-                                if s == t.symbol:
-                                    trade_flag = 1
-                                    break
+                        for s in open_trades:
+                            if s == t.symbol:
+                                trade_flag = 1
+                                break
                         if trade_flag == 0:
                             temp_dec = Bots[i].Make_decision()
                             # print(Data[i].symbol,temp_dec)
