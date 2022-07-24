@@ -529,8 +529,16 @@ def get_heikin_ashi(Open, Close, High, Low):
 
 def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume,
                         symbol, TIME_INTERVAL, start, end):
+    global desktop_path
     print("Loading Price Data")
     i = 0
+    try:
+        if not os.path.exists(desktop_path + f'\\price_data\\'):
+            os.makedirs(desktop_path + f'\\price_data\\')
+    except:
+        desktop_path = './'
+        if not os.path.exists(desktop_path + f'\\price_data\\'):
+            os.makedirs(desktop_path + f'\\price_data\\')
     while i < len(symbol):
         path = f"{desktop_path}\\price_data\\{symbol[i]}_{start}_{end}.joblib"
         try:

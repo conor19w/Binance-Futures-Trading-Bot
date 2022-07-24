@@ -5,7 +5,7 @@ from ta.trend import ema_indicator, macd_signal, macd, sma_indicator, adx, sma_i
     ichimoku_base_line, ichimoku_conversion_line
 from ta.volatility import average_true_range, bollinger_pband, bollinger_hband, bollinger_lband, bollinger_mavg, \
     bollinger_wband
-from ta.volume import ease_of_movement, on_balance_volume, force_current_index, money_flow_current_index
+from ta.volume import ease_of_movement, on_balance_volume, force_index, money_flow_index
 from ta.momentum import tsi
 import math
 # import statsmodels.api as sm
