@@ -337,6 +337,9 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                             active_trades[i].same_candle = False
                             break
                     print_flag = 0
+                    temp_symbols = []
+                    for t in active_trades:
+                        temp_symbols.append(t.symbol)
                     print(f"Account Balance: {account_balance}, {Bots[0].Date[-1]}: Active Trades: {temp_symbols}")
                     #Helper.log_info(active_trades, trade_prices, Dates, account_balance, csv_name, indicators)
                     try:
