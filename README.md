@@ -69,8 +69,9 @@ __Strategies are implemented in Bot_Class as functions in Make_decision()__
 ---
 
 ## To-Do list: (suggest something and I'll add it) 😃 ##
-* Data Cleaning task to run every x amount of minutes, ensuring the Live Bot hasn't lost any candles
+* Data Cleaning task to run every x amount of minutes, ensuring the Live Bot hasn't missed any candles
 * Option to give config in shell flags (Not sure yet but this was requested)
+* Ability to run different strategies, leverage and TP/SL on some coins. (difficult to find a good layout, but I'll try)
 ---
 ## Latest Changes (if any): ##
 * Added a GUI just run app.py (23/07/22)
