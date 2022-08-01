@@ -54,7 +54,8 @@ __Just Run ```app.py``` to get the GUI__
 python3 app.py
 ```
 ![](files/Backtester.PNG)
-* Backtests are displayed in the terminal while running, the results are then saved to a csv file in the current directory along with a graph image.
+* Backtests are displayed in the terminal while running, the results are then saved to a csv file in the current directory along with a graph image.  
+![](files/Backtester Log.PNG)
 
 ![](files/Live_Trading.PNG)
 #### Creating Custom Strategies: ####
