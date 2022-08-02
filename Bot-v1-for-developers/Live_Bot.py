@@ -156,202 +156,201 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
     data_thread.start()
     while True:
         try:
-            try:
-                if new_candle_flag:
-                    for Bot in Bots:
-                        Bot.handle_socket_message(Data[Bot.symbol])
-                    print_flag = 1
-                    new_candle_flag = 0
+            if new_candle_flag:
+                for Bot in Bots:
+                    Bot.handle_socket_message(Data[Bot.symbol])
+                print_flag = 1
+                new_candle_flag = 0
 
-                    ##Ensure Bot doesn't interfere with positions opened manually by the user
-                    open_trades = []
-                    position_info = client.futures_position_information()
-                    for position in position_info:
-                        if float(position['notional']) != 0.0:
-                            open_trades.append(position['symbol'])
+                ##Ensure Bot doesn't interfere with positions opened manually by the user
+                open_trades = []
+                position_info = client.futures_position_information()
+                for position in position_info:
+                    if float(position['notional']) != 0.0:
+                        open_trades.append(position['symbol'])
 
-                    for i in range(len(Bots)):
-                        trade_flag = 0
-                        for t in active_trades:
-                            if t.index == i:
-                                trade_flag = 1
-                                break
-                        for s in open_trades:
-                            if s == Bots[i].symbol:
-                                trade_flag = 1
-                                break
-                        if trade_flag == 0:
-                            temp_dec = Bots[i].Make_decision()
-                            # print(Data[i].symbol,temp_dec)
-                            if temp_dec[0] != -99:
-                                new_trades.append([i, temp_dec])  ##[index,[trade_direction,SL,TP]]
-                ##Sort out new trades to be opened
-                while len(new_trades) > 0 and len(active_trades) < Max_Number_Of_Trades:
-                    account_balance = 0
-                    start_account_balance = 0
-                    account_balance_info = client.futures_account_balance()
-                    for item in account_balance_info:
-                        if item['asset'] == 'USDT':
-                            account_balance = float(item['balance'])
-                            start_account_balance = float(item['balance'])
+                for i in range(len(Bots)):
+                    trade_flag = 0
+                    for t in active_trades:
+                        if t.index == i:
+                            trade_flag = 1
                             break
-                    [index, [trade_direction, stop_loss, take_profit]] = new_trades.pop(0)
-                    order_qty = leverage * order_Size * account_balance / Bots[index].Close[-1]
-                    order_id_temp, position_size_temp = TM.open_trade(Bots[index].symbol, trade_direction, order_qty,
-                                                                      Bots[index].OP)
+                    for s in open_trades:
+                        if s == Bots[i].symbol:
+                            trade_flag = 1
+                            break
+                    if trade_flag == 0:
+                        temp_dec = Bots[i].Make_decision()
+                        # print(Data[i].symbol,temp_dec)
+                        if temp_dec[0] != -99:
+                            new_trades.append([i, temp_dec])  ##[index,[trade_direction,SL,TP]]
+            ##Sort out new trades to be opened
+            while len(new_trades) > 0 and len(active_trades) < Max_Number_Of_Trades:
+                account_balance = 0
+                start_account_balance = 0
+                account_balance_info = client.futures_account_balance()
+                for item in account_balance_info:
+                    if item['asset'] == 'USDT':
+                        account_balance = float(item['balance'])
+                        start_account_balance = float(item['balance'])
+                        break
+                [index, [trade_direction, stop_loss, take_profit]] = new_trades.pop(0)
+                order_qty = leverage * order_Size * account_balance / Bots[index].Close[-1]
+                order_id_temp, position_size_temp = TM.open_trade(Bots[index].symbol, trade_direction, order_qty,
+                                                                  Bots[index].OP, Bots[index].Date[-1])
 
-                    ##Add on the trade which we will later Check on
-                    active_trades.append(Trade(index, position_size_temp, take_profit, stop_loss, trade_direction, order_id_temp,
-                              Bots[index].symbol))
-                    if len(active_trades) >= Max_Number_Of_Trades:
-                        new_trades = []  ##Don't Open any new positions
-
-                ##Clear trades if trade list is full
+                ##Add on the trade which we will later Check on
+                active_trades.append(Trade(index, position_size_temp, take_profit, stop_loss, trade_direction, order_id_temp,
+                          Bots[index].symbol))
                 if len(active_trades) >= Max_Number_Of_Trades:
                     new_trades = []  ##Don't Open any new positions
 
-                rightnow = datetime.now().time()  ##time right now
-                timer = timedelta(hours=0, minutes=0, seconds=15)  ##how often to run code below
-                if (datetime.combine(date.today(), rightnow) - datetime.combine(yesterdate, start)) > timer:
-                    start = datetime.now().time()  ##reset start
-                    yesterdate = date.today()
-                    all_orders = client.futures_get_all_orders()
+            ##Clear trades if trade list is full
+            if len(active_trades) >= Max_Number_Of_Trades:
+                new_trades = []  ##Don't Open any new positions
 
-                    ##Check if we are in a trade set compensation and TPs
-                    trade_index = 0
-                    while trade_index < len(active_trades):
-                        pop_flag = 0
-                        for order in all_orders:
-                            if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == \
-                                    active_trades[trade_index].order_id and active_trades[trade_index].SL_id == '' and \
-                                    order['status'] == 'FILLED':
+            rightnow = datetime.now().time()  ##time right now
+            timer = timedelta(hours=0, minutes=0, seconds=15)  ##how often to run code below
+            if (datetime.combine(date.today(), rightnow) - datetime.combine(yesterdate, start)) > timer:
+                start = datetime.now().time()  ##reset start
+                yesterdate = date.today()
+                all_orders = client.futures_get_all_orders()
 
-                                active_trades[trade_index].entry_price = float(client.futures_position_information(symbol=active_trades[trade_index].symbol)[0]['entryPrice'])
-                                take_profit_val = 0
-                                stop_loss_val = 0
-                                if active_trades[trade_index].trade_direction:
-                                    take_profit_val = active_trades[trade_index].TP_val + active_trades[
-                                        trade_index].entry_price
-                                    stop_loss_val = active_trades[trade_index].entry_price - active_trades[
-                                        trade_index].SL_val
-                                else:
-                                    take_profit_val = active_trades[trade_index].entry_price - active_trades[
-                                        trade_index].TP_val
-                                    stop_loss_val = active_trades[trade_index].entry_price + active_trades[
-                                        trade_index].SL_val
+                ##Check if we are in a trade set compensation and TPs
+                trade_index = 0
+                while trade_index < len(active_trades):
+                    pop_flag = 0
+                    for order in all_orders:
+                        if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == \
+                                active_trades[trade_index].order_id and active_trades[trade_index].SL_id == '' and \
+                                order['status'] == 'FILLED':
 
-                                ##This position has been opened
-                                if active_trades[trade_index].TP_id == '':
-                                    active_trades[trade_index].TP_id = TM.place_TP(active_trades[trade_index].symbol,[take_profit_val, active_trades[trade_index].position_size],
-                                                                                   active_trades[trade_index].trade_direction,Bots[active_trades[trade_index].index].CP,
-                                                                                   Bots[active_trades[trade_index].index].tick_size)
+                            active_trades[trade_index].entry_price = float(client.futures_position_information(symbol=active_trades[trade_index].symbol)[0]['entryPrice'])
+                            take_profit_val = 0
+                            stop_loss_val = 0
+                            if active_trades[trade_index].trade_direction:
+                                take_profit_val = active_trades[trade_index].TP_val + active_trades[
+                                    trade_index].entry_price
+                                stop_loss_val = active_trades[trade_index].entry_price - active_trades[
+                                    trade_index].SL_val
+                            else:
+                                take_profit_val = active_trades[trade_index].entry_price - active_trades[
+                                    trade_index].TP_val
+                                stop_loss_val = active_trades[trade_index].entry_price + active_trades[
+                                    trade_index].SL_val
 
-                                active_trades[trade_index].SL_id = TM.place_SL(active_trades[trade_index].symbol,stop_loss_val, active_trades[trade_index].trade_direction,
-                                                                               Bots[active_trades[trade_index].index].CP,Bots[active_trades[trade_index].index].tick_size)
-                                ##Order would trigger immediately so close the position
-                                if active_trades[trade_index].SL_id == -1 or active_trades[trade_index].TP_id == -1:
-                                    TM.close_position(active_trades[trade_index].symbol,
-                                                      active_trades[trade_index].trade_direction,
-                                                      active_trades[trade_index].position_size)
-                                    print(f"Closed Trade on {active_trades[trade_index].symbol} as SL OR TP would have thrown a trigger immediately error")
-                                    pop_flag = 1
+                            ##This position has been opened
+                            if active_trades[trade_index].TP_id == '':
+                                active_trades[trade_index].TP_id = TM.place_TP(active_trades[trade_index].symbol,[take_profit_val, active_trades[trade_index].position_size],
+                                                                               active_trades[trade_index].trade_direction,Bots[active_trades[trade_index].index].CP,
+                                                                               Bots[active_trades[trade_index].index].tick_size, Bots[trade_index].Date[-1])
+
+                            active_trades[trade_index].SL_id = TM.place_SL(active_trades[trade_index].symbol,stop_loss_val, active_trades[trade_index].trade_direction,
+                                                                           Bots[active_trades[trade_index].index].CP,Bots[active_trades[trade_index].index].tick_size, Bots[trade_index].Date[-1])
+                            ##Order would trigger immediately so close the position
+                            if active_trades[trade_index].SL_id == -1 or active_trades[trade_index].TP_id == -1:
+                                TM.close_position(active_trades[trade_index].symbol,
+                                                  active_trades[trade_index].trade_direction,
+                                                  active_trades[trade_index].position_size)
+                                print(f"Closed Trade on {active_trades[trade_index].symbol} as SL OR TP would have thrown a trigger immediately error")
+                                pop_flag = 1
+                                break
+                    if pop_flag:
+                        active_trades.pop(trade_index)
+                    else:
+                        trade_index += 1
+                ##Check If trades have hit their TP values or SL value and move SL/Cancel open orders cause the trade is finished
+                trade_index = 0
+                while trade_index < len(active_trades):
+                    pop_flag = 0
+                    for order in all_orders:
+                        if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == \
+                                active_trades[trade_index].TP_id and order['status'] == 'FILLED':
+                            ##Trading Statistics
+                            TS.wins += 1
+                            TS.total_number_of_trades += 1
+                            account_balance = 0
+                            account_balance_info = client.futures_account_balance()
+                            for item in account_balance_info:
+                                if item['asset'] == 'USDT':
+                                    account_balance = float(item['balance'])
                                     break
-                        if pop_flag:
-                            active_trades.pop(trade_index)
-                        else:
-                            trade_index += 1
-                    ##Check If trades have hit their TP values or SL value and move SL/Cancel open orders cause the trade is finished
-                    trade_index = 0
-                    while trade_index < len(active_trades):
-                        pop_flag = 0
-                        for order in all_orders:
-                            if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == \
-                                    active_trades[trade_index].TP_id and order['status'] == 'FILLED':
-                                ##Trading Statistics
-                                TS.wins += 1
-                                TS.total_number_of_trades += 1
-                                account_balance = 0
-                                account_balance_info = client.futures_account_balance()
-                                for item in account_balance_info:
-                                    if item['asset'] == 'USDT':
-                                        account_balance = float(item['balance'])
-                                        break
-                                ##Position Closed so cancel open orders and pop off list
-                                try:
-                                    client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
-                                except:
-                                    pass
-                                pop_flag = 1  ##position Closed so pop instead of iterating
-                                break
-                            elif order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == \
-                                    active_trades[trade_index].SL_id and order['status'] == 'FILLED':
-                                ##Trading Statistics
-                                TS.losses += 1
-                                TS.total_number_of_trades += 1
-                                account_balance = 0
-                                account_balance_info = client.futures_account_balance()
-                                for item in account_balance_info:
-                                    if item['asset'] == 'USDT':
-                                        account_balance = float(item['balance'])
-                                        break
-                                ##We've hit our SL so close open orders and pop off list
-                                try:
-                                    client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
-                                except:
-                                    pass
-                                pop_flag = 1  ##Pop off the list
-                                break
-                        if pop_flag == 1:
-                            active_trades.pop(trade_index)
-                        else:
-                            trade_index += 1
-
-                    ##Check If positions have been closed manually by the user
-                    i = 0
-                    while i < len(active_trades):
-                        position_info = client.futures_position_information(symbol=active_trades[i].symbol)[0]
-                        if float(position_info['positionAmt']) == 0:
+                            ##Position Closed so cancel open orders and pop off list
                             try:
-                                client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol) ##Close open orders on that symbol
+                                client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
                             except:
                                 pass
+                            pop_flag = 1  ##position Closed so pop instead of iterating
+                            break
+                        elif order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == \
+                                active_trades[trade_index].SL_id and order['status'] == 'FILLED':
+                            ##Trading Statistics
+                            TS.losses += 1
+                            TS.total_number_of_trades += 1
+                            account_balance = 0
+                            account_balance_info = client.futures_account_balance()
+                            for item in account_balance_info:
+                                if item['asset'] == 'USDT':
+                                    account_balance = float(item['balance'])
+                                    break
+                            ##We've hit our SL so close open orders and pop off list
+                            try:
+                                client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)
+                            except:
+                                pass
+                            pop_flag = 1  ##Pop off the list
+                            break
+                    if pop_flag == 1:
+                        active_trades.pop(trade_index)
+                    else:
+                        trade_index += 1
+
+                ##Check If positions have been closed manually by the user
+                i = 0
+                while i < len(active_trades):
+                    position_info = client.futures_position_information(symbol=active_trades[i].symbol)[0]
+                    if float(position_info['positionAmt']) == 0:
+                        try:
+                            client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol) ##Close open orders on that symbol
+                        except:
+                            pass
+                        active_trades.pop(i)
+                    else:
+                        i += 1
+
+            if print_flag:
+                i = 0
+                while i < len(active_trades):
+                    if Bots[active_trades[i].index].use_close_pos and not active_trades[i].same_candle:
+                        ## Check each interval if the close position was met
+                        close_pos = Bots[active_trades[i].index].check_close_pos(active_trades[i].trade_direction)
+                        if close_pos:
+                            TM.close_position(active_trades[i].symbol,
+                                              active_trades[i].trade_direction,
+                                              active_trades[i].position_size, Bots[active_trades[i].index].Date[-1])
+                            close_pos = 0
+                            print(f"Closed Trade on {active_trades[i].symbol} as Close Position condition was met")
                             active_trades.pop(i)
                         else:
                             i += 1
-
-                if print_flag:
-                    i = 0
-                    while i < len(active_trades):
-                        if Bots[active_trades[i].index].use_close_pos and not active_trades[i].same_candle:
-                            ## Check each interval if the close position was met
-                            close_pos = Bots[active_trades[i].index].check_close_pos(active_trades[i].trade_direction)
-                            if close_pos:
-                                TM.close_position(active_trades[i].symbol,
-                                                  active_trades[i].trade_direction,
-                                                  active_trades[i].position_size)
-                                close_pos = 0
-                                print(f"Closed Trade on {active_trades[i].symbol} as Close Position condition was met")
-                                active_trades.pop(i)
-                            else:
-                                i += 1
-                        else:
-                            active_trades[i].same_candle = False
-                            break
-                    print_flag = 0
-                    temp_symbols = []
-                    for t in active_trades:
-                        temp_symbols.append(t.symbol)
-                    print(f"Account Balance: {account_balance}, {Bots[0].Date[-1]}: Active Trades: {temp_symbols}")
-                    try:
-                        print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance},"
-                              f" Average Trade Profit: ${(account_balance - startup_account_balance) / TS.total_number_of_trades}")
-                    except:
-                        print(
-                            f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance}")
+                    else:
+                        active_trades[i].same_candle = False
+                        break
+                print_flag = 0
+                temp_symbols = []
+                for t in active_trades:
+                    temp_symbols.append(t.symbol)
+                print(f"Account Balance: {account_balance}, {Bots[0].Date[-1]}: Active Trades: {temp_symbols}")
+                try:
+                    print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance},"
+                          f" Average Trade Profit: ${(account_balance - startup_account_balance) / TS.total_number_of_trades}")
+                except:
+                    print(
+                        f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance}")
 
 
-            except BinanceAPIException as e:
-                pp.pprint(e)
+        except BinanceAPIException as e:
+            pp.pprint(e)
         except Exception as e:
             print(e)
             exc_type, exc_obj, exc_tb = sys.exc_info()

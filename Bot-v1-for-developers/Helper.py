@@ -70,130 +70,129 @@ class Trade:
         return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status, self.Highest_val, self.Lowest_val
 
 
+def log_error(e):
+    with open('errors.txt', 'a') as O:
+        O.write(e + "\n")
+
+
 class Trade_Manager:
     def __init__(self, client: Client, use_trailing_stop, trailing_stop_callback):
         self.client = client
         self.use_trailing_stop = use_trailing_stop
         self.trailing_stop_callback = trailing_stop_callback
 
-    def open_trade(self, symbol, side, order_qty, OP):
+    def open_trade(self, symbol, side, order_qty, OP, time):
         orderID = ''
         try:
-            try:
-
-                if OP == 0:
-                    order_qty = round(order_qty)
-                else:
-                    order_qty = round(order_qty, OP)
-
-                ##Could Make limit orders but for now the entry is a market
-                if side == 0:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=SIDE_SELL,
-                        type=FUTURE_ORDER_TYPE_MARKET,
-                        quantity=order_qty)
-                    orderID = order['orderId']
-                if side == 1:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=SIDE_BUY,
-                        type=FUTURE_ORDER_TYPE_MARKET,
-                        quantity=order_qty)
-                    orderID = order['orderId']
-            except BinanceAPIException as e:
-                print("Error in open_trade(), Error: ", e)
-
+            if OP == 0:
+                order_qty = round(order_qty)
+            else:
+                order_qty = round(order_qty, OP)
+            ##Could Make limit orders but for now the entry is a market
+            if side == 0:
+                order = self.client.futures_create_order(
+                    symbol=symbol,
+                    side=SIDE_SELL,
+                    type=FUTURE_ORDER_TYPE_MARKET,
+                    quantity=order_qty)
+                orderID = order['orderId']
+            if side == 1:
+                order = self.client.futures_create_order(
+                    symbol=symbol,
+                    side=SIDE_BUY,
+                    type=FUTURE_ORDER_TYPE_MARKET,
+                    quantity=order_qty)
+                orderID = order['orderId']
+        except BinanceAPIException as e:
+            log_error(f"{time}: {symbol}: Error in open_trade(), Error: {e}")
+            print("Error in open_trade(), Error: ", e)
         except Exception as e:
             print(e)
+            log_error(f"{time}: {symbol}: {e}")
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
 
         return orderID, order_qty
 
-    def place_TP(self, symbol, TP, side, CP, tick_size):
+    def place_TP(self, symbol, TP, side, CP, tick_size, time):
         TP_ID = ''
         try:
-            try:
-
-                TP_val = 0
-                order = ''
-                order_side = ''
-                if CP == 0:
-                    TP_val = round(TP[0])
-                else:
-                    TP_val = round(round(TP[0] / tick_size) * tick_size, CP)
-                if side == 1:
-                    order_side = SIDE_SELL
-                elif side == 0:
-                    order_side = SIDE_BUY
-                if not self.use_trailing_stop:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=order_side,
-                        type=FUTURE_ORDER_TYPE_LIMIT,
-                        price=TP_val,
-                        timeInForce=TIME_IN_FORCE_GTC,
-                        reduceOnly='true',
-                        quantity=TP[1])
-                    TP_ID = order['orderId']
-                else:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=order_side,
-                        type='TRAILING_STOP_MARKET',
-                        ActivationPrice=TP_val,
-                        callbackRate=self.trailing_stop_callback,
-                        quantity=TP[1])
-                    TP_ID = order['orderId']
-
-            except BinanceAPIException as e:
-                print("\nError in place_TP(), Error: ", e)
-                print(f"symbol: {symbol} TP: {TP}\n")
-                return -1
+            TP_val = 0
+            order = ''
+            order_side = ''
+            if CP == 0:
+                TP_val = round(TP[0])
+            else:
+                TP_val = round(round(TP[0] / tick_size) * tick_size, CP)
+            if side == 1:
+                order_side = SIDE_SELL
+            elif side == 0:
+                order_side = SIDE_BUY
+            if not self.use_trailing_stop:
+                order = self.client.futures_create_order(
+                    symbol=symbol,
+                    side=order_side,
+                    type=FUTURE_ORDER_TYPE_LIMIT,
+                    price=TP_val,
+                    timeInForce=TIME_IN_FORCE_GTC,
+                    reduceOnly='true',
+                    quantity=TP[1])
+                TP_ID = order['orderId']
+            else:
+                order = self.client.futures_create_order(
+                    symbol=symbol,
+                    side=order_side,
+                    type='TRAILING_STOP_MARKET',
+                    ActivationPrice=TP_val,
+                    callbackRate=self.trailing_stop_callback,
+                    quantity=TP[1])
+                TP_ID = order['orderId']
+        except BinanceAPIException as e:
+            log_error("{time}: {symbol}: Error in place_TP(), Error: {e}")
+            print(f"\n{time}: {symbol}: Error in place_TP(), Error: {e}")
+            print(f"symbol: {symbol} TP: {TP}\n")
+            return -1
         except Exception as e:
             print(e)
+            log_error(f"{time}: {symbol}: {e}")
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
-
         return TP_ID
 
-    def place_SL(self, symbol, SL, side, CP, tick_size):
+    def place_SL(self, symbol, SL, side, CP, tick_size, time):
         order_ID = ''
         try:
-            try:
-                if CP == 0:
-                    SL = round(SL)
-                else:
-                    SL = round(round(SL / tick_size) * tick_size, CP)
+            if CP == 0:
+                SL = round(SL)
+            else:
+                SL = round(round(SL / tick_size) * tick_size, CP)
 
-                if side == 1:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=SIDE_SELL,
-                        type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                        stopPrice=SL,
-                        closePosition='true')
-                    order_ID = order['orderId']
-                else:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=SIDE_BUY,
-                        type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                        stopPrice=SL,
-                        closePosition='true')
-                    order_ID = order['orderId']
+            if side == 1:
+                order = self.client.futures_create_order(
+                    symbol=symbol,
+                    side=SIDE_SELL,
+                    type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                    stopPrice=SL,
+                    closePosition='true')
+                order_ID = order['orderId']
+            else:
+                order = self.client.futures_create_order(
+                    symbol=symbol,
+                    side=SIDE_BUY,
+                    type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                    stopPrice=SL,
+                    closePosition='true')
+                order_ID = order['orderId']
 
-
-
-            except BinanceAPIException as e:
-                print("Error in place_SL(), Error: ", e)
-                print(f"symbol: {symbol} SL: {SL}\n")
-                return -1
-
+        except BinanceAPIException as e:
+            log_error(f"{time}: {symbol}: Error in place_SL(), Error: {e}")
+            print(f"Error in place_SL(), Error: {e}")
+            print(f"symbol: {symbol} SL: {SL}\n")
+            return -1
         except Exception as e:
+            log_error(f"{time}: {e}")
             print(e)
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -201,27 +200,28 @@ class Trade_Manager:
 
         return order_ID
 
-    def close_position(self, symbol, trade_direction, total_position_size):
+    def close_position(self, symbol, trade_direction, total_position_size, time):
         try:
-            try:
-                self.client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel orders for this symbol
-                if trade_direction == 0:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=SIDE_BUY,
-                        type=FUTURE_ORDER_TYPE_MARKET,
-                        quantity=total_position_size)
-                if trade_direction == 1:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=SIDE_SELL,
-                        type=FUTURE_ORDER_TYPE_MARKET,
-                        quantity=total_position_size)
+            self.client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel orders for this symbol
+            if trade_direction == 0:
+                order = self.client.futures_create_order(
+                    symbol=symbol,
+                    side=SIDE_BUY,
+                    type=FUTURE_ORDER_TYPE_MARKET,
+                    quantity=total_position_size)
+            if trade_direction == 1:
+                order = self.client.futures_create_order(
+                    symbol=symbol,
+                    side=SIDE_SELL,
+                    type=FUTURE_ORDER_TYPE_MARKET,
+                    quantity=total_position_size)
 
-            except BinanceAPIException as e:
-                print(f"{symbol}: Error in close_position(), Error: ", e)
+        except BinanceAPIException as e:
+            log_error(f"{time}: {symbol}: Error in close_position(), Error: {e}")
+            print(f"{symbol}: Error in close_position(), Error: {e}")
         except Exception as e:
-            print(e)
+            print(f"{time}: {e}")
+            log_error(e)
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
