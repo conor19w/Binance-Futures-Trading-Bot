@@ -359,7 +359,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
             print(exc_type, fname, exc_tb.tb_lineno)
 
 
-def run_bot(API_KEY, API_SECRET, leverage, order_Size, start_string, Interval, Max_Number_Of_Trades,
+def run_bot(API_KEY, API_SECRET, leverage, order_Size, buffer, Interval, Max_Number_Of_Trades,
                  use_trailing_stop, trailing_stop_callback, symbol, strategy,
                  TP_choice, SL_choice, SL_mult, TP_mult, Trade_All_Coins):
     client = Client(api_key=API_KEY, api_secret=API_SECRET)

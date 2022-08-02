@@ -97,7 +97,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                 break
         if flag == 1:
             Bots.append(Bot_Class.Bot(symbol[i], [], [], [], [], [], [], Order_precision_temp, Coin_precision_temp,
-                                      i, use_heikin_ashi,tick=tick_temp))
+                                      i, use_heikin_ashi, tick=tick_temp))
             i += 1
         else:
             print(f"{symbol.pop(i)} no info found")
