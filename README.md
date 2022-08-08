@@ -70,12 +70,8 @@ __Strategies are implemented in Bot_Class as functions in Make_decision()__
 [__Silicon Trader__](https://www.youtube.com/channel/UCVRGsC6JVsB8F6HE_xjLyJg) | [__Trade Pro__](https://www.youtube.com/channel/UCrXjzUN6EtlyhaaAerbPfkQ) | [__Strategy Testing__](https://www.youtube.com/c/TradingStrategyTesting) | [__Trading Journal__](https://www.youtube.com/c/TradingJournal1) |  [__The Moving Average__](https://www.youtube.com/channel/UCYFQzaZyTUzY-Tiytyv3HhA)  
 
 ---
-
-## To-Do list: (suggest something and I'll add it) 😃 ##
-* Data Cleaning task to run every x amount of minutes, ensuring the Live Bot hasn't missed any candles
-* Option to give config in shell flags (Not sure yet but this was requested)
-* Ability to run different strategies, leverage and TP/SL on some coins. (difficult to find a good layout, but I'll try)
----
+## TO-DO List: ##
+[Trello Board](https://trello.com/invite/b/iagTNiv0/80cc1828bdac439ed813cc54c9698c06/github-bot)
 ## Latest Changes (if any): ##
 * Added a GUI just run app.py (23/07/22)
 * Improved Backtester speed (23/07/22)
