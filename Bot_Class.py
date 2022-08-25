@@ -14,8 +14,8 @@ import TradingStrats as TS
 
 
 class Bot:
-    def __init__(self, symbol, Open, Close, High, Low, Volume, Date, OP, CP, index, tick,
-                 strategy, TP_choice, SL_choice, SL_mult, TP_mult, backtesting=0):
+    def __init__(self, symbol: str, Open: [float], Close: [float], High: [float], Low: [float], Volume: [float], Date: [str], OP: int, CP: int, index: int, tick: float,
+                 strategy: str, TP_choice: str, SL_choice: str, SL_mult: float, TP_mult: float, backtesting=0):
         self.symbol = symbol
         self.Open = Open
         self.Close = Close
@@ -63,6 +63,7 @@ class Bot:
         self.EMA200 = None
         self.EMA_short = None
         self.EMA_long = None
+        self.EMA10 = None
         self.current_index = -1  ## -1 for live Bot to always reference the most recent candle, will update in Backtester
         if backtesting:
             self.update_indicators()
@@ -127,7 +128,7 @@ class Bot:
             self.EMA_short = np.array(ema_indicator(pd.Series(self.Close), window=10))
             self.EMA_long = np.array(ema_indicator(pd.Series(self.Close), window=20))
 
-    def add_hist(self, Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp):
+    def add_hist(self, Date_temp: [float], Open_temp: [float], Close_temp: [float], High_temp: [float], Low_temp: [float], Volume_temp: [str]):
         if not self.backtesting:
             while 0 < len(self.Date):
                 if self.Date[0] > Date_temp[-1]:
@@ -308,10 +309,6 @@ class Bot:
                                                                                     self.TP_choice, self.SL_choice,
                                                                                     self.fastd, self.fastk, self.EMA200,
                                                                                     self.current_index)
-        elif self.strategy == 'ema_crossover':
-            Trade_Direction, stop_loss_val, take_profit_val = ema_crossover(self.Trade_Direction, self.Close, self.High, self.Low,
-                                                                            self.SL, self.TP, self.TP_choice, self.SL_choice,
-                                                                            self.current_index, self.EMA_short, self.EMA_long)
 
         return Trade_Direction, stop_loss_val, take_profit_val
 
