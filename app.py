@@ -80,7 +80,7 @@ if __name__ == "__main__":
         trading_threshold.place(relx=.47, rely=.3, relwidth=.075)
 
         use_market_orders = BooleanVar()
-        use_market_orders_checkbox = Checkbutton(root, text="Use Market Orders",
+        use_market_orders_checkbox = Checkbutton(frame, text="Use Market Orders",
                                     variable=use_market_orders, bg="light blue", activebackground="light blue")
         use_market_orders_checkbox.place(relx=.3, rely=.34)
 
