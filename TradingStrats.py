@@ -715,12 +715,12 @@ def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, S
         stop_loss_val = (SL / 100) * Close[current_index]
 
     if TP_choice == 'x (ATR)':
-        ATR = np.array(average_true_range(pd.Series(High), pd.Series(Low), pd.Series(Close)))
-        take_profit_val = TP * abs(ATR[current_index])
+        ATR = np.array(average_true_range(pd.Series(High[:current_index]), pd.Series(Low[:current_index]), pd.Series(Close[:current_index])))
+        take_profit_val = TP * abs(ATR[current_index-1])
 
     if SL_choice == 'x (ATR)':
-        ATR = np.array(average_true_range(pd.Series(High), pd.Series(Low), pd.Series(Close)))
-        stop_loss_val = SL * abs(ATR[current_index])
+        ATR = np.array(average_true_range(pd.Series(High[:current_index]), pd.Series(Low[:current_index]), pd.Series(Close[:current_index])))
+        stop_loss_val = SL * abs(ATR[current_index-1])
 
     if TP_choice == 'x (Swing High/Low) level 1':
         high_swing = High[current_index]
