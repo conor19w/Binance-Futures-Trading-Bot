@@ -3,13 +3,14 @@
 [__Join My public Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
 * Create a [Binance Account](https://accounts.binance.com/en/register?ref=BKR8BMMP) (This link uses my referral which gives you 5% kickback on trades & would be greatly appreciated)
 * Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this join & I'll get in touch to get you set up 😃
-* Write your own functions/classes to implement your TA strategies.
+* Write your own functions to implement your TA strategies.
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Want Coding Assistance, Custom Strategies & Custom Features? [Sponsor Me](https://github.com/sponsors/conor19w) (private repo coming soon)
 * [One time payment](https://github.com/sponsors/conor19w) for custom strategies available also.
-* Works best with Python 3.8.10 (one I use and have no issues with)
+* Works best with Python 3.8.10 on Linux.
+* On Windows you may run into issues, using the docker file / reducing the number of coins you are trading might help
 * Utilizes [python-Binance](https://python-binance.readthedocs.io/en/latest/) Client to execute orders and pull data from Binance
 * Utilizes [ta](https://technical-analysis-library-in-python.readthedocs.io/en/latest/) library for Technical indicators
 * [Set up windows to sync time once a day](https://www.makeuseof.com/tag/synchronise-computer-time-internet-custom-schedule-windows-7/#:~:text=Go%20to%20%3E%20Start%20and%20type,on%20the%20right%20hand%20side) if you don't do this binance will eventually reject orders with a timestamp error.

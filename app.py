@@ -9,7 +9,7 @@ from multiprocessing import Process
 from binance.client import Client
 
 if __name__ == "__main__":
-    profit_required, start_balance, leverage, order_size, start, end, isolated_test, only_show_profitable_coins = None, None, None, None, None, None, None, None
+    profit_required, start_balance, leverage, order_size, start, end, isolated_test, only_show_profitable_coins, particular_drawdown, min_dd, slippage, trading_threshold, use_market_orders = None, None, None, None, None, None, None, None, None, None, None, None, None
     API_KEY, API_SECRET, buffer = None, None, None
     T: [Thread] = []
     P: [Process] = []
@@ -25,7 +25,7 @@ if __name__ == "__main__":
         webbrowser.open_new(r"https://github.com/sponsors/conor19w?frequency=recurring&sponsor=conor19w")
 
     def live_mode():
-        global leverage, order_size, API_KEY, API_SECRET, buffer
+        global leverage, order_size, API_KEY, API_SECRET, buffer, trading_threshold, use_market_orders
         for child in frame.winfo_children():
             child.destroy()
         Live_Bot.configure(bg="light blue", fg="black")
@@ -73,13 +73,24 @@ if __name__ == "__main__":
                              cursor="trek", command=load_keys)
         load_api.place(relwidth=(1 / 10), relheight=(1 / 30), relx=.315, rely=.15)
 
+        label16 = tk.Label(frame, text="Trading Threshold (%):", bg="light blue")
+        label16.place(relx=.3, rely=.3)
+        trading_threshold = tk.Entry(frame)
+        trading_threshold.insert(0, ".1")
+        trading_threshold.place(relx=.47, rely=.3, relwidth=.075)
+
+        use_market_orders = BooleanVar()
+        use_market_orders_checkbox = Checkbutton(root, text="Use Market Orders",
+                                    variable=use_market_orders, bg="light blue", activebackground="light blue")
+        use_market_orders_checkbox.place(relx=.3, rely=.34)
+
         run_bot = tk.Button(frame, text="Run Bot", fg='white', bg="#457E81",
                             activebackground="light blue",
                             cursor="trek", command=run_live_bot)
         run_bot.place(relwidth=(1 / 3), relheight=(1 / 8), relx=(1 / 3), rely=(2 / 3))
 
     def backtest_mode():
-        global profit_required, start_balance, leverage, order_size, start, end, isolated_test, only_show_profitable_coins
+        global profit_required, start_balance, leverage, order_size, start, end, isolated_test, only_show_profitable_coins, particular_drawdown, min_dd, slippage
         for child in frame.winfo_children():
             child.destroy()
         ## Set up initial input boxes
@@ -89,13 +100,13 @@ if __name__ == "__main__":
         label1 = tk.Label(frame, text="Start (dd-mm-yy):", bg="light blue")
         label1.place(relx=.01, rely=.1)
         start = tk.Entry(frame)
-        start.insert(0, "01-07-21")
+        start.insert(0, "01-07-22")
         start.place(relx=.16, rely=.1, relwidth=.085)
 
         label2 = tk.Label(frame, text="End (dd-mm-yy):", bg="light blue")
         label2.place(relx=.01, rely=.15)
         end = tk.Entry(frame)
-        end.insert(0, "31-12-21")
+        end.insert(0, "12-08-22")
         end.place(relx=.16, rely=.15, relwidth=.085)
         Live_Bot.configure(bg="#457E81", fg='white')
         Backtester.configure(bg="light blue", fg="black")
@@ -134,6 +145,21 @@ if __name__ == "__main__":
         profit_required.place(relx=.5, rely=.423, relwidth=.075)
         profit_required.insert(0, "0.0")
 
+        particular_drawdown = BooleanVar()
+        particular_drawdown_checkbox = Checkbutton(frame, variable=particular_drawdown,
+                                                          text="Use Min DD:\t\t\t\t\n\n(Only Show coins that have DD less than this %)",
+                                                          bg="light blue", activebackground="light blue")
+        particular_drawdown_checkbox.place(relx=.35, rely=.52)
+        min_dd = tk.Entry(frame)
+        min_dd.place(relx=.5, rely=.523, relwidth=.075)
+        min_dd.insert(0, "0.0")
+
+        label15 = tk.Label(frame, text="Slippage (%):", bg="light blue")
+        label15.place(relx=.65, rely=.423)
+        slippage = tk.Entry(frame)
+        slippage.place(relx=.75, rely=.423, relwidth=.075)
+        slippage.insert(0, "0.0")
+
         run_Backtest = tk.Button(frame, text="Run Backtest", fg='white', bg="#457E81",
                                  activebackground="light blue",
                                  cursor="trek", command=run_backtest)
@@ -146,6 +172,8 @@ if __name__ == "__main__":
         #Backtester.configure(bg="#457E81", fg='white')
         #host.configure(bg="light blue", fg="black")
 
+
+    # noinspection PyUnresolvedReferences
     def run_backtest():
         global T
         if symbol == [] and not trade_all_coins.get():
@@ -170,15 +198,23 @@ if __name__ == "__main__":
 
         if len(T) == 0:
             profit_req = 0
+            min_dd_req = 0
+            slip = 0
             if profit_required.get() != '':
                 profit_req = round(float(profit_required.get())/100, 3)
+            if min_dd.get() != '':
+                min_dd_req = round(float(min_dd.get()), 3)
+            if slippage.get() != '':
+                slip = round(float(slippage.get())/100, 4)
 
-            T.append(Thread(target=run_backtester, args=(float(start_balance.get()), int(leverage.get()), round(float(order_size.get())/100, 2), start.get(), end.get(),
-                           candle_length.get(), int(number_of_trades.get()), trade_all_coins.get(), isolated_test.get(), only_show_profitable_coins.get(),
-                           profit_req, symbol, use_trail_stop.get(), round(float(trail_stop.get())/100, 3), f"Backtest", strategy.get(), TP_sub.get(), SL_sub.get(), float(SL.get()), float(TP.get()))))
+            T.append(Process(target=run_backtester, args=(float(start_balance.get()), int(leverage.get()), round(float(order_size.get())/100, 2), start.get(), end.get(),
+                     candle_length.get(), int(number_of_trades.get()), trade_all_coins.get(), isolated_test.get(), only_show_profitable_coins.get(),
+                     profit_req, particular_drawdown.get(), min_dd_req, symbol, use_trail_stop.get(), round(float(trail_stop.get())/100, 3), f"Backtest", slip,
+                     strategy.get(), TP_sub.get(), SL_sub.get(), float(SL.get()), float(TP.get()))))
             T[-1].start()
 
 
+    # noinspection PyUnresolvedReferences
     def run_live_bot():
         global P
 
@@ -194,7 +230,7 @@ if __name__ == "__main__":
             P.append(Process(target=run_bot, args=(API_KEY.get(), API_SECRET.get(), int(leverage.get()),
                      round(float(order_size.get())/100, 3), buffer.get(), candle_length.get(), int(number_of_trades.get()),
                      use_trail_stop.get(), round(float(trail_stop.get()), 1), symbol, strategy.get(), TP_sub.get(), SL_sub.get(),
-                     float(SL.get()), float(TP.get()), trade_all_coins.get())))
+                     float(SL.get()), float(TP.get()), trade_all_coins.get(), use_market_orders.get(), round(float(trading_threshold.get())/100, 3))))
             P[-1].start()
 
     def save_keys():

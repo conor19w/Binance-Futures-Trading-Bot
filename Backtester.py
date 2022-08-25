@@ -14,8 +14,8 @@ import matplotlib
 
 
 def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIME_INTERVAL, Number_Of_Trades,
-                   Trade_All_Symbols, Trade_Each_Coin_With_Separate_Accounts, only_show_profitable_coins, percent_gain_threshold,
-                   symbol, use_trailing_stop, trailing_stop_callback, csv_name, strategy='', TP_choice='', SL_choice='', SL_mult=1, TP_mult=1, graph_folder_location='./',
+                   Trade_All_Symbols, Trade_Each_Coin_With_Separate_Accounts, only_show_profitable_coins, percent_gain_threshold, particular_drawdown, min_dd,
+                   symbol, use_trailing_stop, trailing_stop_callback, csv_name, slippage, strategy='', TP_choice='', SL_choice='', SL_mult=1, TP_mult=1, graph_folder_location='./',
                    plot_graphs_to_folder=True, print_to_csv=True, fee=.00036, printing_on=True, add_delay=False, buffer=300):
     if plot_graphs_to_folder:
         ## Top of script:
@@ -25,8 +25,10 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
     csv_path = path+f"//{TIME_INTERVAL}//"
     if plot_graphs_to_folder and not os.path.exists(path+f'{TIME_INTERVAL}'):
         os.makedirs(path+f'{TIME_INTERVAL}')
+
     ####################################################################################################
     ####################################################################################################
+    
     if print_to_csv:
         i = 1
         not_found = False
@@ -38,7 +40,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     csv_name = csv_name+f"{i}.csv"
             except:
                 i += 1
-    client = Client(api_key=API_KEY, api_secret=API_SECRET)
+    client = Client()
     if Trade_All_Symbols:
         symbol = []  ## reset symbol before we fill with all symbols below
         x = client.futures_ticker()  # [0]
@@ -144,14 +146,14 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
             if Trade_Each_Coin_With_Separate_Accounts:
                 Order_Notional = account_balance[index] * leverage * order_Size
                 order_qty, entry_price, account_balance[index] = Helper.open_trade(Bots[index].symbol, Order_Notional,
-                                                                        account_balance[index], Open_1min[index][i],
-                                                                        fee, Bots[index].OP)
+                                                                        account_balance[index], Open_1min[index][i+1],
+                                                                        fee, Bots[index].OP, Bots[index].CP, trade_direction, slippage)
             else:
                 Order_Notional = account_balance[0] * leverage * order_Size
                 order_qty, entry_price, account_balance[0] = Helper.open_trade(Bots[index].symbol, Order_Notional,
-                                                                                   account_balance[0],
-                                                                                   Open_1min[index][i],
-                                                                                   fee, Bots[index].OP)
+                                                                               account_balance[0],
+                                                                               Open_1min[index][i+1],
+                                                                               fee, Bots[index].OP, Bots[index].CP, trade_direction, slippage)
 
             take_profit_val = -99
             stop_loss_val = -99
@@ -298,14 +300,16 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         df['drawdown'] = df['cum_roll_max'] - df['cum_return']
         df['drawdown %'] = df['drawdown'] / df['cum_roll_max']
         max_dd = df['drawdown %'].max() * 100
-
-        # cum_ret = np.array(df['cum_return'])
-        CAGR = ((df['cum_return'].iloc[-1]) ** (1 / time_CAGR) - 1) * 100  # ((df['cum_return'].iloc[-1])**(1/time_CAGR)-1)*100
-        vol = (df['daily_return'].std() * np.sqrt(365)) * 100
-        neg_vol = (df[df['daily_return'] < 0]['daily_return'].std() * np.sqrt(365)) * 100
-        Sharpe_ratio = (CAGR - risk_free_rate) / vol
-        sortino_ratio = (CAGR - risk_free_rate) / neg_vol
-        calmar_ratio = CAGR / max_dd
+        try:
+            # cum_ret = np.array(df['cum_return'])
+            CAGR = ((df['cum_return'].iloc[-1]) ** (1 / time_CAGR) - 1) * 100  # ((df['cum_return'].iloc[-1])**(1/time_CAGR)-1)*100
+            vol = (df['daily_return'].std() * np.sqrt(365)) * 100
+            neg_vol = (df[df['daily_return'] < 0]['daily_return'].std() * np.sqrt(365)) * 100
+            Sharpe_ratio = (CAGR - risk_free_rate) / vol
+            sortino_ratio = (CAGR - risk_free_rate) / neg_vol
+            calmar_ratio = CAGR / max_dd
+        except:
+            pass
 
         print("\nSettings:")
         print('leverage:', leverage)
@@ -343,6 +347,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
             plt.show()
 
     else:
+        useful_coins = []
         num_wins_total = 0
         for j in range(len(symbol)):
             if (only_show_profitable_coins and account_balance[j] > originalBalance[j]*(1 + percent_gain_threshold)) or (not only_show_profitable_coins):
@@ -373,34 +378,37 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     Sharpe_ratio = (CAGR - risk_free_rate) / vol
                     sortino_ratio = (CAGR - risk_free_rate) / neg_vol
                     calmar_ratio = CAGR / max_dd
-                    print("Symbol:", symbol[j], "fee:", fee)
-                    print(f"{original_time_interval} OHLC Candle Sticks from {start} to {end}")
-                    print("Account Balance:", account_balance[j])
-                    print("% Gain on Account:", ((account_balance[j] - originalBalance[j]) * 100) / originalBalance[j])
-                    print("Total Returns:", account_balance[j] - originalBalance[j])
-                    print(f"Annualized Volatility: {round(vol, 4)}%")
-                    print(f"CAGR: {round(CAGR, 4)}%")
-                    print("Sharpe Ratio:", round(Sharpe_ratio, 4))
-                    print("Sortino Ratio:", round(sortino_ratio, 4))
-                    print("Calmar Ratio:", round(calmar_ratio, 4))
-                    print(f"Max Drawdown: {round(max_dd, 4)}%")
-                    print(f"Average Win: {round(average * 100, 4)}%\n")
-                    if plot_graphs_to_folder:
-                        if not os.path.exists(path + f'{original_time_interval}'):
-                            os.makedirs(path + f'{original_time_interval}')
-                        plt.plot(profitgraph[j])
-                        plt.title(f"{symbol[j]}: {original_time_interval} from {start} to {end}")
-                        plt.ylabel('Account Balance')
-                        plt.xlabel('Number of Trades')
-                        name_of_plot = f'{symbol[j]}_{csv_name[:-4]}'  ## Name of the graph, will overwrite if it already exists
-                        plt.savefig(f'{csv_path}{name_of_plot}.png', dpi=300, bbox_inches='tight')
-                        plt.close()
+                    if (particular_drawdown and max_dd < min_dd) or not particular_drawdown:
+                        useful_coins.append(symbol[j])
+                        print("Symbol:", symbol[j], "fee:", fee)
+                        print(f"{original_time_interval} OHLC Candle Sticks from {start} to {end}")
+                        print("Account Balance:", account_balance[j])
+                        print("% Gain on Account:", ((account_balance[j] - originalBalance[j]) * 100) / originalBalance[j])
+                        print("Total Returns:", account_balance[j] - originalBalance[j])
+                        print(f"Annualized Volatility: {round(vol, 4)}%")
+                        print(f"CAGR: {round(CAGR, 4)}%")
+                        print("Sharpe Ratio:", round(Sharpe_ratio, 4))
+                        print("Sortino Ratio:", round(sortino_ratio, 4))
+                        print("Calmar Ratio:", round(calmar_ratio, 4))
+                        print(f"Max Drawdown: {round(max_dd, 4)}%")
+                        print(f"Average Win: {round(average * 100, 4)}%\n")
+                        if plot_graphs_to_folder:
+                            if not os.path.exists(path + f'{original_time_interval}'):
+                                os.makedirs(path + f'{original_time_interval}')
+                            plt.plot(profitgraph[j])
+                            plt.title(f"{symbol[j]}: {original_time_interval} from {start} to {end}")
+                            plt.ylabel('Account Balance')
+                            plt.xlabel('Number of Trades')
+                            name_of_plot = f'{symbol[j]}_{csv_name[:-4]}'  ## Name of the graph, will overwrite if it already exists
+                            plt.savefig(f'{csv_path}{name_of_plot}.png', dpi=300, bbox_inches='tight')
+                            plt.close()
                 except Exception as e:
                     print(e)
         print("\nSettings:")
         print('leverage:', leverage)
         print('order_Size:', order_Size)
         print('fee:', fee)
+        print(f"symbol = {useful_coins}")
         print("\nOverall Stats based on all coins")
         print("Trades Made: ", tradeNO)
         print("Accuracy: ", f"{(len(winning_trades) / tradeNO) * 100}%", "\n")

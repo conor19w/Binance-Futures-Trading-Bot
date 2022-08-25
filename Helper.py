@@ -10,24 +10,25 @@ from tabulate import tabulate
 client = Client(api_key=API_KEY,
                 api_secret=API_SECRET)  ##Binance keys needed to get historical data/ Trade on an account
 
-desktop_path = f"C:\\Users\\conor\\Desktop"
-
+price_data_path = '.'
 
 class Data_Handler:
-    def __init__(self, symbol, index):
+    def __init__(self, symbol: str, index: int):
         self.symbol = symbol
         self.index = index
         self.new_data = False
         self.socket_failed = False
-        self.next_candle = {'Date': '', 'Close': 0.0, 'Open': 0.0, 'High': 0.0, 'Low': 0.0, 'Volume': 0.0}
+        self.next_candle = {'Date': 0, 'Close': 0.0, 'Open': 0.0, 'High': 0.0, 'Low': 0.0, 'Volume': 0.0}
 
     def handle_socket_message(self, msg):
         # print(msg['k']['x'])
         try:
             if msg != '':
                 payload = msg['k']
-                if payload['x']:
-                    self.next_candle['Date'] = datetime.utcfromtimestamp(round(payload['T'] / 1000))
+                #if payload['x']:
+                if payload['T'] > self.next_candle['Date']:
+                    #self.next_candle['Date'] = str(datetime.utcfromtimestamp(round(payload['T'] / 1000)))
+                    self.next_candle['Date'] = payload['T']
                     self.next_candle['Close'] = float(payload['c'])
                     self.next_candle['Volume'] = float(payload['q'])
                     self.next_candle['High'] = float(payload['h'])
@@ -48,7 +49,7 @@ class Trade_Stats:
 
 
 class Trade:
-    def __init__(self, index, position_size, tp_val, stop_loss_val, trade_direction, order_id_temp, symbol):
+    def __init__(self, index: int, position_size: float, tp_val: float, stop_loss_val: float, trade_direction: int, order_id_temp: int, symbol: str):
         self.index = index
         self.symbol = symbol
         self.entry_price = -99
@@ -76,46 +77,119 @@ def log_error(e):
 
 
 class Trade_Manager:
-    def __init__(self, client: Client, use_trailing_stop, trailing_stop_callback):
+    def __init__(self, client: Client, use_trailing_stop: bool, trailing_stop_callback: float, use_market: bool):
         self.client = client
         self.use_trailing_stop = use_trailing_stop
         self.trailing_stop_callback = trailing_stop_callback
+        self.use_market = use_market
 
-    def open_trade(self, symbol, side, order_qty, OP, time):
-        orderID = ''
-        try:
-            if OP == 0:
-                order_qty = round(order_qty)
-            else:
-                order_qty = round(order_qty, OP)
-            ##Could Make limit orders but for now the entry is a market
-            if side == 0:
-                order = self.client.futures_create_order(
-                    symbol=symbol,
-                    side=SIDE_SELL,
-                    type=FUTURE_ORDER_TYPE_MARKET,
-                    quantity=order_qty)
-                orderID = order['orderId']
-            if side == 1:
-                order = self.client.futures_create_order(
-                    symbol=symbol,
-                    side=SIDE_BUY,
-                    type=FUTURE_ORDER_TYPE_MARKET,
-                    quantity=order_qty)
-                orderID = order['orderId']
-        except BinanceAPIException as e:
-            log_error(f"{time}: {symbol}: Error in open_trade(), Error: {e}")
-            print("Error in open_trade(), Error: ", e)
-        except Exception as e:
-            print(e)
-            log_error(f"{time}: {symbol}: {e}")
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
+    def open_trade(self, symbol: str, trade_direction: int, order_notional: float, CP: int, OP: int, tick_size: float, time: int, close: float, trading_threshold: float, orderID: int = '', old_entry_price: float = 0):
+        order_book = self.client.futures_order_book(symbol=symbol)
+        bids = order_book['bids']
+        asks = order_book['asks']
+        entry_price = 0
+        if trade_direction == 1:
+            entry_price = float(bids[0][0])
+        elif trade_direction == 0:
+            entry_price = float(asks[0][0])
 
-        return orderID, order_qty
+        if self.use_market:
+            order_qty = order_notional / close
+            ## Conditions to cancel the opening of a trade
+            if old_entry_price != 0 and (close - entry_price) / close > trading_threshold and trade_direction == 0:
+                return '', order_qty, entry_price
+            elif old_entry_price != 0 and (entry_price - close) / close > trading_threshold and trade_direction == 1:
+                return '', order_qty, entry_price
 
-    def place_TP(self, symbol, TP, side, CP, tick_size, time):
+            try:
+                if OP == 0:
+                    order_qty = round(order_qty)
+                else:
+                    order_qty = round(order_qty, OP)
+                ##Could Make limit orders but for now the entry is a market
+                if trade_direction == 0:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=SIDE_SELL,
+                        type=FUTURE_ORDER_TYPE_MARKET,
+                        quantity=order_qty)
+                    orderID = order['orderId']
+                if trade_direction == 1:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=SIDE_BUY,
+                        type=FUTURE_ORDER_TYPE_MARKET,
+                        quantity=order_qty)
+                    orderID = order['orderId']
+            except BinanceAPIException as e:
+                log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in open_trade(), Error: {e}")
+                print(f"{time}: {symbol}: Error in open_trade(), Error: ", e, order_qty, CP, OP)
+            except Exception as e:
+                print(e)
+                log_error(f"{time}: {symbol}: {e}")
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
+
+            entry_price = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
+            return orderID, order_qty, entry_price
+
+        else:
+            order_qty = 0
+            try:
+                if orderID != '':
+                    try:
+                        self.client.futures_cancel_order(symbol=symbol, orderId=orderID)
+                    except:
+                        pass
+
+                if OP == 0:
+                    order_qty = round(order_notional / entry_price)
+                else:
+                    order_qty = round(order_notional / entry_price, OP)
+                if CP == 0:
+                    entry_price = round(entry_price)
+                else:
+                    entry_price = round(round(entry_price / tick_size) * tick_size, CP)
+
+                ## Conditions to cancel the opening of a trade
+                if old_entry_price != 0 and (old_entry_price - entry_price) / old_entry_price > trading_threshold and trade_direction == 0:
+                    return '', order_qty, entry_price
+                elif old_entry_price != 0 and (entry_price - old_entry_price) / old_entry_price > trading_threshold and trade_direction == 1:
+                    return '', order_qty, entry_price
+                if order_qty == 0:
+                    return '', order_qty, entry_price
+
+                if trade_direction == 0:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=SIDE_SELL,
+                        type=FUTURE_ORDER_TYPE_LIMIT,
+                        price=entry_price,
+                        timeInForce=TIME_IN_FORCE_GTC,
+                        quantity=order_qty)
+                    orderID = order['orderId']
+                if trade_direction == 1:
+                    order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=SIDE_BUY,
+                        type=FUTURE_ORDER_TYPE_LIMIT,
+                        price=entry_price,
+                        timeInForce=TIME_IN_FORCE_GTC,
+                        quantity=order_qty)
+                    orderID = order['orderId']
+
+                return orderID, order_qty, entry_price
+            except BinanceAPIException as e:
+                print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in open_trade(), Error: ", e, order_qty, entry_price, CP, OP)
+                return '', 0, 0
+            except Exception as e:
+                print(e)
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
+
+    def place_TP(self, symbol: str, TP: [float, float], trade_direction: int, CP: int, tick_size: float, time: int):
         TP_ID = ''
         try:
             TP_val = 0
@@ -125,9 +199,9 @@ class Trade_Manager:
                 TP_val = round(TP[0])
             else:
                 TP_val = round(round(TP[0] / tick_size) * tick_size, CP)
-            if side == 1:
+            if trade_direction == 1:
                 order_side = SIDE_SELL
-            elif side == 0:
+            elif trade_direction == 0:
                 order_side = SIDE_BUY
             if not self.use_trailing_stop:
                 order = self.client.futures_create_order(
@@ -149,19 +223,19 @@ class Trade_Manager:
                     quantity=TP[1])
                 TP_ID = order['orderId']
         except BinanceAPIException as e:
-            log_error("{time}: {symbol}: Error in place_TP(), Error: {e}")
-            print(f"\n{time}: {symbol}: Error in place_TP(), Error: {e}")
+            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in place_TP(), Error: {e}")
+            print(f"\n{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in place_TP(), Error: {e}")
             print(f"symbol: {symbol} TP: {TP}\n")
             return -1
         except Exception as e:
             print(e)
-            log_error(f"{time}: {symbol}: {e}")
+            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: {e}")
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
         return TP_ID
 
-    def place_SL(self, symbol, SL, side, CP, tick_size, time):
+    def place_SL(self, symbol: str, SL: float, trade_direction: int, CP: int, tick_size: float, time: int):
         order_ID = ''
         try:
             if CP == 0:
@@ -169,7 +243,7 @@ class Trade_Manager:
             else:
                 SL = round(round(SL / tick_size) * tick_size, CP)
 
-            if side == 1:
+            if trade_direction == 1:
                 order = self.client.futures_create_order(
                     symbol=symbol,
                     side=SIDE_SELL,
@@ -187,12 +261,12 @@ class Trade_Manager:
                 order_ID = order['orderId']
 
         except BinanceAPIException as e:
-            log_error(f"{time}: {symbol}: Error in place_SL(), Error: {e}")
-            print(f"Error in place_SL(), Error: {e}")
-            print(f"symbol: {symbol} SL: {SL}\n")
+            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in place_SL(), Error: {e}")
+            print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: Error in place_SL(), Error: {e}")
+            print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: symbol: {symbol} SL: {SL}\n")
             return -1
         except Exception as e:
-            log_error(f"{time}: {e}")
+            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {e}")
             print(e)
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -200,7 +274,7 @@ class Trade_Manager:
 
         return order_ID
 
-    def close_position(self, symbol, trade_direction, total_position_size, time):
+    def close_position(self, symbol: str, trade_direction: int, total_position_size: float, time: int):
         try:
             self.client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel orders for this symbol
             if trade_direction == 0:
@@ -217,11 +291,11 @@ class Trade_Manager:
                     quantity=total_position_size)
 
         except BinanceAPIException as e:
-            log_error(f"{time}: {symbol}: Error in close_position(), Error: {e}")
+            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in close_position(), Error: {e}")
             print(f"{symbol}: Error in close_position(), Error: {e}")
         except Exception as e:
-            print(f"{time}: {e}")
-            log_error(e)
+            print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {e}")
+            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: {e}")
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
@@ -382,7 +456,7 @@ def get_Klines(symbol, start_str, end_str, path):
     return price_data
 
 
-def get_historical(symbol, start_string, Interval):
+def get_historical(symbol: str, start_string: str, Interval: str):
     Open = []
     High = []
     Low = []
@@ -391,7 +465,8 @@ def get_historical(symbol, start_string, Interval):
     Date = []
     try:
         for kline in client.futures_historical_klines(symbol, Interval, start_str=start_string):
-            Date.append(datetime.utcfromtimestamp(round(kline[6] / 1000)))
+            #Date.append(str(datetime.utcfromtimestamp(round(kline[6] / 1000))))
+            Date.append(kline[6])
             Open.append(float(kline[1]))
             Close.append(float(kline[4]))
             High.append(float(kline[2]))
@@ -529,18 +604,14 @@ def get_heikin_ashi(Open, Close, High, Low):
 
 def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume,
                         symbol, TIME_INTERVAL, start, end):
-    global desktop_path
     print("Loading Price Data")
     i = 0
-    try:
-        if not os.path.exists(desktop_path + f'\\price_data\\'):
-            os.makedirs(desktop_path + f'\\price_data\\')
-    except:
-        desktop_path = './'
-        if not os.path.exists(desktop_path + f'\\price_data\\'):
-            os.makedirs(desktop_path + f'\\price_data\\')
+
+    price_data_path = '.'
+    if not os.path.exists(price_data_path + f'//price_data//'):
+        os.makedirs(price_data_path + f'//price_data//')
     while i < len(symbol):
-        path = f"{desktop_path}\\price_data\\{symbol[i]}_{start}_{end}.joblib"
+        path = f"{price_data_path}//price_data//{symbol[i]}_{start}_{end}.joblib"
         try:
             price_data = load(path)
             Date.append(price_data[f'Date_{TIME_INTERVAL}'])
@@ -681,13 +752,23 @@ def check_SL(t: Trade, account_balance, High, Low, fee, printing_on=1):
     return t, account_balance
 
 
-def open_trade(symbol, Order_Notional, account_balance, Open, fee, OP, printing_on=1):
-    if OP == 0:
-        order_qty = round(Order_Notional / Open)
+def open_trade(symbol, Order_Notional, account_balance, Open, fee, OP, CP, Trade_Direction, slippage, printing_on=1):
+    if Trade_Direction == 0:
+        if CP == 0:
+            entry_price = round(Open * (1 - slippage))
+        else:
+            entry_price = round(Open * (1 - slippage), CP)
     else:
-        order_qty = round(Order_Notional / Open, OP)
+        if CP == 0:
+            entry_price = round(Open * (1 + slippage))
+        else:
+            entry_price = round(Open * (1 + slippage), CP)
 
-    entry_price = Open
+    if OP == 0:
+        order_qty = round(Order_Notional / entry_price)
+    else:
+        order_qty = round(Order_Notional / entry_price, OP)
+
 
     if order_qty > 0:
         account_balance -= Order_Notional * fee

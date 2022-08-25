@@ -50,30 +50,26 @@ def web_soc_process(pipe: Pipe, twm: ThreadedWebsocketManager):
                 except:
                     print(f"Error in resetting websocket for {data.symbol}")
         ##If they have, Send the updated Data_set to the process handling trading
-        if count > .9 * len(DH):
+        if count == len(DH):
             for data in DH:
                 data.new_data = False
                 Data[data.symbol] = data.next_candle
             pipe.send(Data)
 
 
-def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, Max_Number_Of_Trades, client: Client,
-                      twm: ThreadedWebsocketManager, use_trailing_stop, trailing_stop_callback, symbol, strategy,
-                      TP_choice, SL_choice, SL_mult, TP_mult):
+def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string: str, Interval: str, Max_Number_Of_Trades: int, client: Client,
+                      twm: ThreadedWebsocketManager, use_trailing_stop: bool, use_market_orders: bool, trading_threshold: float, trailing_stop_callback: float, symbol: [str], strategy: str,
+                      TP_choice: str, SL_choice: str, SL_mult: float, TP_mult: float):
     global new_candle_flag, Data
     pp = PrettyPrinter()  ## for printing json text cleanly (inspect binance API call returns)
     active_trades: [Trade] = []  ## List of active trades
-    new_trades = []
-    TM = Trade_Manager(client, use_trailing_stop, trailing_stop_callback)
+    new_trades: [[int, [int, float, float]]] = []
+    TM = Trade_Manager(client=client, use_trailing_stop=use_trailing_stop, trailing_stop_callback=trailing_stop_callback, use_market=use_market_orders)
     TS = Trade_Stats()
     Bots: [Bot_Class.Bot] = []
 
     y = client.futures_exchange_info()['symbols']
-    coin_info = []
-    for x in y:
-        # z = x['filters'][0]
-        coin_info.append([x['pair'], x['pricePrecision'], x['quantityPrecision'], x['filters'][0]['tickSize'],
-                          x['filters'][0]['minPrice']])
+    coin_info = [[x['pair'], x['pricePrecision'], x['quantityPrecision'], x['filters'][0]['tickSize'], x['filters'][0]['minPrice']] for x in y]
 
     i = 0
     while i < len(symbol):
@@ -85,6 +81,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
         flag = 0
         for x in coin_info:
             if x[0] == symbol[i]:
+                print(symbol[i], int(x[2]), int(x[1]))
                 Coin_precision_temp = int(x[1])
                 Order_precision_temp = int(x[2])
                 tick_temp = float(x[3])
@@ -92,8 +89,8 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                 flag = 1
                 break
         if flag == 1:
-            Bots.append(Bot_Class.Bot(symbol[i], [], [], [], [], [], [], Order_precision_temp, Coin_precision_temp,
-                                      i, tick_temp, strategy, TP_choice, SL_choice, SL_mult, TP_mult))
+            Bots.append(Bot_Class.Bot(symbol=symbol[i], Open=[], Close=[], High=[], Low=[], Volume=[], Date=[], OP=Order_precision_temp, CP=Coin_precision_temp,
+                                      index=i, tick=tick_temp, strategy=strategy, TP_choice=TP_choice, SL_choice=SL_choice, SL_mult=SL_mult, TP_mult=TP_mult))
             i += 1
         else:
             print(f"{symbol.pop(i)} no info found")
@@ -108,7 +105,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
     print("Combining Historical and web socket data...")
     i = 0
     while i < len(Bots):
-        Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp = get_historical(symbol[i], start_string, Interval)
+        Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp = get_historical(symbol=symbol[i], start_string=start_string, Interval=Interval)
         ##Pop off last candle as it is a duplicate, luki009's suggestion
         Date_temp.pop(-1)
         Open_temp.pop(-1)
@@ -122,7 +119,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
             Bots.pop(i)
             streams.pop(i)
         else:
-            Bots[i].add_hist(Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp)
+            Bots[i].add_hist(Date_temp=Date_temp, Open_temp=Open_temp, Close_temp=Close_temp, High_temp=High_temp, Low_temp=Low_temp, Volume_temp=Volume_temp)
             i += 1
         if RATE_LIMIT_WAIT:
             time.sleep(2)  ##wait a few second to avoid api rate limit
@@ -161,9 +158,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                 ##Ensure Bot doesn't interfere with positions opened manually by the user
                 open_trades = []
                 position_info = client.futures_position_information()
-                for position in position_info:
-                    if float(position['notional']) != 0.0:
-                        open_trades.append(position['symbol'])
+                open_trades = [position['symbol'] for position in position_info if float(position['notional']) != 0.0]
 
                 for i in range(len(Bots)):
                     trade_flag = 0
@@ -189,13 +184,17 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                         account_balance = float(item['balance'])
                         break
                 [index, [trade_direction, stop_loss, take_profit]] = new_trades.pop(0)
-                order_qty = leverage * order_Size * account_balance / Bots[index].Close[-1]
-                order_id_temp, position_size_temp = TM.open_trade(Bots[index].symbol, trade_direction, order_qty,
-                                                                  Bots[index].OP, Bots[index].Date[-1])
+
+                order_notional = leverage * order_Size * account_balance
+
+                order_id_temp, position_size_temp, entry_price_temp = TM.open_trade(symbol=Bots[index].symbol, trade_direction=trade_direction, order_notional=order_notional,
+                                                                  CP=Bots[index].CP, OP=Bots[index].OP, tick_size=Bots[index].tick_size,
+                                                                  time=Bots[index].Date[-1], close=Bots[index].Close[-1], trading_threshold=trading_threshold)
 
                 ##Add on the trade which we will later Check on
-                active_trades.append(Trade(index, position_size_temp, take_profit, stop_loss, trade_direction, order_id_temp,
-                          Bots[index].symbol))
+                if order_id_temp != '':
+                    active_trades.append(Trade(index, position_size_temp, take_profit, stop_loss, trade_direction, order_id_temp, Bots[index].symbol))
+                    active_trades[-1].entry_price = entry_price_temp
                 if len(active_trades) >= Max_Number_Of_Trades:
                     new_trades = []  ##Don't Open any new positions
 
@@ -204,7 +203,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                 new_trades = []  ##Don't Open any new positions
 
             rightnow = datetime.now().time()  ##time right now
-            timer = timedelta(hours=0, minutes=0, seconds=15)  ##how often to run code below
+            timer = timedelta(hours=0, minutes=0, seconds=10)  ##how often to run code below
             if (datetime.combine(date.today(), rightnow) - datetime.combine(yesterdate, start)) > timer:
                 start = datetime.now().time()  ##reset start
                 yesterdate = date.today()
@@ -223,36 +222,49 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                             take_profit_val = 0
                             stop_loss_val = 0
                             if active_trades[trade_index].trade_direction:
-                                take_profit_val = active_trades[trade_index].TP_val + active_trades[
-                                    trade_index].entry_price
-                                stop_loss_val = active_trades[trade_index].entry_price - active_trades[
-                                    trade_index].SL_val
+                                take_profit_val = active_trades[trade_index].TP_val + active_trades[trade_index].entry_price
+                                stop_loss_val = active_trades[trade_index].entry_price - active_trades[trade_index].SL_val
                             else:
-                                take_profit_val = active_trades[trade_index].entry_price - active_trades[
-                                    trade_index].TP_val
-                                stop_loss_val = active_trades[trade_index].entry_price + active_trades[
-                                    trade_index].SL_val
+                                take_profit_val = active_trades[trade_index].entry_price - active_trades[trade_index].TP_val
+                                stop_loss_val = active_trades[trade_index].entry_price + active_trades[trade_index].SL_val
 
                             ##This position has been opened
                             if active_trades[trade_index].TP_id == '':
-                                active_trades[trade_index].TP_id = TM.place_TP(active_trades[trade_index].symbol,[take_profit_val, active_trades[trade_index].position_size],
-                                                                               active_trades[trade_index].trade_direction,Bots[active_trades[trade_index].index].CP,
-                                                                               Bots[active_trades[trade_index].index].tick_size, Bots[trade_index].Date[-1])
+                                active_trades[trade_index].TP_id = TM.place_TP(symbol=active_trades[trade_index].symbol, TP=[take_profit_val, active_trades[trade_index].position_size],
+                                                                               trade_direction=active_trades[trade_index].trade_direction, CP=Bots[active_trades[trade_index].index].CP,
+                                                                               tick_size=Bots[active_trades[trade_index].index].tick_size, time=Bots[trade_index].Date[-1])
 
-                            active_trades[trade_index].SL_id = TM.place_SL(active_trades[trade_index].symbol,stop_loss_val, active_trades[trade_index].trade_direction,
-                                                                           Bots[active_trades[trade_index].index].CP,Bots[active_trades[trade_index].index].tick_size, Bots[trade_index].Date[-1])
+                            active_trades[trade_index].SL_id = TM.place_SL(symbol=active_trades[trade_index].symbol, SL=stop_loss_val, trade_direction=active_trades[trade_index].trade_direction,
+                                                                           CP=Bots[active_trades[trade_index].index].CP, tick_size=Bots[active_trades[trade_index].index].tick_size, time=Bots[trade_index].Date[-1])
                             ##Order would trigger immediately so close the position
                             if active_trades[trade_index].SL_id == -1 or active_trades[trade_index].TP_id == -1:
-                                TM.close_position(active_trades[trade_index].symbol,
-                                                  active_trades[trade_index].trade_direction,
-                                                  active_trades[trade_index].position_size, Bots[trade_index].Date[-1])
+                                TM.close_position(symbol=active_trades[trade_index].symbol,
+                                                  trade_direction=active_trades[trade_index].trade_direction,
+                                                  total_position_size=active_trades[trade_index].position_size, time=Bots[trade_index].Date[-1])
                                 print(f"Closed Trade on {active_trades[trade_index].symbol} as SL OR TP would have thrown a trigger immediately error")
                                 pop_flag = 1
                                 break
+
+                    if active_trades[trade_index].TP_id == '' or active_trades[trade_index].SL_id == '':
+                        ## trade hasn't opened yet so try open now if it hasn't gone past threshold
+                        order_notional = leverage * order_Size * account_balance
+                        active_trades[trade_index].order_id, active_trades[trade_index].position_size,\
+                        active_trades[trade_index].entry_price = TM.open_trade(symbol=active_trades[trade_index].symbol,
+                                                                               trade_direction=active_trades[trade_index].trade_direction,
+                                                                               order_notional=order_notional,
+                                                                               CP=Bots[active_trades[trade_index].index].CP, OP=Bots[active_trades[trade_index].index].OP,
+                                                                               tick_size=Bots[active_trades[trade_index].index].tick_size,
+                                                                               time=Bots[active_trades[trade_index].index].Date[-1], close=Bots[active_trades[trade_index].index].Close[-1],
+                                                                               trading_threshold=trading_threshold, orderID=active_trades[trade_index].order_id,
+                                                                               old_entry_price=active_trades[trade_index].entry_price)
+                        if active_trades[trade_index].order_id == '':
+                            pop_flag = 1 ## pop off trade as threshold was reached
+
                     if pop_flag:
                         active_trades.pop(trade_index)
                     else:
                         trade_index += 1
+
                 ##Check If trades have hit their TP values or SL value and move SL/Cancel open orders cause the trade is finished
                 trade_index = 0
                 while trade_index < len(active_trades):
@@ -305,7 +317,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                     position_info = client.futures_position_information(symbol=active_trades[i].symbol)[0]
                     if float(position_info['positionAmt']) == 0:
                         try:
-                            client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol) ##Close open orders on that symbol
+                            client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol)  ##Close open orders on that symbol
                         except:
                             pass
                         active_trades.pop(i)
@@ -337,10 +349,8 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
                         active_trades[i].same_candle = False
                         break
                 print_flag = 0
-                temp_symbols = []
-                for t in active_trades:
-                    temp_symbols.append(t.symbol)
-                print(f"Account Balance: {account_balance}, {Bots[0].Date[-1]}: Active Trades: {temp_symbols}")
+                temp_symbols = [active_trades[t].symbol for t in range(len(active_trades))]
+                print(f"Account Balance: {account_balance}, {str(datetime.utcfromtimestamp(round(Bots[0].Date[-1]/1000)))}: Active Trades: {temp_symbols}")
                 #Helper.log_info(active_trades, trade_prices, Dates, account_balance, csv_name, indicators)
                 try:
                     print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance},"
@@ -361,16 +371,12 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, start_string, Interval, 
 
 def run_bot(API_KEY, API_SECRET, leverage, order_Size, buffer, Interval, Max_Number_Of_Trades,
                  use_trailing_stop, trailing_stop_callback, symbol, strategy,
-                 TP_choice, SL_choice, SL_mult, TP_mult, Trade_All_Coins):
+                 TP_choice, SL_choice, SL_mult, TP_mult, Trade_All_Coins, use_market_orders, trading_threshold):
     client = Client(api_key=API_KEY, api_secret=API_SECRET)
 
     if Trade_All_Coins:
-        symbol = []
         x = client.futures_ticker()
-        for y in x:
-            symbol.append(y['symbol'])
-        symbol = [x for x in symbol if 'USDT' in x]
-        symbol = [x for x in symbol if not '_' in x]
+        symbol = [y['symbol'] for y in x if (('USDT' in y['symbol']) and not('_' in y['symbol']))]
 
     pp = PrettyPrinter()  ##for printing json text cleanly (inspect binance API call returns)
     twm = ThreadedWebsocketManager(api_key=API_KEY, api_secret=API_SECRET)
@@ -404,7 +410,7 @@ def run_bot(API_KEY, API_SECRET, leverage, order_Size, buffer, Interval, Max_Num
     _thread = Thread(target=web_soc_process, args=(pipe1, twm))
     _thread.start()
 
-    P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, buffer, Interval, Max_Number_Of_Trades, client, twm, use_trailing_stop,
+    P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, buffer, Interval, Max_Number_Of_Trades, client, twm, use_trailing_stop, use_market_orders, trading_threshold,
                                                  trailing_stop_callback, symbol, strategy, TP_choice, SL_choice, SL_mult, TP_mult))
     P1.start()
     twm.join()  ##keep websockets running
@@ -415,5 +421,46 @@ if __name__ == '__main__':
     from Config_File import *
     from Config_File import symbol  # explicitly importing to remove a warning
 
-    run_bot(API_KEY, API_SECRET, leverage, order_Size, buffer, Interval, Max_Number_Of_Trades,
-            use_trailing_stop, trailing_stop_callback, symbol, strategy, TP_choice, SL_choice, SL_mult, TP_mult, Trade_All_Coins)
+    client = Client(api_key=API_KEY, api_secret=API_SECRET)
+
+    if Trade_All_Coins:
+        x = client.futures_ticker()
+        symbol = [y['symbol'] for y in x if (('USDT' in y['symbol']) and not ('_' in y['symbol']))]
+
+    pp = PrettyPrinter()  ##for printing json text cleanly (inspect binance API call returns)
+    twm = ThreadedWebsocketManager(api_key=API_KEY, api_secret=API_SECRET)
+    twm.start()  ##start manager
+
+    print("Setting Leverage...")
+    i = 0
+    while i < len(symbol):
+        try:
+            client.futures_change_leverage(symbol=symbol[i], leverage=leverage)
+            i += 1
+        except BinanceAPIException as e:
+            if e == 'APIError(code=-4141): Symbol is closed.':
+                print(f"Symbol: {symbol[i]}, error: {e}")
+                symbol.pop(i)
+            else:
+                print(f"Error: {e}, removing symbol")
+                symbol.pop(i)
+
+    i = 0
+    while i < len(symbol):
+        try:
+            DH.append(Data_Handler(symbol[i], i))
+            streams.append(twm.start_kline_futures_socket(callback=DH[i].handle_socket_message, symbol=symbol[i],
+                                                          interval=Interval))
+            i += 1
+        except:
+            symbol.pop(i)
+
+    pipe1, pipe2 = Pipe()  ##pipe to communicate between processes
+    _thread = Thread(target=web_soc_process, args=(pipe1, twm))
+    _thread.start()
+
+    P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, buffer, Interval, Max_Number_Of_Trades, client,
+                      twm, use_trailing_stop, use_market_orders, trading_threshold, trailing_stop_callback, symbol, strategy,
+                      TP_choice, SL_choice, SL_mult, TP_mult))
+    P1.start()
+    twm.join()  ##keep websockets running
