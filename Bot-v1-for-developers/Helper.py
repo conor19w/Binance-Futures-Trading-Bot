@@ -318,7 +318,7 @@ def get_Klines(symbol, start_str, end_str, path):
         for unit in [1, 2, 4, 6, 8, 12]:
             try:
                 ## Construct the 1h, 2h, 4h, 6h, 8h and 12h candles
-                if int(str(candle_open)[-8:-6]) % unit == 0 and int(str(price_data['Date_1m'][-1])[-5:-3]) == 0:
+                if int(str(candle_open)[-8:-6]) % unit == 0 and int(str(candle_open)) == 0:
                     ##Candle open
                     price_data[f'Open_{unit}h'].append(price_data['Open_1m'][-1])
                     price_data[f'High_{unit}h'].append(price_data['High_1m'][-1])  ##initialize as highest
