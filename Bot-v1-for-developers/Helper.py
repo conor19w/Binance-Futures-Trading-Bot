@@ -10,7 +10,7 @@ from tabulate import tabulate
 client = Client(api_key=API_KEY,
                 api_secret=API_SECRET)  ##Binance keys needed to get historical data/ Trade on an account
 
-desktop_path = f"C:\\Users\\conor\\Desktop"
+desktop_path = f"."
 
 
 class Data_Handler:
@@ -532,7 +532,7 @@ def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, D
     print("Loading Price Data")
     i = 0
     while i < len(symbol):
-        path = f"{desktop_path}\\price_data\\{symbol[i]}_{start}_{end}.joblib"
+        path = f"{desktop_path}//price_data//{symbol[i]}_{start}_{end}.joblib"
         try:
             price_data = load(path)
             Date.append(price_data[f'Date_{TIME_INTERVAL}'])
