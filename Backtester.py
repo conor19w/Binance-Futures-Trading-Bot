@@ -40,7 +40,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     csv_name = csv_name+f"{i}.csv"
             except:
                 i += 1
-    client = Client()
+    client = Client(api_key=API_KEY, api_secret=API_SECRET)
     if Trade_All_Symbols:
         symbol = []  ## reset symbol before we fill with all symbols below
         x = client.futures_ticker()  # [0]
@@ -48,6 +48,13 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
             symbol.append(y['symbol'])
         symbol = [x for x in symbol if 'USDT' in x]
         symbol = [x for x in symbol if not '_' in x]
+
+    y = client.futures_exchange_info()['symbols']
+    coin_info = []
+    for x in y:
+        coin_info.append([x['pair'], x['pricePrecision'], x['quantityPrecision'], x['filters'][0]['tickSize'],
+                          x['filters'][0]['minPrice']])
+
     if trailing_stop_callback < .001 and use_trailing_stop:
         trailing_stop_callback = .001
         print("*********************************\nCallback rate must be >= .001, I have set callback rate to .001 for you\n*********************************")
@@ -78,11 +85,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         print(f"{TIME_INTERVAL} OHLC Candle Sticks from {start} to {end}")
 
     Bots: [Bot] = []
-    y = client.futures_exchange_info()['symbols']
-    coin_info = []
-    for x in y:
-        coin_info.append([x['pair'], x['pricePrecision'], x['quantityPrecision'], x['filters'][0]['tickSize'],
-                          x['filters'][0]['minPrice']])
+
 
     original_time_interval = copy(TIME_INTERVAL)
     TIME_INTERVAL = Helper.get_TIME_INTERVAL(TIME_INTERVAL)  ##Convert string to an integer for the rest of the script
@@ -176,8 +179,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 tradeNO += 1
                 ## Append new trade, to our trade list
                 ## (index, position_size, tp_val, stop_loss_val, trade_direction, order_id_temp, symbol)
-                active_trades.append(
-                    Trade(index, order_qty, take_profit_val, stop_loss_val, trade_direction, '', Bots[index].symbol))
+                active_trades.append(Trade(index, order_qty, take_profit_val, stop_loss_val, trade_direction, 0, Bots[index].symbol))
                 active_trades[-1].entry_price = entry_price
                 active_trades[-1].trade_start = Date_1min[index][i]
                 change_occurred = True
