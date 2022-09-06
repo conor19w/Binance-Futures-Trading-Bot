@@ -7,7 +7,7 @@
 * Comes with some pre-coded strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
-* Want Coding Assistance, Custom Strategies & Custom Features? [Sponsor Me](https://github.com/sponsors/conor19w) (private repo coming soon)
+* Prioritise your [Trello](https://trello.com/invite/b/iagTNiv0/80cc1828bdac439ed813cc54c9698c06/github-bot) ticket with a [one-off-payment](https://github.com/sponsors/conor19w)
 * [One time payment](https://github.com/sponsors/conor19w) for custom strategies available also.
 * Works best with Python 3.8.10 on Linux.
 * On Windows you may run into issues, using the docker file / reducing the number of coins you are trading might help
