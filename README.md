@@ -44,10 +44,13 @@ python3 Live_Bot.py
 __Docker container creation__ (Recommended for anyone having issues running the bot):
 * Navigate to the project directory in your terminal window
 * Run the following Command this will create a docker image with the current state of your Config.py and choice of strategy in Bot_Class.py:
+
+Sample docker commands that I use, __note yours may be different__ (`sudo` may not be needed for you):
 ```shell
-docker build --tag Live_Bot
-docker run -it Live_Bot
+sudo docker build --tag live_bot .
+sudo docker run -it live_bot
 ```
+
 ---
 ### GUI for Backtesting and Live Trading (locally) ###
 __Just Run ```app.py``` to get the GUI__
