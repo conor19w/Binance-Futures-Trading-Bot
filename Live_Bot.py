@@ -64,6 +64,8 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
     pp = PrettyPrinter()  ## for printing json text cleanly (inspect binance API call returns)
     active_trades: [Trade] = []  ## List of active trades
     new_trades: [[int, [int, float, float]]] = []
+    order_Size = round(order_Size/100, 3)
+    trading_threshold = round(trading_threshold/100, 3)
     TM = Trade_Manager(client=client, use_trailing_stop=use_trailing_stop, trailing_stop_callback=trailing_stop_callback, use_market=use_market_orders)
     TS = Trade_Stats()
     Bots: [Bot_Class.Bot] = []

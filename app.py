@@ -100,13 +100,13 @@ if __name__ == "__main__":
         label1 = tk.Label(frame, text="Start (dd-mm-yy):", bg="light blue")
         label1.place(relx=.01, rely=.1)
         start = tk.Entry(frame)
-        start.insert(0, "01-07-22")
+        start.insert(0, "01-05-22")
         start.place(relx=.16, rely=.1, relwidth=.085)
 
         label2 = tk.Label(frame, text="End (dd-mm-yy):", bg="light blue")
         label2.place(relx=.01, rely=.15)
         end = tk.Entry(frame)
-        end.insert(0, "12-08-22")
+        end.insert(0, "26-08-22")
         end.place(relx=.16, rely=.15, relwidth=.085)
         Live_Bot.configure(bg="#457E81", fg='white')
         Backtester.configure(bg="light blue", fg="black")
@@ -207,7 +207,7 @@ if __name__ == "__main__":
             if slippage.get() != '':
                 slip = round(float(slippage.get())/100, 4)
 
-            T.append(Process(target=run_backtester, args=(float(start_balance.get()), int(leverage.get()), round(float(order_size.get())/100, 2), start.get(), end.get(),
+            T.append(Thread(target=run_backtester, args=(float(start_balance.get()), int(leverage.get()), round(float(order_size.get())/100, 3), start.get(), end.get(),
                      candle_length.get(), int(number_of_trades.get()), trade_all_coins.get(), isolated_test.get(), only_show_profitable_coins.get(),
                      profit_req, particular_drawdown.get(), min_dd_req, symbol, use_trail_stop.get(), round(float(trail_stop.get())/100, 3), f"Backtest", slip,
                      strategy.get(), TP_sub.get(), SL_sub.get(), float(SL.get()), float(TP.get()))))
@@ -227,10 +227,10 @@ if __name__ == "__main__":
                     i += 1
         if len(P) == 0:
 
-            P.append(Process(target=run_bot, args=(API_KEY.get(), API_SECRET.get(), int(leverage.get()),
-                     round(float(order_size.get())/100, 3), buffer.get(), candle_length.get(), int(number_of_trades.get()),
+            P.append(Thread(target=run_bot, args=(API_KEY.get(), API_SECRET.get(), int(leverage.get()),
+                     float(order_size.get()), buffer.get(), candle_length.get(), int(number_of_trades.get()),
                      use_trail_stop.get(), round(float(trail_stop.get()), 1), symbol, strategy.get(), TP_sub.get(), SL_sub.get(),
-                     float(SL.get()), float(TP.get()), trade_all_coins.get(), use_market_orders.get(), round(float(trading_threshold.get())/100, 3))))
+                     float(SL.get()), float(TP.get()), trade_all_coins.get(), use_market_orders.get(), float(trading_threshold.get()))))
             P[-1].start()
 
     def save_keys():
@@ -282,7 +282,6 @@ if __name__ == "__main__":
         print("Coins:", symbol)
 
 
-    symbol = []
     root = tk.Tk()
     root.title("Binance Futures Bot (gui v1)                                                    Developed by Conor White")
     photo = tk.PhotoImage(file="./icon.png")
