@@ -1,3 +1,5 @@
+import time
+
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
@@ -66,7 +68,8 @@ class Trade:
         self.Lowest_val = 999999
         self.trail_activated = False
         self.same_candle = True
-
+        self.limit_order_wait_time = 2 ## 20 seconds
+        self.waited_time = 0
     def print_vals(self):
         return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status, self.Highest_val, self.Lowest_val
 
@@ -97,9 +100,9 @@ class Trade_Manager:
             order_qty = order_notional / close
             ## Conditions to cancel the opening of a trade
             if old_entry_price != 0 and (close - entry_price) / close > trading_threshold and trade_direction == 0:
-                return '', order_qty, entry_price
+                return '', order_qty, entry_price, -99
             elif old_entry_price != 0 and (entry_price - close) / close > trading_threshold and trade_direction == 1:
-                return '', order_qty, entry_price
+                return '', order_qty, entry_price, -99
 
             try:
                 if OP == 0:
@@ -123,16 +126,16 @@ class Trade_Manager:
                     orderID = order['orderId']
             except BinanceAPIException as e:
                 log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in open_trade(), Error: {e}")
-                print(f"{time}: {symbol}: Error in open_trade(), Error: ", e, order_qty, CP, OP)
+                print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in open_trade(), Error: ", e, order_qty, CP, OP)
             except Exception as e:
                 print(e)
-                log_error(f"{time}: {symbol}: {e}")
+                log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: {e}")
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 print(exc_type, fname, exc_tb.tb_lineno)
 
             entry_price = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
-            return orderID, order_qty, entry_price
+            return orderID, order_qty, entry_price, 1
 
         else:
             order_qty = 0
@@ -140,8 +143,9 @@ class Trade_Manager:
                 if orderID != '':
                     try:
                         self.client.futures_cancel_order(symbol=symbol, orderId=orderID)
-                    except:
-                        pass
+                    except BinanceAPIException as e:
+                        print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error trying to cancel trade {str(e)}")
+                        log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error trying to cancel trade {str(e)}")
 
                 if OP == 0:
                     order_qty = round(order_notional / entry_price)
@@ -154,11 +158,11 @@ class Trade_Manager:
 
                 ## Conditions to cancel the opening of a trade
                 if old_entry_price != 0 and (old_entry_price - entry_price) / old_entry_price > trading_threshold and trade_direction == 0:
-                    return '', order_qty, entry_price
+                    return '', order_qty, entry_price, -99
                 elif old_entry_price != 0 and (entry_price - old_entry_price) / old_entry_price > trading_threshold and trade_direction == 1:
-                    return '', order_qty, entry_price
+                    return '', order_qty, entry_price, -99
                 if order_qty == 0:
-                    return '', order_qty, entry_price
+                    return '', order_qty, entry_price, -99
 
                 if trade_direction == 0:
                     order = self.client.futures_create_order(
@@ -179,10 +183,10 @@ class Trade_Manager:
                         quantity=order_qty)
                     orderID = order['orderId']
 
-                return orderID, order_qty, entry_price
+                return orderID, order_qty, entry_price, 0
             except BinanceAPIException as e:
                 print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in open_trade(), Error: ", e, order_qty, entry_price, CP, OP)
-                return '', 0, 0
+                return '', 0, 0, 0
             except Exception as e:
                 print(e)
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -326,29 +330,29 @@ def get_Klines(symbol, start_str, end_str, path):
     end_date = f'{end_str[3:5]}-{end_str[0:2]}-{end_str[6:]}'
     print(f"Downloading CandleStick Data for {symbol}...")
     price_data = {'High_1m': [], 'Low_1m': [], 'Close_1m': [],
-                  'Open_1m': [], 'Date_1m': [],'Volume_1m': [],
+                  'Open_1m': [], 'Date_1m': [], 'Volume_1m': [],
                   'High_3m': [], 'Low_3m': [], 'Close_3m': [],
-                  'Open_3m': [], 'Date_3m': [],'Volume_3m': [],
+                  'Open_3m': [], 'Date_3m': [], 'Volume_3m': [],
                   'High_5m': [], 'Low_5m': [], 'Close_5m': [],
-                  'Open_5m': [], 'Date_5m': [],'Volume_5m': [],
+                  'Open_5m': [], 'Date_5m': [], 'Volume_5m': [],
                   'High_15m': [], 'Low_15m': [], 'Close_15m': [],
-                  'Open_15m': [], 'Date_15m': [],'Volume_15m': [],
+                  'Open_15m': [], 'Date_15m': [], 'Volume_15m': [],
                   'High_30m': [], 'Low_30m': [], 'Close_30m': [],
-                  'Open_30m': [], 'Date_30m': [],'Volume_30m': [],
+                  'Open_30m': [], 'Date_30m': [], 'Volume_30m': [],
                   'High_1h': [], 'Low_1h': [], 'Close_1h': [],
-                  'Open_1h': [], 'Date_1h': [],'Volume_1h': [],
+                  'Open_1h': [], 'Date_1h': [], 'Volume_1h': [],
                   'High_2h': [], 'Low_2h': [], 'Close_2h': [],
-                  'Open_2h': [], 'Date_2h': [],'Volume_2h': [],
+                  'Open_2h': [], 'Date_2h': [], 'Volume_2h': [],
                   'High_4h': [], 'Low_4h': [], 'Close_4h': [],
-                  'Open_4h': [], 'Date_4h': [],'Volume_4h': [],
+                  'Open_4h': [], 'Date_4h': [], 'Volume_4h': [],
                   'High_6h': [], 'Low_6h': [], 'Close_6h': [],
-                  'Open_6h': [], 'Date_6h': [],'Volume_6h': [],
+                  'Open_6h': [], 'Date_6h': [], 'Volume_6h': [],
                   'High_8h': [], 'Low_8h': [], 'Close_8h': [],
-                  'Open_8h': [], 'Date_8h': [],'Volume_8h': [],
+                  'Open_8h': [], 'Date_8h': [], 'Volume_8h': [],
                   'High_12h': [], 'Low_12h': [], 'Close_12h': [],
-                  'Open_12h': [], 'Date_12h': [],'Volume_12h': [],
+                  'Open_12h': [], 'Date_12h': [], 'Volume_12h': [],
                   'High_1d': [], 'Low_1d': [], 'Close_1d': [],
-                  'Open_1d': [], 'Date_1d': [],'Volume_1d': []}
+                  'Open_1d': [], 'Date_1d': [], 'Volume_1d': []}
 
     for kline in client.futures_historical_klines(symbol, '1m', start_str=start_date, end_str=end_date):
         #:return: list of OHLCV values (Open time, Open, High, Low, Close, Volume, Close time, Quote asset volume, Number of trades, Taker buy base asset volume, Taker buy quote asset volume, Ignore)
@@ -357,7 +361,7 @@ def get_Klines(symbol, start_str, end_str, path):
         price_data['High_1m'].append(float(kline[2]))
         price_data['Low_1m'].append(float(kline[3]))
         price_data['Close_1m'].append(float(kline[4]))
-        price_data['Volume_1m'].append(float(kline[5]))
+        price_data['Volume_1m'].append(round(float(kline[5])))
         price_data['Date_1m'].append(datetime.utcfromtimestamp((round(kline[6] / 1000))))
         for unit in [3, 5, 15, 30]:
             try:
@@ -377,15 +381,15 @@ def get_Klines(symbol, start_str, end_str, path):
                         price_data[f'High_{unit}m'][-1] = price_data['High_1m'][-1]  ##update as highest
                     if price_data['Low_1m'][-1] < price_data[f'Low_{unit}m'][-1]:
                         price_data[f'Low_{unit}m'][-1] = price_data['Low_1m'][-1]  ##update as lowest
-                    price_data[f'Volume_{unit}m'][-1] += price_data['Volume_1m'][-1] ## add on volume
-
-                else:
+                    price_data[f'Volume_{unit}m'][-1] += price_data['Volume_1m'][-1]  ## add on volume
+                    price_data[f'Volume_{unit}m'][-1] = round(price_data[f'Volume_{unit}m'][-1])
+                elif not int(str(candle_open)[-5:-3]) % unit == 0 and not int(str(price_data['Date_1m'][-1])[-5:-3]) % unit == 0:
                     ## Check for higher and lower candle inbetween:
                     if price_data['High_1m'][-1] > price_data[f'High_{unit}m'][-1]:
                         price_data[f'High_{unit}m'][-1] = price_data['High_1m'][-1]  ##update as highest
                     if price_data['Low_1m'][-1] < price_data[f'Low_{unit}m'][-1]:
                         price_data[f'Low_{unit}m'][-1] = price_data['Low_1m'][-1]  ##update as lowest
-                    price_data[f'Volume_{unit}m'][-1] += price_data['Volume_1m'][-1] ## add on volume
+                    price_data[f'Volume_{unit}m'][-1] += price_data['Volume_1m'][-1]  ## add on volume
 
             except Exception as e:
                 print(f"Error in {unit}m candles should be fine just for debugging purposes, {e}")
@@ -408,7 +412,9 @@ def get_Klines(symbol, start_str, end_str, path):
                     if price_data['Low_1m'][-1] < price_data[f'Low_{unit}h'][-1]:
                         price_data[f'Low_{unit}h'][-1] = price_data['Low_1m'][-1]  ##update as lowest
                     price_data[f'Volume_{unit}h'][-1] += price_data['Volume_1m'][-1]  ## add on volume
-                else:
+                    price_data[f'Volume_{unit}h'][-1] = round(price_data[f'Volume_{unit}h'][-1])
+                elif not (int(str(candle_open)[-8:-6]) % unit == 0 and int(str(candle_open)[-5:-3]) == 0) and \
+                        not (int(str(price_data['Date_1m'][-1])[-8:-6]) % unit == 0 and int(str(price_data['Date_1m'][-1])[-5:-3]) == 0):
                     ## Check for higher and lower candle inbetween:
                     if price_data['High_1m'][-1] > price_data[f'High_{unit}h'][-1]:
                         price_data[f'High_{unit}h'][-1] = price_data['High_1m'][-1]  ##update as highest

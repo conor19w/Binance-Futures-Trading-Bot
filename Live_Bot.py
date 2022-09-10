@@ -187,7 +187,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
 
                 order_notional = leverage * order_Size * account_balance
 
-                order_id_temp, position_size_temp, entry_price_temp = TM.open_trade(symbol=Bots[index].symbol, trade_direction=trade_direction, order_notional=order_notional,
+                order_id_temp, position_size_temp, entry_price_temp, _ = TM.open_trade(symbol=Bots[index].symbol, trade_direction=trade_direction, order_notional=order_notional,
                                                                   CP=Bots[index].CP, OP=Bots[index].OP, tick_size=Bots[index].tick_size,
                                                                   time=Bots[index].Date[-1], close=Bots[index].Close[-1], trading_threshold=trading_threshold)
 
@@ -215,7 +215,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                     pop_flag = 0
                     for order in all_orders:
                         if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == \
-                                active_trades[trade_index].order_id and active_trades[trade_index].SL_id == '' and \
+                                active_trades[trade_index].order_id and active_trades[trade_index].trade_status == 0 and \
                                 order['status'] == 'FILLED':
 
                             active_trades[trade_index].entry_price = float(client.futures_position_information(symbol=active_trades[trade_index].symbol)[0]['entryPrice'])
@@ -236,6 +236,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
 
                             active_trades[trade_index].SL_id = TM.place_SL(symbol=active_trades[trade_index].symbol, SL=stop_loss_val, trade_direction=active_trades[trade_index].trade_direction,
                                                                            CP=Bots[active_trades[trade_index].index].CP, tick_size=Bots[active_trades[trade_index].index].tick_size, time=Bots[trade_index].Date[-1])
+                            active_trades[trade_index].trade_status = 1 ## In a Trade
                             ##Order would trigger immediately so close the position
                             if active_trades[trade_index].SL_id == -1 or active_trades[trade_index].TP_id == -1:
                                 TM.close_position(symbol=active_trades[trade_index].symbol,
@@ -245,11 +246,11 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                                 pop_flag = 1
                                 break
 
-                    if active_trades[trade_index].TP_id == '' or active_trades[trade_index].SL_id == '':
+                    if active_trades[trade_index].trade_status == 0 and active_trades[trade_index].waited_time >= active_trades[trade_index].limit_order_wait_time:
                         ## trade hasn't opened yet so try open now if it hasn't gone past threshold
                         order_notional = leverage * order_Size * account_balance
                         active_trades[trade_index].order_id, active_trades[trade_index].position_size,\
-                        active_trades[trade_index].entry_price = TM.open_trade(symbol=active_trades[trade_index].symbol,
+                        active_trades[trade_index].entry_price, active_trades[trade_index].trade_status = TM.open_trade(symbol=active_trades[trade_index].symbol,
                                                                                trade_direction=active_trades[trade_index].trade_direction,
                                                                                order_notional=order_notional,
                                                                                CP=Bots[active_trades[trade_index].index].CP, OP=Bots[active_trades[trade_index].index].OP,
@@ -257,9 +258,11 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                                                                                time=Bots[active_trades[trade_index].index].Date[-1], close=Bots[active_trades[trade_index].index].Close[-1],
                                                                                trading_threshold=trading_threshold, orderID=active_trades[trade_index].order_id,
                                                                                old_entry_price=active_trades[trade_index].entry_price)
-                        if active_trades[trade_index].order_id == '':
-                            pop_flag = 1 ## pop off trade as threshold was reached
-
+                        active_trades[trade_index].waited_time = 0
+                        if active_trades[trade_index].trade_status == -99:
+                            pop_flag = 1  ## pop off trade as threshold was reached
+                    elif active_trades[trade_index].trade_status == 0 and active_trades[trade_index].waited_time < active_trades[trade_index].limit_order_wait_time:
+                        active_trades[trade_index].waited_time += 1
                     if pop_flag:
                         active_trades.pop(trade_index)
                     else:
@@ -315,7 +318,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                 i = 0
                 while i < len(active_trades):
                     position_info = client.futures_position_information(symbol=active_trades[i].symbol)[0]
-                    if float(position_info['positionAmt']) == 0:
+                    if float(position_info['positionAmt']) == 0 and (active_trades[i].trade_status == -99 or active_trades[i].trade_status == 1):
                         try:
                             client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol)  ##Close open orders on that symbol
                         except:
