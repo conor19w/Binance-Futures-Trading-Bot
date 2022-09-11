@@ -54,17 +54,17 @@ Test the candles I generate are the same as the ones binance feeds us
 Test alignment of data in backtester is correct
 
 '''
-# buffer = 20
-# for TIME_INTERVAL in ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h']:
-#     Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = \
-#         Helper.get_aligned_candles([], [], [], [], [], [], [], [], [], [], [], symbol, TIME_INTERVAL, start, end)
-#     flag = 0
-#     TIME_INTERVAL_prev = copy(TIME_INTERVAL)
-#     TIME_INTERVAL = Helper.get_TIME_INTERVAL(TIME_INTERVAL)
-#     for i in range((buffer-1)*TIME_INTERVAL, len(Date_1min[0]) - 2):
-#         if ((i + 1) % TIME_INTERVAL == 0 or TIME_INTERVAL == 1) and Date_1min[0][i] != Date[0][int(i/TIME_INTERVAL)]:
-#             flag = 1
-#     if flag == 0:
-#         print(f"Aligned candles are correct for the {TIME_INTERVAL_prev} timeframe")
-#     else:
-#         print(f"Aligned candles are incorrect for the {TIME_INTERVAL_prev} timeframe")
+buffer = 20
+for TIME_INTERVAL in ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h']:
+    Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = \
+        Helper.get_aligned_candles([], [], [], [], [], [], [], [], [], [], [], symbol, TIME_INTERVAL, start, end)
+    flag = 0
+    TIME_INTERVAL_prev = copy(TIME_INTERVAL)
+    TIME_INTERVAL = Helper.get_TIME_INTERVAL(TIME_INTERVAL)
+    for i in range((buffer-1)*TIME_INTERVAL, len(Close_1min[0]) - (len(Close_1min[0])-len(Close[0])*TIME_INTERVAL)):
+        if ((i + 1) % TIME_INTERVAL == 0 or TIME_INTERVAL == 1) and Date_1min[0][i] != Date[0][int(i/TIME_INTERVAL)] or Close_1min[0][i] != Close[0][int(i/TIME_INTERVAL)]:
+            flag = 1
+    if flag == 0:
+        print(f"Aligned candles are CORRECT for the {TIME_INTERVAL_prev} timeframe")
+    else:
+        print(f"****** Aligned candles are INCORRECT for the {TIME_INTERVAL_prev} timeframe ******")
