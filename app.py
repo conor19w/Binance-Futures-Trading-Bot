@@ -15,6 +15,7 @@ if __name__ == "__main__":
     P: [Process] = []
     client = Client()
     valid_symbols = []  ## reset symbol before we fill with all symbols below
+    symbol = []
     x = client.futures_ticker()  # [0]
     for y in x:
         valid_symbols.append(y['symbol'])
