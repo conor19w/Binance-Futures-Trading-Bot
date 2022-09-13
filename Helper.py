@@ -23,13 +23,10 @@ class Data_Handler:
         self.next_candle = {'Date': 0, 'Close': 0.0, 'Open': 0.0, 'High': 0.0, 'Low': 0.0, 'Volume': 0.0}
 
     def handle_socket_message(self, msg):
-        # print(msg['k']['x'])
         try:
             if msg != '':
                 payload = msg['k']
-                #if payload['x']:
-                if payload['T'] > self.next_candle['Date']:
-                    #self.next_candle['Date'] = str(datetime.utcfromtimestamp(round(payload['T'] / 1000)))
+                if payload['x']:
                     self.next_candle['Date'] = payload['T']
                     self.next_candle['Close'] = float(payload['c'])
                     self.next_candle['Volume'] = float(payload['q'])
@@ -361,7 +358,7 @@ def get_Klines(symbol, start_str, end_str, path):
         price_data['High_1m'].append(float(kline[2]))
         price_data['Low_1m'].append(float(kline[3]))
         price_data['Close_1m'].append(float(kline[4]))
-        price_data['Volume_1m'].append(round(float(kline[5])))
+        price_data['Volume_1m'].append(round(float(kline[7])))
         price_data['Date_1m'].append(datetime.utcfromtimestamp((round(kline[6] / 1000))))
         for unit in [3, 5, 15, 30]:
             try:
