@@ -137,13 +137,6 @@ class Trade_Manager:
         else:
             order_qty = 0
             try:
-                if orderID != '':
-                    try:
-                        self.client.futures_cancel_order(symbol=symbol, orderId=orderID)
-                    except BinanceAPIException as e:
-                        print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error trying to cancel trade {str(e)}")
-                        log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error trying to cancel trade {str(e)}")
-
                 if OP == 0:
                     order_qty = round(order_notional / entry_price)
                 else:
@@ -161,24 +154,25 @@ class Trade_Manager:
                 if order_qty == 0:
                     return '', order_qty, entry_price, -99
 
-                if trade_direction == 0:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=SIDE_SELL,
-                        type=FUTURE_ORDER_TYPE_LIMIT,
-                        price=entry_price,
-                        timeInForce=TIME_IN_FORCE_GTC,
-                        quantity=order_qty)
-                    orderID = order['orderId']
-                if trade_direction == 1:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=SIDE_BUY,
-                        type=FUTURE_ORDER_TYPE_LIMIT,
-                        price=entry_price,
-                        timeInForce=TIME_IN_FORCE_GTC,
-                        quantity=order_qty)
-                    orderID = order['orderId']
+                if orderID == '':
+                    if trade_direction == 0:
+                        order = self.client.futures_create_order(
+                            symbol=symbol,
+                            side=SIDE_SELL,
+                            type=FUTURE_ORDER_TYPE_LIMIT,
+                            price=entry_price,
+                            timeInForce=TIME_IN_FORCE_GTC,
+                            quantity=order_qty)
+                        orderID = order['orderId']
+                    if trade_direction == 1:
+                        order = self.client.futures_create_order(
+                            symbol=symbol,
+                            side=SIDE_BUY,
+                            type=FUTURE_ORDER_TYPE_LIMIT,
+                            price=entry_price,
+                            timeInForce=TIME_IN_FORCE_GTC,
+                            quantity=order_qty)
+                        orderID = order['orderId']
 
                 return orderID, order_qty, entry_price, 0
             except BinanceAPIException as e:
