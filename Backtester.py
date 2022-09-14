@@ -86,7 +86,6 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
 
     Bots: [Bot] = []
 
-
     original_time_interval = copy(TIME_INTERVAL)
     TIME_INTERVAL = Helper.get_TIME_INTERVAL(TIME_INTERVAL)  ##Convert string to an integer for the rest of the script
     if len(Open[0]) < 300:
@@ -114,7 +113,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
     new_trades = []
     if printing_on:
         print("Account Balance: ", account_balance[0])
-    for i in range((buffer - 1)*TIME_INTERVAL, len(Close_1min[0]) - 1):
+    for i in range((buffer - 1)*TIME_INTERVAL, len(Close_1min[0]) - 1 - TIME_INTERVAL * 2):
         if account_balance[0] < 0 and not Trade_Each_Coin_With_Separate_Accounts:
             if printing_on:
                 print("Negative Balance")
@@ -223,7 +222,6 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     t.trade_status = 4  ## Closed on condition
                     change_occurred = True
 
-
         ## Check PNL here as well as print the current trades:
         if printing_on:
             trade_price = []
@@ -292,8 +290,13 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
             if profitgraph[0][i] > profitgraph[0][i - 1]:
                 num_wins += 1
                 average += (profitgraph[0][i] - profitgraph[0][i - 1]) / profitgraph[0][i]
-        average /= num_wins
 
+        average /= num_wins
+        CAGR = 0
+        vol = 0
+        Sharpe_ratio = 0
+        sortino_ratio = 0
+        calmar_ratio = 0
         risk_free_rate = 1.41  ##10 year treasury rate
         df = pd.DataFrame({'Account_Balance': Daily_return[0]})
         df['daily_return'] = df['Account_Balance'].pct_change()
@@ -336,7 +339,10 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         print(f"Winning Trades:\n {len(winning_trades)}")
         print(f"Losing Trades:\n {len(losing_trades)}")
         plt.plot(profitgraph[0])
-        plt.title(f"{symbol}: {original_time_interval} from {start} to {end}")
+        if Trade_All_Symbols:
+            plt.title(f"All Coins: {original_time_interval} from {start} to {end}")
+        else:
+            plt.title(f"{symbol}: {original_time_interval} from {start} to {end}")
         plt.ylabel('Account Balance')
         plt.xlabel('Number of Trades')
         if plot_graphs_to_folder:
