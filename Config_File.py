@@ -14,9 +14,8 @@ use_market_orders = False
 trading_threshold = 0.1  ## %, i.e 0.1 = 0.1%
 
 ## New vars needed for the gui, running script from terminal will also need these now
-strategy = 'tripleEMAStochasticRSIATR'
-TP_choice = 'x (ATR)'
-SL_choice = 'x (ATR)'
+strategy = 'StochRSIMACD'
+TP_SL_choice = '%'
 SL_mult = .5
 TP_mult = 1
 

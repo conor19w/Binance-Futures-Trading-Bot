@@ -211,7 +211,7 @@ if __name__ == "__main__":
             T.append(Thread(target=run_backtester, args=(float(start_balance.get()), int(leverage.get()), round(float(order_size.get())/100, 3), start.get(), end.get(),
                      candle_length.get(), int(number_of_trades.get()), trade_all_coins.get(), isolated_test.get(), only_show_profitable_coins.get(),
                      profit_req, particular_drawdown.get(), min_dd_req, symbol, use_trail_stop.get(), round(float(trail_stop.get())/100, 3), f"Backtest", slip,
-                     strategy.get(), TP_sub.get(), SL_sub.get(), float(SL.get()), float(TP.get()))))
+                     strategy.get(), TP_SL.get(), float(SL.get()), float(TP.get()))))
             T[-1].start()
 
 
@@ -230,7 +230,7 @@ if __name__ == "__main__":
 
             P.append(Thread(target=run_bot, args=(API_KEY.get(), API_SECRET.get(), int(leverage.get()),
                      float(order_size.get()), buffer.get(), candle_length.get(), int(number_of_trades.get()),
-                     use_trail_stop.get(), round(float(trail_stop.get()), 1), symbol, strategy.get(), TP_sub.get(), SL_sub.get(),
+                     use_trail_stop.get(), round(float(trail_stop.get()), 1), symbol, strategy.get(), TP_SL.get(),
                      float(SL.get()), float(TP.get()), trade_all_coins.get(), use_market_orders.get(), float(trading_threshold.get()))))
             P[-1].start()
 
@@ -326,26 +326,19 @@ if __name__ == "__main__":
     SL = tk.Entry(root)
     SL.place(relx=.66, rely=.2, relwidth=.03)
     SL.insert(0, "1")
-    SL_sub = StringVar()
-    SL_sub_options = ['%', 'x (ATR)', 'x (Swing High/Low) level 1', 'x (Swing Close) level 1',
+    TP_SL = StringVar()
+    TP_SL_options = ['%', 'x (ATR)', 'x (Swing High/Low) level 1', 'x (Swing Close) level 1',
                       'x (Swing High/Low) level 2', 'x (Swing Close) level 2', 'x (Swing High/Low) level 3',
                       'x (Swing Close) level 3']
-    SL_sub.set("%")
-    SL_sub_choice_dropdown = tk.OptionMenu(root, SL_sub, *SL_sub_options)
-    SL_sub_choice_dropdown.place(relx=.7, rely=.2, relheight=.03)
+    TP_SL.set("%")
+    TP_SL_choice_dropdown = tk.OptionMenu(root, TP_SL, *TP_SL_options)
+    TP_SL_choice_dropdown.place(relx=.7, rely=.225, relheight=.03)
 
     label14 = tk.Label(root, text="TP:", bg="light blue")
     label14.place(relx=.63, rely=.25)
     TP = tk.Entry(root)
     TP.place(relx=.66, rely=.25, relwidth=.03)
     TP.insert(0, "1.5")
-    TP_sub_options = ['%', 'x (ATR)', 'x (Swing High/Low) level 1', 'x (Swing Close) level 1',
-                      'x (Swing High/Low) level 2', 'x (Swing Close) level 2', 'x (Swing High/Low) level 3',
-                      'x (Swing Close) level 3']
-    TP_sub = StringVar()
-    TP_sub.set("%")
-    TP_sub_choice_dropdown = tk.OptionMenu(root, TP_sub, *TP_sub_options)
-    TP_sub_choice_dropdown.place(relx=.7, rely=.25, relheight=.03)
 
     label8 = tk.Label(root, text="Max Number of Trades:", bg="light blue")
     label8.place(relx=.55, rely=.15)

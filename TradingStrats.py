@@ -16,7 +16,7 @@ from copy import copy
 import time
 
 
-def candle_wick(Trade_Direction, Close, Open, High, Low, SL, TP, TP_choice, SL_choice, current_index):
+def candle_wick(Trade_Direction, Close, Open, High, Low, current_index):
     if Close[current_index - 4] < Close[current_index - 3] < Close[current_index - 2] and Close[current_index - 1] < Open[current_index - 1] and (
             High[current_index - 1] - Open[current_index - 1] + Close[current_index - 1] - Low[current_index - 1]) > 10 * (Open[current_index - 1] - Close[current_index - 1]) and Close[current_index] < Close[current_index - 1]:
         ##3 green candles followed by a red candle with a huge wick
@@ -25,8 +25,7 @@ def candle_wick(Trade_Direction, Close, Open, High, Low, SL, TP, TP_choice, SL_c
             High[current_index - 1] - Close[current_index - 1] + Open[current_index - 1] - Low[current_index - 1]) > 10 * (Close[current_index - 1] - Open[current_index - 1]) and Close[current_index] > Close[current_index - 1]:
         ##3 red candles followed by a green candle with a huge wick
         Trade_Direction = 1
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, current_index)
-    return Trade_Direction, stop_loss_val, take_profit_val
+    return Trade_Direction
 
 
 def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, current_index):
@@ -48,7 +47,6 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
             ##Weve found a trough:
             Close_troughs.append(Low[i])
             location_troughs.append(i)
-
 
     trend = -99  ##indicate the direction of trend
     if Close[current_index] < EMA200[current_index]:
@@ -274,7 +272,7 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
     return Trade_Direction, stop_loss_val, take_profit_val
 
 
-def goldenCross(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice, EMA100, EMA50, EMA20, RSI, current_index):
+def goldenCross(Trade_Direction, Close, EMA100, EMA50, EMA20, RSI, current_index):
     if Close[current_index] > EMA100[current_index] and RSI[current_index] > 50:
         ##looking for long entries
         if (EMA20[current_index - 1] < EMA50[current_index - 1] and EMA20[current_index] > EMA50[current_index]) or (EMA20[current_index - 2] < EMA50[current_index - 2] and EMA20[current_index] > EMA50[current_index]) or (
@@ -288,12 +286,10 @@ def goldenCross(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice,
             ##Cross up occured
             Trade_Direction = 0  ##Sell
 
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, current_index)
-
-    return Trade_Direction, stop_loss_val, take_profit_val
+    return Trade_Direction
 
 
-def StochRSIMACD(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice, fastd, fastk, RSI, MACD, macdsignal, current_index):
+def StochRSIMACD(Trade_Direction, fastd, fastk, RSI, MACD, macdsignal, current_index):
 
     if ((fastd[current_index] < 20 and fastk[current_index] < 20 and RSI[current_index] > 50 and MACD[current_index] > macdsignal[current_index] and MACD[current_index - 1] < macdsignal[
         current_index - 1]) or
@@ -313,8 +309,7 @@ def StochRSIMACD(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice
           (fastd[current_index - 3] > 80 and fastk[current_index - 3] > 80 and RSI[current_index] < 50 and MACD[current_index] < macdsignal[current_index] and MACD[current_index - 2] > macdsignal[
               current_index - 2] and fastd[current_index] > 20 and fastk[current_index] > 20)):
         Trade_Direction = 0
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, current_index)
-    return Trade_Direction, stop_loss_val, take_profit_val
+    return Trade_Direction
 
 
 ##############################################################################################################################
@@ -322,7 +317,7 @@ def StochRSIMACD(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice
 ##############################################################################################################################
 
 
-def tripleEMA(Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, EMA3, EMA6, EMA9, current_index):
+def tripleEMA(Trade_Direction, EMA3, EMA6, EMA9, current_index):
 
     if EMA3[current_index - 4] > EMA6[current_index - 4] and EMA3[current_index - 4] > EMA9[current_index - 4] \
             and EMA3[current_index - 3] > EMA6[current_index - 3] and EMA3[current_index - 3] > EMA9[current_index - 3] \
@@ -336,12 +331,10 @@ def tripleEMA(Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, E
             and EMA3[current_index - 1] < EMA6[current_index - 1] and EMA3[current_index - 1] < EMA9[current_index - 1] \
             and EMA3[current_index] > EMA6[current_index] and EMA3[current_index] > EMA9[current_index]:
         Trade_Direction = 1
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, current_index)
-    return Trade_Direction, stop_loss_val, take_profit_val
+    return Trade_Direction
 
 
-def heikin_ashi_ema2(Close, OpenStream_H, High_H, Low_H, Close_H, High, Low, Trade_Direction, CurrentPos, Close_pos, SL,
-                     TP, TP_choice, SL_choice, fastd, fastk, EMA200, current_index):
+def heikin_ashi_ema2(OpenStream_H, High_H, Low_H, Close_H, Trade_Direction, CurrentPos, Close_pos, fastd, fastk, EMA200, current_index):
     if CurrentPos == -99:
         Trade_Direction = -99
         short_threshold = .7  ##If RSI falls below this don't open any shorts
@@ -394,12 +387,10 @@ def heikin_ashi_ema2(Close, OpenStream_H, High_H, Low_H, Close_H, High, Low, Tra
         Close_pos = 1
     else:
         Close_pos = 0
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, current_index)
-    return Trade_Direction, stop_loss_val, take_profit_val, Close_pos
+    return Trade_Direction, Close_pos
 
 
-def heikin_ashi_ema(Close, OpenStream_H, Close_H, Trade_Direction, CurrentPos, Close_pos, High, Low, SL, TP, TP_choice,
-                    SL_choice, fastd, fastk, EMA200, current_index):
+def heikin_ashi_ema(OpenStream_H, Close_H, Trade_Direction, CurrentPos, Close_pos, fastd, fastk, EMA200, current_index):
     if CurrentPos == -99:
         Trade_Direction = -99
 
@@ -465,11 +456,10 @@ def heikin_ashi_ema(Close, OpenStream_H, Close_H, Trade_Direction, CurrentPos, C
         Close_pos = 1
     else:
         Close_pos = 0
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, current_index)
-    return Trade_Direction, stop_loss_val, take_profit_val, Close_pos
+    return Trade_Direction, Close_pos
 
 
-def tripleEMAStochasticRSIATR(Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, EMA50, EMA14, EMA8, fastd, fastk, current_index):
+def tripleEMAStochasticRSIATR(Close, Trade_Direction, EMA50, EMA14, EMA8, fastd, fastk, current_index):
     ##buy signal
     if (Close[current_index] > EMA8[current_index] > EMA14[current_index] > EMA50[current_index]) and \
             ((fastk[current_index] > fastd[current_index]) and (fastk[current_index - 1] < fastd[current_index - 1])):  # and (fastk[current_index]<80 and fastd[current_index]<80):
@@ -478,8 +468,7 @@ def tripleEMAStochasticRSIATR(Close, High, Low, Trade_Direction, SL, TP, TP_choi
             ((fastk[current_index] < fastd[current_index]) and (fastk[current_index - 1] > fastd[current_index - 1])):  # and (fastk[current_index]>20 and fastd[current_index]>20):
         Trade_Direction = 0
 
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, current_index)
-    return Trade_Direction, stop_loss_val, take_profit_val
+    return Trade_Direction
 
 
 ##############################################################################################################################
@@ -577,7 +566,7 @@ def tripleEMAStochasticRSIATR(Close, High, Low, Trade_Direction, SL, TP, TP_choi
 
 ##############################################################################################################
 
-def stochBB(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice, fastd, fastk, percent_B, current_index):
+def stochBB(Trade_Direction, fastd, fastk, percent_B, current_index):
     percent_B1 = percent_B[current_index]
     percent_B2 = percent_B[current_index - 1]
     percent_B3 = percent_B[current_index - 2]
@@ -589,11 +578,10 @@ def stochBB(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice, fas
     elif fastk[current_index] > .8 and fastd[current_index] > .8 and (fastk[current_index] < fastd[current_index] and fastk[current_index - 1] > fastd[current_index - 1]) and (
             percent_B1 > 1 or percent_B2 > 1 or percent_B3 > 1):  # or percent_B3>1):# or percent_B2>1):
         Trade_Direction = 0
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, current_index)
-    return Trade_Direction, stop_loss_val, take_profit_val
+    return Trade_Direction
 
 
-def breakout(Trade_Direction, Close, VolumeStream, High, Low, SL, TP, TP_choice, SL_choice, max_Close, min_Close, max_Vol, current_index):
+def breakout(Trade_Direction, Close, VolumeStream, max_Close, min_Close, max_Vol, current_index):
     invert = 0  ## switch shorts and longs, basically fakeout instead of breakout
     if invert:
         if Close[current_index] >= max_Close.iloc[current_index] and VolumeStream[current_index] >= max_Vol.iloc[current_index]:
@@ -605,9 +593,7 @@ def breakout(Trade_Direction, Close, VolumeStream, High, Low, SL, TP, TP_choice,
             Trade_Direction = 1
         elif Close[current_index] <= min_Close.iloc[current_index] and VolumeStream[current_index] >= max_Vol.iloc[current_index]:
             Trade_Direction = 0
-
-    stop_loss_val, take_profit_val = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, current_index)
-    return Trade_Direction, stop_loss_val, take_profit_val
+    return Trade_Direction
 
 
 # def fakeout(Trade_Direction, Close, VolumeStream, High, Low, SL, TP, TP_choice, SL_choice):
@@ -633,7 +619,7 @@ def breakout(Trade_Direction, Close, VolumeStream, High, Low, SL, TP, TP_choice,
 #     return Trade_Direction, stop_loss_val, take_profit_val
 
 
-def EMA_cross(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice, EMA_short, EMA_long, current_index):
+def EMA_cross(Trade_Direction, EMA_short, EMA_long, current_index):
     if EMA_short[current_index - 4] > EMA_long[current_index - 4] \
             and EMA_short[current_index - 3] > EMA_long[current_index - 3] \
             and EMA_short[current_index - 2] > EMA_long[current_index - 2] \
@@ -648,9 +634,7 @@ def EMA_cross(Trade_Direction, Close, High, Low, SL, TP, TP_choice, SL_choice, E
             and EMA_short[current_index] > EMA_long[current_index]:
         Trade_Direction = 1
 
-    stop_loss, take_profit = SetSLTP(-99, -99, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, current_index)
-    return Trade_Direction, stop_loss, take_profit
-
+    return Trade_Direction
 
 '''def pairTrading(Trade_Direction,Close1,Close2,log=0,TPSL=0,percent_TP=0,percent_SL=0):
     new_Close = []
@@ -708,352 +692,74 @@ def pairTrading_Crossover(Trade_Direction, Close1, Close2, CurrentPos, percent_S
     return Trade_Direction,Close1_SL,Close2_SL,Close_pos'''
 
 
-def SetSLTP(stop_loss_val, take_profit_val, Close, High, Low, Trade_Direction, SL, TP, TP_choice, SL_choice, current_index):
-    if TP_choice == '%':
-        take_profit_val = (TP / 100) * Close[current_index]
-    if SL_choice == '%':
-        stop_loss_val = (SL / 100) * Close[current_index]
+def SetSLTP(stop_loss_val_arr, take_profit_val_arr, peaks, troughs, Close, High, Low, Trade_Direction, SL, TP, TP_SL_choice, current_index):
 
-    if TP_choice == 'x (ATR)':
-        ATR = np.array(average_true_range(pd.Series(High[:current_index]), pd.Series(Low[:current_index]), pd.Series(Close[:current_index])))
-        take_profit_val = TP * abs(ATR[current_index-1])
+    take_profit_val = -99
+    stop_loss_val = -99
 
-    if SL_choice == 'x (ATR)':
-        ATR = np.array(average_true_range(pd.Series(High[:current_index]), pd.Series(Low[:current_index]), pd.Series(Close[:current_index])))
-        stop_loss_val = SL * abs(ATR[current_index-1])
+    if TP_SL_choice == '%':
+        take_profit_val = take_profit_val_arr[current_index]
+        stop_loss_val = stop_loss_val_arr[current_index]
 
-    if TP_choice == 'x (Swing High/Low) level 1':
+    if TP_SL_choice == 'x (ATR)':
+        take_profit_val = take_profit_val_arr[current_index]
+        stop_loss_val = stop_loss_val_arr[current_index]
+
+    if TP_SL_choice == 'x (Swing High/Low) level 1' or TP_SL_choice == 'x (Swing High/Low) level 2' or TP_SL_choice == 'x (Swing High/Low) level 3':
         high_swing = High[current_index]
-        Low_swing = Low[current_index]
+        low_swing = Low[current_index]
         high_flag = 0
         low_flag = 0
-        j = current_index - 1
-        while j > -1:
-            if High[j] > high_swing and high_flag == 0:
-                high_swing = High[j]
-                if High[j - 1] < High[j] > High[j + 1]:
-                    ##found a swing high level 1
+        ## Check last 300 candles for Swing high/ low
+        for i in range(current_index - int(TP_SL_choice[-1]), -1, -1):
+            if High[i] > high_swing and high_flag == 0:
+                if peaks[i] > high_swing and peaks[i] != 0 and high_flag == 0:
+                    high_swing = peaks[i]
                     high_flag = 1
-            if Low[j] < Low_swing and low_flag == 0:
-                Low_swing = Low[j]
-                if Low[j - 1] > Low[j] < Low[j + 1]:
-                    ##found a swing low level 1
+            if Low[i] < low_swing and low_flag == 0:
+                if troughs[i] < low_swing and troughs[i] != 0 and low_flag == 0:
+                    low_swing = troughs[i]
                     low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
+
+            if (high_flag == 1 and Trade_Direction == 0) or (low_flag == 1 and Trade_Direction == 1):
                 break
-            j -= 1
 
         if Trade_Direction == 0:
-            take_profit_val = TP * (Close[current_index] - Low_swing)
-        elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[current_index])
-
-    if SL_choice == 'x (Swing High/Low) level 1':
-        high_swing = High[current_index]
-        Low_swing = Low[current_index]
-        high_flag = 0
-        low_flag = 0
-        j = current_index - 1
-        while j > -1:
-            if High[j] > high_swing and high_flag == 0:
-                high_swing = High[j]
-                if High[j - 1] < High[j] > High[j + 1]:
-                    ##found a swing high level 1
-                    high_flag = 1
-            if Low[j] < Low_swing and low_flag == 0:
-                Low_swing = Low[j]
-                if Low[j - 1] > Low[j] < Low[j + 1]:
-                    ##found a swing low level 1
-                    low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
-                break
-            j -= 1
-
-        if Trade_Direction == 0:
+            print("TP margin:", Close[current_index] - low_swing, 'low_swing:', low_swing, 'Close:', Close[current_index])
             stop_loss_val = SL * (high_swing - Close[current_index])
+            take_profit_val = TP * stop_loss_val
         elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[current_index] - Low_swing)
+            print("TP margin:", high_swing - Close[current_index], 'high_swing:', high_swing, 'Close:', Close[current_index])
+            stop_loss_val = SL * (Close[current_index] - low_swing)
+            take_profit_val = TP * stop_loss_val
 
-    if TP_choice == 'x (Swing High/Low) level 2':
-        high_swing = High[current_index]
-        Low_swing = Low[current_index]
+    if TP_SL_choice == 'x (Swing Close) level 1' or TP_SL_choice == 'x (Swing Close) level 2' or TP_SL_choice == 'x (Swing Close) level 3':
+        high_swing = Close[current_index]
+        low_swing = Close[current_index]
         high_flag = 0
         low_flag = 0
-        j = current_index - 2
-        while j > -1:
-            if High[j] > high_swing and high_flag == 0:
-                high_swing = High[j]
-                if High[j - 1] < High[j] > High[j + 1] and High[j - 2] < High[j] > High[j + 2]:
-                    ##found a swing high level 2
+        ## Check last 300 candles for Swing high/ low
+        for i in range(current_index - int(TP_SL_choice[-1]), -1, -1):
+            if Close[i] > high_swing and high_flag == 0:
+                if peaks[i] > high_swing and peaks[i] != 0 and high_flag == 0:
+                    high_swing = peaks[i]
                     high_flag = 1
-            if Low[j] < Low_swing and low_flag == 0:
-                Low_swing = Low[j]
-                if Low[j - 1] > Low[j] < Low[j + 1] and Low[j - 2] > Low[j] < Low[j + 2]:
-                    ##found a swing low level 2
+            if Close[i] < low_swing and low_flag == 0:
+                if troughs[i] < low_swing and troughs[i] != 0 and low_flag == 0:
+                    low_swing = troughs[i]
                     low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
+
+            if (high_flag == 1 and Trade_Direction == 0) or (low_flag == 1 and Trade_Direction == 1):
                 break
-            j -= 1
 
         if Trade_Direction == 0:
-            take_profit_val = TP * (Close[current_index] - Low_swing)
-        elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[current_index])
-
-    if SL_choice == 'x (Swing High/Low) level 2':
-        high_swing = High[current_index]
-        Low_swing = Low[current_index]
-        high_flag = 0
-        low_flag = 0
-        j = current_index - 2
-        while j > -1:
-            if High[j] > high_swing and high_flag == 0:
-                high_swing = High[j]
-                if High[j - 1] < High[j] > High[j + 1] and High[j - 2] < High[j] > \
-                        High[j + 2]:
-                    ##found a swing high level 2
-                    high_flag = 1
-            if Low[j] < Low_swing and low_flag == 0:
-                Low_swing = Low[j]
-                if Low[j - 1] > Low[j] < Low[j + 1] and Low[j - 2] > Low[j] < Low[
-                    j + 2]:
-                    ##found a swing low level 2
-                    low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
-                break
-            j -= 1
-
-        if Trade_Direction == 0:
+            print("TP margin:", Close[current_index] - low_swing, 'low_swing:', low_swing, 'Close:', Close[current_index])
             stop_loss_val = SL * (high_swing - Close[current_index])
+            take_profit_val = TP * stop_loss_val
         elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[current_index] - Low_swing)
-
-    if TP_choice == 'x (Swing High/Low) level 3':
-        high_swing = High[current_index]
-        Low_swing = Low[current_index]
-        high_flag = 0
-        low_flag = 0
-        j = current_index - 3
-        while j > -1:
-            if High[j] > high_swing and high_flag == 0:
-                high_swing = High[j]
-                if High[j - 1] < High[j] > High[j + 1] and High[j - 2] < High[j] > \
-                        High[j + 2] and High[j - 3] < High[j] > \
-                        High[j + 3]:
-                    ##found a swing high level 2
-                    high_flag = 1
-            if Low[j] < Low_swing and low_flag == 0:
-                Low_swing = Low[j]
-                if Low[j - 1] > Low[j] < Low[j + 1] and Low[j - 2] > Low[j] < Low[
-                    j + 2] and Low[j - 3] > Low[j] < Low[
-                    j + 3]:
-                    ##found a swing low level 2
-                    low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
-                break
-            j -= 1
-
-        if Trade_Direction == 0:
-            take_profit_val = TP * (Close[current_index] - Low_swing)
-        elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[current_index])
-
-    if SL_choice == 'x (Swing High/Low) level 3':
-        high_swing = High[current_index]
-        Low_swing = Low[current_index]
-        high_flag = 0
-        low_flag = 0
-        j = current_index - 3
-        while j > -1:
-            if High[j] > high_swing and high_flag == 0:
-                high_swing = High[j]
-                if High[j - 1] < High[j] > High[j + 1] and High[j - 2] < High[j] > \
-                        High[j + 2] and High[j - 3] < High[j] > \
-                        High[j + 3]:
-                    ##found a swing high level 2
-                    high_flag = 1
-            if Low[j] < Low_swing and low_flag == 0:
-                Low_swing = Low[j]
-                if Low[j - 1] > Low[j] < Low[j + 1] and Low[j - 2] > Low[j] < Low[
-                    j + 2] and Low[j - 3] > Low[j] < Low[
-                    j + 3]:
-                    ##found a swing low level 2
-                    low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
-                break
-            j -= 1
-
-        if Trade_Direction == 0:
-            stop_loss_val = SL * (high_swing - Close[current_index])
-        elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[current_index] - Low_swing)
-
-    if TP_choice == 'x (Swing Close) level 1':
-        high_swing = Close[current_index]
-        Low_swing = Close[current_index]
-        high_flag = 0
-        low_flag = 0
-        j = current_index - 1
-        while j > -1:
-            if Close[j] > high_swing and high_flag == 0:
-                high_swing = Close[j]
-                if Close[j - 1] < Close[j] > Close[j + 1]:
-                    ##found a swing high level 1
-                    high_flag = 1
-            if Close[j] < Low_swing and low_flag == 0:
-                Low_swing = Close[j]
-                if Close[j - 1] > Close[j] < Close[j + 1]:
-                    ##found a swing low level 1
-                    low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
-                break
-            j -= 1
-
-        if Trade_Direction == 0:
-            take_profit_val = TP * (Close[current_index] - Low_swing)
-        elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[current_index])
-
-    if SL_choice == 'x (Swing Close) level 1':
-        high_swing = Close[current_index]
-        Low_swing = Close[current_index]
-        high_flag = 0
-        low_flag = 0
-        j = current_index - 1
-        while j > -1:
-            if Close[j] > high_swing and high_flag == 0:
-                high_swing = Close[j]
-                if Close[j - 1] < Close[j] > Close[j + 1]:
-                    ##found a swing high level 1
-                    high_flag = 1
-            if Close[j] < Low_swing and low_flag == 0:
-                Low_swing = Close[j]
-                if Close[j - 1] > Close[j] < Close[j + 1]:
-                    ##found a swing low level 1
-                    low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
-                break
-            j -= 1
-
-        if Trade_Direction == 0:
-            stop_loss_val = SL * (high_swing - Close[current_index])
-        elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[current_index] - Low_swing)
-
-    if TP_choice == 'x (Swing Close) level 2':
-        high_swing = Close[current_index]
-        Low_swing = Close[current_index]
-        high_flag = 0
-        low_flag = 0
-        j = current_index - 2
-        while j > -1:
-            if Close[j] > high_swing and high_flag == 0:
-                high_swing = Close[j]
-                if Close[j - 1] < Close[j] > Close[j + 1] and Close[j - 2] < Close[j] > \
-                        Close[j + 2]:
-                    ##found a swing high level 2
-                    high_flag = 1
-            if Close[j] < Low_swing and low_flag == 0:
-                Low_swing = Close[j]
-                if Close[j - 1] > Close[j] < Close[j + 1] and Close[j - 2] > Close[j] < Close[
-                    j + 2]:
-                    ##found a swing low level 2
-                    low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
-                break
-            j -= 1
-
-        if Trade_Direction == 0:
-            take_profit_val = TP * (Close[current_index] - Low_swing)
-        elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[current_index])
-
-    if SL_choice == 'x (Swing Close) level 2':
-        high_swing = Close[current_index]
-        Low_swing = Close[current_index]
-        high_flag = 0
-        low_flag = 0
-        j = current_index - 2
-        while j > -1:
-            if Close[j] > high_swing and high_flag == 0:
-                high_swing = Close[j]
-                if Close[j - 1] < Close[j] > Close[j + 1] and Close[j - 2] < Close[j] > \
-                        Close[j + 2]:
-                    ##found a swing high level 2
-                    high_flag = 1
-            if Low[j] < Low_swing and low_flag == 0:
-                Low_swing = Low[j]
-                if Low[j - 1] > Low[j] < Low[j + 1] and Low[j - 2] > Low[j] < Low[
-                    j + 2]:
-                    ##found a swing low level 2
-                    low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
-                break
-            j -= 1
-
-        if Trade_Direction == 0:
-            stop_loss_val = SL * (high_swing - Close[current_index])
-        elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[current_index] - Low_swing)
-
-    if TP_choice == 'x (Swing Close) level 3':
-        high_swing = Close[current_index]
-        Low_swing = Close[current_index]
-        high_flag = 0
-        low_flag = 0
-        j = current_index - 3
-        while j > -1:
-            if Close[j] > high_swing and high_flag == 0:
-                high_swing = Close[j]
-                if Close[j - 1] < Close[j] > Close[j + 1] and Close[j - 2] < Close[j] > \
-                        Close[j + 2] and Close[j - 3] < Close[j] > \
-                        Close[j + 3]:
-                    ##found a swing high level 2
-                    high_flag = 1
-            if Close[j] < Low_swing and low_flag == 0:
-                Low_swing = Close[j]
-                if Close[j - 1] > Close[j] < Close[j + 1] and Close[j - 2] > Close[j] < Close[
-                    j + 2] and Close[j - 3] > Close[j] < Close[
-                    j + 3]:
-                    ##found a swing low level 2
-                    low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
-                break
-            j -= 1
-
-        if Trade_Direction == 0:
-            take_profit_val = TP * (Close[current_index] - Low_swing)
-        elif Trade_Direction == 1:
-            take_profit_val = TP * (high_swing - Close[current_index])
-
-    if SL_choice == 'x (Swing Close) level 3':
-        high_swing = Close[current_index]
-        Low_swing = Close[current_index]
-        high_flag = 0
-        low_flag = 0
-        j = current_index - 3
-        while j > -1:
-            if Close[j] > high_swing and high_flag == 0:
-                high_swing = Close[j]
-                if Close[j - 1] < Close[j] > Close[j + 1] and Close[j - 2] < Close[j] > \
-                        Close[j + 2] and Close[j - 3] < Close[j] > \
-                        Close[j + 3]:
-                    ##found a swing high level 2
-                    high_flag = 1
-            if Close[j] < Low_swing and low_flag == 0:
-                Low_swing = Close[j]
-                if Close[j - 1] > Close[j] < Close[j + 1] and Close[j - 2] > Close[j] < Close[
-                    j + 2] and Close[j - 3] > Close[j] < Close[
-                    j + 3]:
-                    ##found a swing low level 2
-                    low_flag = 1
-            if (high_flag == 1 and Trade_Direction == 1) or (low_flag == 1 and Trade_Direction == 0):
-                break
-            j -= 1
-
-        if Trade_Direction == 0:
-            stop_loss_val = SL * (high_swing - Close[current_index])
-        elif Trade_Direction == 1:
-            stop_loss_val = SL * (Close[current_index] - Low_swing)
+            print("TP margin:", high_swing - Close[current_index], 'high_swing:', high_swing, 'Close:',
+                  Close[current_index])
+            stop_loss_val = SL * (Close[current_index] - low_swing)
+            take_profit_val = TP * stop_loss_val
 
     return stop_loss_val, take_profit_val

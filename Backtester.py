@@ -15,7 +15,7 @@ import matplotlib
 
 def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIME_INTERVAL, Number_Of_Trades,
                    Trade_All_Symbols, Trade_Each_Coin_With_Separate_Accounts, only_show_profitable_coins, percent_gain_threshold, particular_drawdown, min_dd,
-                   symbol, use_trailing_stop, trailing_stop_callback, csv_name, slippage, strategy='', TP_choice='', SL_choice='', SL_mult=1, TP_mult=1, graph_folder_location='./',
+                   symbol, use_trailing_stop, trailing_stop_callback, csv_name, slippage, strategy='', TP_SL_choice='', SL_mult=1, TP_mult=1, graph_folder_location='./',
                    plot_graphs_to_folder=True, print_to_csv=True, fee=.00036, printing_on=True, add_delay=False, buffer=300):
     if plot_graphs_to_folder:
         ## Top of script:
@@ -106,7 +106,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 flag = 1
                 break
         Bots.append(Bot(symbol[k], Open[k], Close[k], High[k], Low[k], Volume[k], Date[k],
-                Order_precision_temp, Coin_precision_temp, k, tick_temp, strategy, TP_choice, SL_choice, SL_mult, TP_mult, 1))
+                Order_precision_temp, Coin_precision_temp, k, tick_temp, strategy, TP_SL_choice, SL_mult, TP_mult, 1))
         Bots[k].add_hist([], [], [], [], [], [])
     tradeNO = 0  ##number of trades
     active_trades: [Trade] = []
@@ -121,11 +121,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         ##give each coin next piece of data
         if (i + 1) % TIME_INTERVAL == 0 or TIME_INTERVAL == 1:
             for k in range(len(symbol)):
-                try:
-                    temp = Close[k][int(i / TIME_INTERVAL)]  ## make sure we don't have an index out of bounds error
-                    Bots[k].current_index = int(i / TIME_INTERVAL)
-                except:
-                    pass
+                Bots[k].current_index = int(i / TIME_INTERVAL)
 
             for k in range(len(Bots)):
                 trade_flag = 0
@@ -211,7 +207,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     change_occurred = True
             if Bots[t.index].use_close_pos and t.trade_status == 1 and (i % TIME_INTERVAL == 0 or TIME_INTERVAL == 1):
                 ## Check each interval if the close position was met
-                close_pos = Bots[t.index].check_close_pos(t.trade_direction)
+                close_pos = Bots[t.index].check_close_pos()
                 if close_pos:
                     if Trade_Each_Coin_With_Separate_Accounts:
                         t, account_balance[t.index] = Helper.close_pos(t, account_balance[t.index], fee, Close_1min[t.index][i])
@@ -237,7 +233,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 print("**************** You have been liquidated *******************")
                 profitgraph[0].append(0)
                 account_balance[0] = 0
-                break  ## break out of loop as weve been liquidated
+                break  ## break out of loop as we've been liquidated
             if add_delay:
                 time.sleep(1)
 

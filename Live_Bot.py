@@ -59,7 +59,7 @@ def web_soc_process(pipe: Pipe, twm: ThreadedWebsocketManager):
 
 def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string: str, Interval: str, Max_Number_Of_Trades: int, client: Client,
                       twm: ThreadedWebsocketManager, use_trailing_stop: bool, use_market_orders: bool, trading_threshold: float, trailing_stop_callback: float, symbol: [str], strategy: str,
-                      TP_choice: str, SL_choice: str, SL_mult: float, TP_mult: float):
+                      TP_SL_choice: str, SL_mult: float, TP_mult: float):
     global new_candle_flag, Data
     pp = PrettyPrinter()  ## for printing json text cleanly (inspect binance API call returns)
     active_trades: [Trade] = []  ## List of active trades
@@ -92,7 +92,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                 break
         if flag == 1:
             Bots.append(Bot_Class.Bot(symbol=symbol[i], Open=[], Close=[], High=[], Low=[], Volume=[], Date=[], OP=Order_precision_temp, CP=Coin_precision_temp,
-                                      index=i, tick=tick_temp, strategy=strategy, TP_choice=TP_choice, SL_choice=SL_choice, SL_mult=SL_mult, TP_mult=TP_mult))
+                                      index=i, tick=tick_temp, strategy=strategy, TP_SL_choice=TP_SL_choice, SL_mult=SL_mult, TP_mult=TP_mult))
             i += 1
         else:
             print(f"{symbol.pop(i)} no info found")
@@ -317,7 +317,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                 while i < len(active_trades):
                     if Bots[active_trades[i].index].use_close_pos and not active_trades[i].same_candle:
                         ## Check each interval if the close position was met
-                        close_pos = Bots[active_trades[i].index].check_close_pos(active_trades[i].trade_direction)
+                        close_pos = Bots[active_trades[i].index].check_close_pos()
                         if close_pos:
                             TM.close_position(active_trades[i].symbol,
                                               active_trades[i].trade_direction,
@@ -393,7 +393,7 @@ def run_bot(API_KEY, API_SECRET, leverage, order_Size, buffer, Interval, Max_Num
     _thread.start()
 
     P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, buffer, Interval, Max_Number_Of_Trades, client, twm, use_trailing_stop, use_market_orders, trading_threshold,
-                                                 trailing_stop_callback, symbol, strategy, TP_choice, SL_choice, SL_mult, TP_mult))
+                                                 trailing_stop_callback, symbol, strategy, TP_SL_choice, SL_mult, TP_mult))
     P1.start()
     twm.join()  ##keep websockets running
 
@@ -443,6 +443,6 @@ if __name__ == '__main__':
 
     P1 = Process(target=Check_for_signals, args=(pipe2, leverage, order_Size, buffer, Interval, Max_Number_Of_Trades, client,
                       twm, use_trailing_stop, use_market_orders, trading_threshold, trailing_stop_callback, symbol, strategy,
-                      TP_choice, SL_choice, SL_mult, TP_mult))
+                      TP_SL_choice, SL_mult, TP_mult))
     P1.start()
     twm.join()  ##keep websockets running
