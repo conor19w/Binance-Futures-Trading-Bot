@@ -15,7 +15,7 @@ import TradingStrats as TS
 
 class Bot:
     def __init__(self, symbol: str, Open: [float], Close: [float], High: [float], Low: [float], Volume: [float], Date: [str], OP: int, CP: int, index: int, tick: float,
-                 strategy: str, TP_SL_choice: str, SL_mult: float, TP_mult: float, backtesting=0):
+                 strategy: str, TP_SL_choice: str, SL_mult: float, TP_mult: float, backtesting=1650):
         self.symbol = symbol
         self.Open = Open
         self.Close = Close
