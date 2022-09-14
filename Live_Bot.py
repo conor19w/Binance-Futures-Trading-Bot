@@ -275,6 +275,10 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                     position_info = client.futures_position_information(symbol=active_trades[i].symbol)[0]
                     all_orders = client.futures_get_all_orders()
                     if float(position_info['positionAmt']) == 0 and (active_trades[i].trade_status == -99 or active_trades[i].trade_status == 1):
+                        try:
+                            client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol)  ##Close open orders on that symbol
+                        except:
+                            pass
                         for order in all_orders:
                             if order['symbol'] == active_trades[i].symbol and order['orderId'] == \
                                     active_trades[i].TP_id and order['status'] == 'FILLED':
@@ -298,10 +302,6 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                                     if item['asset'] == 'USDT':
                                         account_balance = float(item['balance'])
                                         break
-                        try:
-                            client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol)  ##Close open orders on that symbol
-                        except:
-                            pass
                         active_trades.pop(i)
                     else:
                         i += 1
