@@ -38,7 +38,9 @@ python3 Live_Bot.py
 * __Trailing stop: set ```use_trailing_stop = 1``` and change ```trailing_stop_percent``` to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e. 5%). The trailing stop will be placed when the take profit value margin of increase/decrease is reached from your strategy__.
 * To close a trade based off a condition check_close_pos() must return a close_pos flag.
 * ```strategy``` is the name of the strategy you want to use, see below for adding your own custom strategies.
-* ```TP_choice``` and ```SL_choice``` correspond to the type of SL/TP seen in the dropdowns in the GUI see below for adding custom ones.
+* There are 12 default strategies to choose from: StochRSIMACD, tripleEMAStochasticRSIATR, tripleEMA, breakout, stochBB, goldenCross,
+candle_wick, fibMACD, EMA_cross, heikin_ashi_ema2, heikin_ashi_ema & ema_crossover
+* ```TP_SL_choice``` correspond to the type of SL/TP seen in the dropdowns in the GUI see below for adding custom ones.
 * ```SL_mult``` and ```TP_mult``` correspond to the numbers preceding the TP and SL choice dropdowns.
 
 __Docker container creation__ (Recommended for anyone having issues running the bot):
@@ -52,7 +54,7 @@ sudo docker run -it live_bot
 ```
 
 ---
-### GUI for Backtesting and Live Trading (locally) ###
+### GUI for Backtesting and Live Trading ###
 __Just Run ```app.py``` to get the GUI__
 ```commandline
 python3 app.py
