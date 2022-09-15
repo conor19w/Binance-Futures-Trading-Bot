@@ -116,7 +116,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
         Low_temp.pop(-1)
         Volume_temp.pop(-1)
         if len(Date_temp) < 100:
-            print(f"Not enough data for {symbol[i]}, Increase your start_str variable in Config_File so we have a buffer of candles ")
+            print(f"Not enough data for {symbol[i]}, Increase your buffer variable in Config_File.py so you have a buffer of candles")
             symbol.pop(i)
             Bots.pop(i)
             streams.pop(i)
@@ -124,7 +124,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
             Bots[i].add_hist(Date_temp=Date_temp, Open_temp=Open_temp, Close_temp=Close_temp, High_temp=High_temp, Low_temp=Low_temp, Volume_temp=Volume_temp)
             i += 1
         if RATE_LIMIT_WAIT:
-            time.sleep(2)  ##wait a few second to avoid api rate limit
+            time.sleep(1)  ##wait a second to avoid API rate limit (if you are getting a rate limit error)
     print("Finished.")
     AccountBalance = 0
     y = client.futures_account_balance()
@@ -142,10 +142,10 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
     account_balance = 0
     startup_account_balance = 0
     account_balance_info = client.futures_account_balance()
-    for item in account_balance_info:
-        if item['asset'] == 'USDT':
-            account_balance = float(item['balance'])
-            startup_account_balance = float(item['balance'])
+    for x in account_balance_info:
+        if x['asset'] == 'USDT':
+            account_balance = float(x['balance'])
+            startup_account_balance = float(x['balance'])
             break
     data_thread = Thread(target=listen_pipe, args=(pipe,))  ## thread to listen for new candles
     data_thread.start()
@@ -158,7 +158,6 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                 new_candle_flag = 0
 
                 ##Ensure Bot doesn't interfere with positions opened manually by the user
-                open_trades = []
                 position_info = client.futures_position_information()
                 open_trades = [position['symbol'] for position in position_info if float(position['notional']) != 0.0]
 
@@ -174,9 +173,8 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                             break
                     if trade_flag == 0:
                         temp_dec = Bots[i].Make_decision()
-                        # print(Data[i].symbol,temp_dec)
                         if temp_dec[0] != -99:
-                            new_trades.append([i, temp_dec])  ##[index,[trade_direction,SL,TP]]
+                            new_trades.append([i, temp_dec])  ##[index, [trade_direction, SL, TP]]
             ##Sort out new trades to be opened
             while len(new_trades) > 0 and len(active_trades) < Max_Number_Of_Trades:
                 account_balance = 0
@@ -205,7 +203,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                 new_trades = []  ##Don't Open any new positions
 
             rightnow = datetime.now().time()  ##time right now
-            timer = timedelta(hours=0, minutes=0, seconds=10)  ##how often to run code below
+            timer = timedelta(hours=0, minutes=0, seconds=15)  ##how often to run code below
             if (datetime.combine(date.today(), rightnow) - datetime.combine(yesterdate, start)) > timer:
                 start = datetime.now().time()  ##reset start
                 yesterdate = date.today()
@@ -214,7 +212,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                 ##Check if we are in a trade set compensation and TPs
                 trade_index = 0
                 while trade_index < len(active_trades):
-                    pop_flag = 0
+                    pop_flag = False
                     for order in all_orders:
                         if order['symbol'] == active_trades[trade_index].symbol and order['orderId'] == \
                                 active_trades[trade_index].order_id and active_trades[trade_index].trade_status == 0 and \
@@ -245,7 +243,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                                                   trade_direction=active_trades[trade_index].trade_direction,
                                                   total_position_size=active_trades[trade_index].position_size, time=Bots[trade_index].Date[-1])
                                 print(f"Closed Trade on {active_trades[trade_index].symbol} as SL OR TP would have thrown a trigger immediately error")
-                                pop_flag = 1
+                                pop_flag = True
                                 break
 
                     if active_trades[trade_index].trade_status == 0 and active_trades[trade_index].waited_time >= active_trades[trade_index].limit_order_wait_time:
@@ -261,7 +259,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                                                                                old_entry_price=active_trades[trade_index].entry_price)
                         active_trades[trade_index].waited_time = 0
                         if active_trades[trade_index].trade_status == -99:
-                            pop_flag = 1  ## pop off trade as threshold was reached
+                            pop_flag = True  ## pop off trade as threshold was reached
                     elif active_trades[trade_index].trade_status == 0 and active_trades[trade_index].waited_time < active_trades[trade_index].limit_order_wait_time:
                         active_trades[trade_index].waited_time += 1
                     if pop_flag:
@@ -275,10 +273,11 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                     position_info = client.futures_position_information(symbol=active_trades[i].symbol)[0]
                     all_orders = client.futures_get_all_orders()
                     if float(position_info['positionAmt']) == 0 and (active_trades[i].trade_status == -99 or active_trades[i].trade_status == 1):
+                        pop_flag = True
                         try:
                             client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol)  ##Close open orders on that symbol
                         except:
-                            pass
+                            pop_flag = False
                         for order in all_orders:
                             if order['symbol'] == active_trades[i].symbol and order['orderId'] == \
                                     active_trades[i].TP_id and order['status'] == 'FILLED':
@@ -302,7 +301,10 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                                     if item['asset'] == 'USDT':
                                         account_balance = float(item['balance'])
                                         break
-                        active_trades.pop(i)
+                        if pop_flag:
+                            active_trades.pop(i)
+                        else:
+                            i += 1
                     else:
                         i += 1
 
@@ -340,7 +342,6 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                 except:
                     print(
                         f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance}")
-
 
         except BinanceAPIException as e:
             pp.pprint(e)
