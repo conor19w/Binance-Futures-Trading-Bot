@@ -15,7 +15,7 @@ import TradingStrats as TS
 
 class Bot:
     def __init__(self, symbol: str, Open: [float], Close: [float], High: [float], Low: [float], Volume: [float], Date: [str], OP: int, CP: int, index: int, tick: float,
-                 strategy: str, TP_SL_choice: str, SL_mult: float, TP_mult: float, backtesting=1650):
+                 strategy: str, TP_SL_choice: str, SL_mult: float, TP_mult: float, backtesting=0):
         self.symbol = symbol
         self.Open = Open
         self.Close = Close
@@ -273,14 +273,13 @@ class Bot:
                 self.update_indicators()
                 self.update_TP_SL()
         # except Exception as e:
-        #     print(e)
-        #     exc_type, exc_obj, exc_tb = sys.exc_info()
-        #     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        #     print(exc_type, fname, exc_tb.tb_lineno) ## Can add this except statement in to code to figure out what line the error was thrown on
+        #
         except Exception as e:
             print(f"Error in {self.symbol}.handle_socket_message(): ", e)
             self.socket_failed = True
-
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno) ## Can add this except statement in to code to figure out what line the error was thrown on
     def Make_decision(self):
         ##Initialize vars:
         Trade_Direction = -99  ## Short (0), Long (1)
