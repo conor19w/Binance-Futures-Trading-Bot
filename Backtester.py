@@ -129,7 +129,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     if t.index == k:
                         trade_flag = 1
                         break
-                if trade_flag == 0 and Bots[k].Date[Bots[k].current_index] != 'Data Set hasn\'t started yet':
+                if trade_flag == 0 and len(Bots[k].Date) > i / TIME_INTERVAL:
                     temp_dec = Bots[k].Make_decision()
                     if temp_dec[0] != -99:
                         new_trades.append([k, temp_dec])
