@@ -137,6 +137,11 @@ class Bot:
             self.stop_loss_val = [(self.SL_mult / 100) * self.Close[i] for i in range(len(self.Close))]
 
         if self.TP_SL_choice == 'x (ATR)':
+            shortest = len(self.High)
+            if shortest > len(self.Low):
+                shortest = len(self.Low)
+            if shortest > len(self.Close):
+                shortest = len(self.Close)
             ATR = np.array(average_true_range(pd.Series(self.High), pd.Series(self.Low), pd.Series(self.Close)))
             self.take_profit_val = [self.TP_mult * abs(ATR[i]) for i in range(len(ATR))]
             self.stop_loss_val = [self.SL_mult * abs(ATR[i]) for i in range(len(ATR))]
