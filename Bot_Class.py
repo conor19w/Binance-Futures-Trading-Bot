@@ -15,7 +15,7 @@ import TradingStrats as TS
 
 class Bot:
     def __init__(self, symbol: str, Open: [float], Close: [float], High: [float], Low: [float], Volume: [float], Date: [str], OP: int, CP: int, index: int, tick: float,
-                 strategy: str, TP_SL_choice: str, SL_mult: float, TP_mult: float, backtesting=1650):
+                 strategy: str, TP_SL_choice: str, SL_mult: float, TP_mult: float, backtesting=2000):
         self.symbol = symbol
         self.Open = Open
         self.Close = Close
@@ -137,7 +137,12 @@ class Bot:
             self.stop_loss_val = [(self.SL_mult / 100) * self.Close[i] for i in range(len(self.Close))]
 
         if self.TP_SL_choice == 'x (ATR)':
-            ATR = np.array(average_true_range(pd.Series(self.High), pd.Series(self.Low), pd.Series(self.Close)))
+            shortest = len(self.High)
+            if shortest > len(self.Low):
+                shortest = len(self.Low)
+            if shortest > len(self.Close):
+                shortest = len(self.Close)
+            ATR = np.array(average_true_range(pd.Series(self.High[:shortest]), pd.Series(self.Low[:shortest]), pd.Series(self.Close[:shortest])))
             self.take_profit_val = [self.TP_mult * abs(ATR[i]) for i in range(len(ATR))]
             self.stop_loss_val = [self.SL_mult * abs(ATR[i]) for i in range(len(ATR))]
 
@@ -364,7 +369,6 @@ class Bot:
                 stop_loss_val, take_profit_val = TS.SetSLTP(self.stop_loss_val, self.take_profit_val, self.peaks, self. troughs,
                                                             self.Close, self.High, self.Low, Trade_Direction, self.SL_mult, self.TP_mult, self.TP_SL_choice,
                                                             self.current_index)
-
         return Trade_Direction, stop_loss_val, take_profit_val
 
     def check_close_pos(self):
