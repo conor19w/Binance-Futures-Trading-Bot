@@ -263,7 +263,12 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, start_string
                     elif active_trades[trade_index].trade_status == 0 and active_trades[trade_index].waited_time < active_trades[trade_index].limit_order_wait_time:
                         active_trades[trade_index].waited_time += 1
                     if pop_flag:
-                        active_trades.pop(trade_index)
+                        try:
+                            client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol)  ##Close open orders on that symbol
+                        except:
+                            pop_flag = False
+                        if pop_flag:
+                            active_trades.pop(trade_index)
                     else:
                         trade_index += 1
 
