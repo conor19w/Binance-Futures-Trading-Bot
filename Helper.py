@@ -65,8 +65,6 @@ class Trade:
         self.Lowest_val = 999999
         self.trail_activated = False
         self.same_candle = True
-        self.limit_order_wait_time = 2 ## 20 seconds
-        self.waited_time = 0
     def print_vals(self):
         return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status, self.Highest_val, self.Lowest_val
 
@@ -83,7 +81,7 @@ class Trade_Manager:
         self.trailing_stop_callback = trailing_stop_callback
         self.use_market = use_market
 
-    def open_trade(self, symbol: str, trade_direction: int, order_notional: float, CP: int, OP: int, tick_size: float, time: int, close: float, trading_threshold: float, orderID: int = '', old_entry_price: float = 0):
+    def open_trade_check_threshold(self, symbol: str, trade_direction: int, order_notional: float, CP: int, OP: int, tick_size: float, time: int, close: float, trading_threshold: float, orderID: int = '', old_entry_price: float = 0):
         order_book = self.client.futures_order_book(symbol=symbol)
         bids = order_book['bids']
         asks = order_book['asks']
