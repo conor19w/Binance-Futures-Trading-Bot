@@ -2,7 +2,7 @@
 ## Technical Analysis driven Crypto Trading bot on Binance Futures 📈 ₿ 🚀 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin) ##
 [__Join My public Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
 * Comes with 12 pre-built strategies found in [TradingStrats.py](https://github.com/conor19w/Binance-Futures-Trading-Bot/blob/main/TradingStrats.py)
-* You can also write your own functions to implement your TA strategies.
+* See Documentation below to implement your TA strategies.
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Works best with Python 3.8.10 on Linux.
