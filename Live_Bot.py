@@ -222,8 +222,9 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, buffer: str,
                             pop_flag = True  ## pop off trade as threshold was reached
                     if pop_flag:
                         try:
-                            client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol)  ##Close open orders on that symbol
-                        except:
+                            client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)  ##Close open orders on that symbol
+                        except Exception as e:
+                            print(f"Failed to cancel Trade on {active_trades[trade_index].symbol}, Error: {e}")
                             pop_flag = False
                             trade_index += 1
                         if pop_flag:
@@ -240,8 +241,9 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, buffer: str,
                         pop_flag = True
                         try:
                             client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol)  ##Close open orders on that symbol
-                        except:
-                            pop_flag = False
+
+                        except Exception as e:
+                            print(f"Failed to cancel orders on {active_trades[i].symbol}, Error: {e}")
                         for order in all_orders:
                             if order['symbol'] == active_trades[i].symbol and order['orderId'] == \
                                     active_trades[i].TP_id and order['status'] == 'FILLED':
