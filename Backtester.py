@@ -69,6 +69,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
     if Trade_Each_Coin_With_Separate_Accounts:
         Number_Of_Trades = len(symbol)
     Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = [], [], [], [], [], [], [], [], [], [], []
+    print("Loading Price Data")
     if use_multiprocessing_for_downloading_data:
         Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = Helper.multiprocess_get_candles(symbol, TIME_INTERVAL, start, end)
     else:

@@ -600,13 +600,13 @@ def get_heikin_ashi(Open, Close, High, Low):
 
 def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume,
                         symbol, TIME_INTERVAL, start, end, use_multiprocessing=False, index=0, return_dict=None):
-    print("Loading Price Data")
     i = 0
 
     price_data_path = '.'
     if not os.path.exists(price_data_path + f'//price_data//'):
         os.makedirs(price_data_path + f'//price_data//')
     while i < len(symbol):
+        print(f"Loading {symbol[i]}")
         path = f"{price_data_path}//price_data//{symbol[i]}_{start}_{end}.joblib"
         try:
             price_data = load(path)
@@ -672,6 +672,7 @@ def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, D
             align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume)
     if use_multiprocessing:
         return_dict[index] = [Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol]
+        return
     return Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol
 
 
@@ -697,21 +698,28 @@ def multiprocess_get_candles(symbol, TIME_INTERVAL, start, end):
 
         for proc in jobs:
             proc.join()
-        Date_1min = list(return_dict[0][0]) + list(return_dict[1][0]) + list(return_dict[2][0])
-        High_1min = list(return_dict[0][1]) + list(return_dict[1][1]) + list(return_dict[2][1])
-        Low_1min = list(return_dict[0][2]) + list(return_dict[1][2]) + list(return_dict[2][2])
-        Close_1min = list(return_dict[0][3]) + list(return_dict[1][3]) + list(return_dict[2][3])
-        Open_1min = list(return_dict[0][4]) + list(return_dict[1][4]) + list(return_dict[2][4])
-        Date = list(return_dict[0][5]) + list(return_dict[1][5]) + list(return_dict[2][5])
-        Open = list(return_dict[0][6]) + list(return_dict[1][6]) + list(return_dict[2][6])
-        Close = list(return_dict[0][7]) + list(return_dict[1][7]) + list(return_dict[2][7])
-        High = list(return_dict[0][8]) + list(return_dict[1][8]) + list(return_dict[2][8])
-        Low = list(return_dict[0][9]) + list(return_dict[1][9]) + list(return_dict[2][9])
-        Volume = list(return_dict[0][10]) + list(return_dict[1][10]) + list(return_dict[2][10])
-        symbol = list(return_dict[0][11]) + list(return_dict[1][11]) + list(return_dict[2][11])
+        python_list = [None, None, None]
+        python_list[0] = list(return_dict[0])
+        del return_dict[0]
+        python_list[1] = list(return_dict[1])
+        del return_dict[1]
+        python_list[2] = list(return_dict[2])
+        del return_dict[2]
+        manager.shutdown()
+        Date_1min = python_list[0][0] + python_list[1][0] + python_list[2][0]
+        High_1min = python_list[0][1] + python_list[1][1] + python_list[2][1]
+        Low_1min = python_list[0][2] + python_list[1][2] + python_list[2][2]
+        Close_1min = python_list[0][3] + python_list[1][3] + python_list[2][3]
+        Open_1min = python_list[0][4] + python_list[1][4] + python_list[2][4]
+        Date = python_list[0][5] + python_list[1][5] + python_list[2][5]
+        Open = python_list[0][6] + python_list[1][6] + python_list[2][6]
+        Close = python_list[0][7] + python_list[1][7] + python_list[2][7]
+        High = python_list[0][8] + python_list[1][8] + python_list[2][8]
+        Low = python_list[0][9] + python_list[1][9] + python_list[2][9]
+        Volume = python_list[0][10] + python_list[1][10] + python_list[2][10]
+        symbol = python_list[0][11] + python_list[1][11] + python_list[2][11]
         Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = \
             align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume)
-        manager.shutdown()
     else:
         Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = \
             get_aligned_candles([], [], [], [], [], [], [], [], [], [], [], symbol, TIME_INTERVAL, start, end)
