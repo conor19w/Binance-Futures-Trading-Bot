@@ -8,7 +8,7 @@ from Config_File import API_KEY, API_SECRET
 from joblib import load, dump
 import sys, os
 from tabulate import tabulate
-
+import multiprocessing
 client = Client(api_key=API_KEY,
                 api_secret=API_SECRET)  ##Binance keys needed to get historical data/ Trade on an account
 
@@ -473,6 +473,7 @@ def get_historical(symbol: str, start_string: str, Interval: str):
 
 
 def align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume):
+    print("Aligning Data Sets... This may take a few minutes")
     start_date = [Date[0][0], 0]  ##get 1st date of first coin
     end_date = [Date[0][-1], 0]  ##get last date of first coin
     for i in range(len(Date)):
@@ -598,7 +599,7 @@ def get_heikin_ashi(Open, Close, High, Low):
 
 
 def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume,
-                        symbol, TIME_INTERVAL, start, end):
+                        symbol, TIME_INTERVAL, start, end, use_multiprocessing=False, index=0, return_dict=None):
     print("Loading Price Data")
     i = 0
 
@@ -666,11 +667,56 @@ def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, D
             symbol.pop(i)
             i -= 1
         i += 1
-    print("Aligning Data Sets... This may take a few minutes")
+    if not use_multiprocessing:
+        Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = \
+            align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume)
+    if use_multiprocessing:
+        return_dict[index] = [Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol]
+    return Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol
 
-    Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = \
-        align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume)
-    return Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol #, get_longest(Date_1min)
+
+def multiprocess_get_candles(symbol, TIME_INTERVAL, start, end):
+    Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = [], [], [], [], [], [], [], [], [], [], []
+    if len(symbol) > 2:
+        manager = multiprocessing.Manager()
+        return_dict = manager.dict()
+        jobs = []
+        for i in range(3):
+            if i != 2:
+                p = multiprocessing.Process(target=get_aligned_candles, args=(
+                    [], [], [], [], [], [], [], [], [], [], [],
+                    symbol[round(i * (len(symbol) / 3)):round((i + 1) * (len(symbol) / 3))],
+                    TIME_INTERVAL, start, end, True, i, return_dict))
+            else:
+                p = multiprocessing.Process(target=get_aligned_candles, args=(
+                    [], [], [], [], [], [], [], [], [], [], [],
+                    symbol[round(i * (len(symbol) / 3)):],
+                    TIME_INTERVAL, start, end, True, i, return_dict))
+            jobs.append(p)
+            p.start()
+
+        for proc in jobs:
+            proc.join()
+        Date_1min = list(return_dict[0][0]) + list(return_dict[1][0]) + list(return_dict[2][0])
+        High_1min = list(return_dict[0][1]) + list(return_dict[1][1]) + list(return_dict[2][1])
+        Low_1min = list(return_dict[0][2]) + list(return_dict[1][2]) + list(return_dict[2][2])
+        Close_1min = list(return_dict[0][3]) + list(return_dict[1][3]) + list(return_dict[2][3])
+        Open_1min = list(return_dict[0][4]) + list(return_dict[1][4]) + list(return_dict[2][4])
+        Date = list(return_dict[0][5]) + list(return_dict[1][5]) + list(return_dict[2][5])
+        Open = list(return_dict[0][6]) + list(return_dict[1][6]) + list(return_dict[2][6])
+        Close = list(return_dict[0][7]) + list(return_dict[1][7]) + list(return_dict[2][7])
+        High = list(return_dict[0][8]) + list(return_dict[1][8]) + list(return_dict[2][8])
+        Low = list(return_dict[0][9]) + list(return_dict[1][9]) + list(return_dict[2][9])
+        Volume = list(return_dict[0][10]) + list(return_dict[1][10]) + list(return_dict[2][10])
+        symbol = list(return_dict[0][11]) + list(return_dict[1][11]) + list(return_dict[2][11])
+        Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = \
+            align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume)
+        manager.shutdown()
+    else:
+        Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = \
+            get_aligned_candles([], [], [], [], [], [], [], [], [], [], [], symbol, TIME_INTERVAL, start, end)
+
+    return Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol
 
 
 def check_TP(t: Trade, account_balance, High, Low, fee, use_trailing_stop, trailing_stop_callback, CP, printing_on=1):

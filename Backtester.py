@@ -15,8 +15,8 @@ import matplotlib
 
 def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIME_INTERVAL, Number_Of_Trades,
                    Trade_All_Symbols, Trade_Each_Coin_With_Separate_Accounts, only_show_profitable_coins, percent_gain_threshold, particular_drawdown, min_dd,
-                   symbol, use_trailing_stop, trailing_stop_callback, csv_name, slippage, strategy='', TP_SL_choice='', SL_mult=1, TP_mult=1, graph_folder_location='./',
-                   plot_graphs_to_folder=True, print_to_csv=True, fee=.00036, printing_on=True, add_delay=False, buffer=300):
+                   symbol, use_trailing_stop, trailing_stop_callback, csv_name, slippage, strategy='', TP_SL_choice='', SL_mult=1, TP_mult=1, use_multiprocessing_for_downloading_data=False, graph_folder_location='./',
+                   plot_graphs_to_folder=True, print_to_csv=True, fee=.00036, printing_on=True, add_delay=False, buffer=2000):
     if plot_graphs_to_folder:
         ## Top of script:
         matplotlib.use("Agg")
@@ -48,7 +48,6 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
             symbol.append(y['symbol'])
         symbol = [x for x in symbol if 'USDT' in x]
         symbol = [x for x in symbol if not '_' in x]
-
     y = client.futures_exchange_info()['symbols']
     coin_info = []
     for x in y:
@@ -69,8 +68,12 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
     time_CAGR = Helper.get_CAGR(start, end)
     if Trade_Each_Coin_With_Separate_Accounts:
         Number_Of_Trades = len(symbol)
-    Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = \
-        Helper.get_aligned_candles([], [], [], [], [], [], [], [], [], [], [], symbol, TIME_INTERVAL, start, end)
+    Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = [], [], [], [], [], [], [], [], [], [], []
+    if use_multiprocessing_for_downloading_data:
+        Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = Helper.multiprocess_get_candles(symbol, TIME_INTERVAL, start, end)
+    else:
+        Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = \
+            Helper.get_aligned_candles([], [], [], [], [], [], [], [], [], [], [], symbol, TIME_INTERVAL, start, end)
     print(symbol)
     account_balance = []
     Daily_return = []
@@ -96,15 +99,14 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         Coin_precision_temp = -99
         Order_precision_temp = -99
         tick_temp = -99
-        min_price_temp = -99
         for x in coin_info:
             if x[0] == symbol[k]:
                 Coin_precision_temp = int(x[1])
                 Order_precision_temp = int(x[2])
                 tick_temp = float(x[3])
-                min_price_temp = float(x[4])
-                flag = 1
                 break
+        #print(type(Open[k][0]))
+        #time.sleep(20)
         Bots.append(Bot(symbol[k], Open[k], Close[k], High[k], Low[k], Volume[k], Date[k],
                 Order_precision_temp, Coin_precision_temp, k, tick_temp, strategy, TP_SL_choice, SL_mult, TP_mult, 1))
         Bots[k].add_hist([], [], [], [], [], [])

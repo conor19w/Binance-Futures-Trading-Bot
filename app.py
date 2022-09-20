@@ -9,9 +9,8 @@ from multiprocessing import Process
 from binance.client import Client
 
 if __name__ == "__main__":
-    profit_required, start_balance, leverage, order_size, start, end, isolated_test, only_show_profitable_coins, particular_drawdown, min_dd, slippage, trading_threshold, use_market_orders = None, None, None, None, None, None, None, None, None, None, None, None, None
+    profit_required, start_balance, leverage, order_size, start, end, isolated_test, only_show_profitable_coins, particular_drawdown, min_dd, slippage, trading_threshold, use_market_orders, use_multiprocessing = None, None, None, None, None, None, None, None, None, None, None, None, None, None
     API_KEY, API_SECRET, buffer = None, None, None
-    T: [Thread] = []
     P: [Process] = []
     client = Client()
     valid_symbols = []  ## reset symbol before we fill with all symbols below
@@ -91,7 +90,7 @@ if __name__ == "__main__":
         run_bot.place(relwidth=(1 / 3), relheight=(1 / 8), relx=(1 / 3), rely=(2 / 3))
 
     def backtest_mode():
-        global profit_required, start_balance, leverage, order_size, start, end, isolated_test, only_show_profitable_coins, particular_drawdown, min_dd, slippage
+        global profit_required, start_balance, leverage, order_size, start, end, isolated_test, only_show_profitable_coins, particular_drawdown, min_dd, slippage, use_multiprocessing
         for child in frame.winfo_children():
             child.destroy()
         ## Set up initial input boxes
@@ -131,6 +130,12 @@ if __name__ == "__main__":
         leverage.insert(0, "10")
         leverage.place(relx=.33, rely=.2, relwidth=.075)
 
+        use_multiprocessing = BooleanVar(value=True)
+        use_multiprocessing_checkbox = Checkbutton(frame,
+                                             text="Use Multiprocessing for downloading Data. \n (Turn off if running more than one bot locally)",
+                                             variable=use_multiprocessing, bg="light blue", activebackground="light blue")
+        use_multiprocessing_checkbox.place(relx=.01, rely=.5)
+
         isolated_test = BooleanVar()
         isolated_test_checkbox = Checkbutton(frame,
                                              text="Isolated Test: (If on strategy will be evaluated on each coin with a separate balance.\n Good for finding coins that get good signals from the strategy)",
@@ -141,24 +146,24 @@ if __name__ == "__main__":
         only_show_profitable_coins_checkbox = Checkbutton(frame, variable=only_show_profitable_coins,
                                                           text="Profit Required:\t\t\t\t\n\n(Only Show coins that Profit more than this %)",
                                                           bg="light blue", activebackground="light blue")
-        only_show_profitable_coins_checkbox.place(relx=.35, rely=.42)
+        only_show_profitable_coins_checkbox.place(relx=.43, rely=.42)
         profit_required = tk.Entry(frame)
-        profit_required.place(relx=.5, rely=.423, relwidth=.075)
+        profit_required.place(relx=.6, rely=.423, relwidth=.075)
         profit_required.insert(0, "0.0")
 
         particular_drawdown = BooleanVar()
         particular_drawdown_checkbox = Checkbutton(frame, variable=particular_drawdown,
                                                           text="Use Min DD:\t\t\t\t\n\n(Only Show coins that have DD less than this %)",
                                                           bg="light blue", activebackground="light blue")
-        particular_drawdown_checkbox.place(relx=.35, rely=.52)
+        particular_drawdown_checkbox.place(relx=.43, rely=.52)
         min_dd = tk.Entry(frame)
-        min_dd.place(relx=.5, rely=.523, relwidth=.075)
+        min_dd.place(relx=.6, rely=.523, relwidth=.075)
         min_dd.insert(0, "0.0")
 
         label15 = tk.Label(frame, text="Slippage (%):", bg="light blue")
-        label15.place(relx=.65, rely=.423)
+        label15.place(relx=.63, rely=.375)
         slippage = tk.Entry(frame)
-        slippage.place(relx=.75, rely=.423, relwidth=.075)
+        slippage.place(relx=.75, rely=.375, relwidth=.075)
         slippage.insert(0, "0.0")
 
         run_Backtest = tk.Button(frame, text="Run Backtest", fg='white', bg="#457E81",
@@ -176,7 +181,7 @@ if __name__ == "__main__":
 
     # noinspection PyUnresolvedReferences
     def run_backtest():
-        global T
+        global P
         if symbol == [] and not trade_all_coins.get():
             print("Add some coins to the list or tick trade all coins before running a backtest")
             return
@@ -188,16 +193,16 @@ if __name__ == "__main__":
             print("Invalid Start/End parameters fix them before running a backtest")
             return
 
-        if len(T) > 0:
+        if len(P) > 0:
             i = 0
-            while i < len(T):
-                if not T[i].is_alive():
-                    T.pop(i)
+            while i < len(P):
+                if not P[i].is_alive():
+                    P.pop(i)
                 else:
                     i += 1
 
 
-        if len(T) == 0:
+        if len(P) == 0:
             profit_req = 0
             min_dd_req = 0
             slip = 0
@@ -208,11 +213,11 @@ if __name__ == "__main__":
             if slippage.get() != '':
                 slip = round(float(slippage.get())/100, 4)
 
-            T.append(Thread(target=run_backtester, args=(float(start_balance.get()), int(leverage.get()), round(float(order_size.get())/100, 3), start.get(), end.get(),
+            P.append(Process(target=run_backtester, args=(float(start_balance.get()), int(leverage.get()), round(float(order_size.get())/100, 3), start.get(), end.get(),
                      candle_length.get(), int(number_of_trades.get()), trade_all_coins.get(), isolated_test.get(), only_show_profitable_coins.get(),
                      profit_req, particular_drawdown.get(), min_dd_req, symbol, use_trail_stop.get(), round(float(trail_stop.get())/100, 3), f"Backtest", slip,
-                     strategy.get(), TP_SL.get(), float(SL.get()), float(TP.get()))))
-            T[-1].start()
+                     strategy.get(), TP_SL.get(), float(SL.get()), float(TP.get()), use_multiprocessing.get())))
+            P[-1].start()
 
 
     # noinspection PyUnresolvedReferences
@@ -228,7 +233,7 @@ if __name__ == "__main__":
                     i += 1
         if len(P) == 0:
 
-            P.append(Thread(target=run_bot, args=(API_KEY.get(), API_SECRET.get(), int(leverage.get()),
+            P.append(Process(target=run_bot, args=(API_KEY.get(), API_SECRET.get(), int(leverage.get()),
                      float(order_size.get()), buffer.get(), candle_length.get(), int(number_of_trades.get()),
                      use_trail_stop.get(), round(float(trail_stop.get()), 1), symbol, strategy.get(), TP_SL.get(),
                      float(SL.get()), float(TP.get()), trade_all_coins.get(), use_market_orders.get(), float(trading_threshold.get()))))
