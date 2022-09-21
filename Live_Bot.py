@@ -322,7 +322,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, buffer: str,
 
 def run_bot(API_KEY, API_SECRET, leverage, order_Size, buffer, Interval, Max_Number_Of_Trades,
                  use_trailing_stop, trailing_stop_callback, symbol, strategy,
-                 TP_choice, SL_choice, SL_mult, TP_mult, Trade_All_Coins, use_market_orders, trading_threshold):
+                 TP_SL_choice, SL_mult, TP_mult, Trade_All_Coins, use_market_orders, trading_threshold):
     client = Client(api_key=API_KEY, api_secret=API_SECRET)
 
     if Trade_All_Coins:
