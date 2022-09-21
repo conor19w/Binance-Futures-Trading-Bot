@@ -698,6 +698,7 @@ def multiprocess_get_candles(symbol, TIME_INTERVAL, start, end):
 
         for proc in jobs:
             proc.join()
+        print("Joining Data From multiple Processes")
         python_list = [None, None, None]
         python_list[0] = list(return_dict[0])
         del return_dict[0]

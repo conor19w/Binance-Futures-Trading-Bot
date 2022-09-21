@@ -59,10 +59,6 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         print("*********************************\nCallback rate must be >= .001, I have set callback rate to .001 for you\n*********************************")
     trailing_stop_callback = round(trailing_stop_callback, 3) ##Traling stop can only be a multiple of .1% ie 3 decimals
     print(f"Coins Tradeable : {symbol}")
-    winning_trades = []
-    losing_trades = []
-    closed_on_condition = []
-    profitgraph = []  # for graphing the profit change over time
     pp = pprint.PrettyPrinter()
     change_occurred = False
     time_CAGR = Helper.get_CAGR(start, end)
@@ -76,14 +72,6 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol = \
             Helper.get_aligned_candles([], [], [], [], [], [], [], [], [], [], [], symbol, TIME_INTERVAL, start, end)
     print(symbol)
-    account_balance = []
-    Daily_return = []
-    for i in range(len(symbol)):
-        account_balance.append(account_balance_start)
-        profitgraph.append([account_balance_start])
-        Daily_return.append([])
-    originalBalance = copy(account_balance)
-    day_start_equity = account_balance
 
     if printing_on:
         print(f"{TIME_INTERVAL} OHLC Candle Sticks from {start} to {end}")
@@ -106,14 +94,26 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 Order_precision_temp = int(x[2])
                 tick_temp = float(x[3])
                 break
-        #print(type(Open[k][0]))
-        #time.sleep(20)
         Bots.append(Bot(symbol[k], Open[k], Close[k], High[k], Low[k], Volume[k], Date[k],
                 Order_precision_temp, Coin_precision_temp, k, tick_temp, strategy, TP_SL_choice, SL_mult, TP_mult, 1))
         Bots[k].add_hist([], [], [], [], [], [])
+
+    # Initialize vars for profit calculation
     tradeNO = 0  ##number of trades
     active_trades: [Trade] = []
     new_trades = []
+    account_balance = []
+    Daily_return = []
+    winning_trades = []
+    losing_trades = []
+    closed_on_condition = []
+    profitgraph = []  # for graphing the profit change over time
+    for i in range(len(symbol)):
+        account_balance.append(account_balance_start)
+        profitgraph.append([account_balance_start])
+        Daily_return.append([])
+    originalBalance = copy(account_balance)
+
     if printing_on:
         print("Account Balance: ", account_balance[0])
     for i in range((buffer - 1)*TIME_INTERVAL, len(Close_1min[0]) - 1 - TIME_INTERVAL * 2):
