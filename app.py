@@ -24,6 +24,9 @@ if __name__ == "__main__":
     def go_to_github():
         webbrowser.open_new(r"https://github.com/sponsors/conor19w?frequency=recurring&sponsor=conor19w")
 
+    def go_to_trello():
+        webbrowser.open_new(r"https://trello.com/b/iagTNiv0/github-bot")
+
     def live_mode():
         global leverage, order_size, API_KEY, API_SECRET, buffer, trading_threshold, use_market_orders
         for child in frame.winfo_children():
@@ -100,13 +103,13 @@ if __name__ == "__main__":
         label1 = tk.Label(frame, text="Start (dd-mm-yy):", bg="light blue")
         label1.place(relx=.01, rely=.1)
         start = tk.Entry(frame)
-        start.insert(0, "01-05-22")
+        start.insert(0, "01-03-22")
         start.place(relx=.16, rely=.1, relwidth=.085)
 
         label2 = tk.Label(frame, text="End (dd-mm-yy):", bg="light blue")
         label2.place(relx=.01, rely=.15)
         end = tk.Entry(frame)
-        end.insert(0, "26-08-22")
+        end.insert(0, "19-09-22")
         end.place(relx=.16, rely=.15, relwidth=.085)
         Live_Bot.configure(bg="#457E81", fg='white')
         Backtester.configure(bg="light blue", fg="black")
@@ -299,13 +302,16 @@ if __name__ == "__main__":
     frame.config(height=700, width=800, bg="light blue")
 
     Live_Bot = tk.Button(root, text="Live Trading", fg='white', bg='#457E81', activebackground="light blue", cursor="trek", command=live_mode)
-    Live_Bot.place(relwidth=(1/3), relheight=(1/20), relx=0, rely=.95)
+    Live_Bot.place(relwidth=(1/4), relheight=(1/20), relx=0, rely=.95)
     Backtester = tk.Button(root, text="Backtester", fg='black', bg="light blue", activebackground="light blue", cursor="trek", command=backtest_mode)
-    Backtester.place(relwidth=(1/3), relheight=(1/20), relx=(1/3), rely=.95)
-    host = tk.Button(root, text="Cheap Bot hosting on AWS (Coming Soon)", fg='white', bg="#457E81", activebackground="light blue", cursor="trek", command=host_mode)
-    host.place(relwidth=(1/3), relheight=(1/20), relx=(2/3), rely=.95)
+    Backtester.place(relwidth=(1/4), relheight=(1/20), relx=(1/4), rely=.95)
+    host = tk.Button(root, text="Hosting on AWS", fg='white', bg="#457E81", activebackground="light blue", cursor="trek", command=host_mode)
+    host.place(relwidth=(1/4), relheight=(1/20), relx=(2/4), rely=.95)
+    host = tk.Button(root, text="Suggestions", fg='white', bg="#457E81", activebackground="light blue", cursor="trek", command=go_to_trello)
+    host.place(relwidth=(1 / 4), relheight=(1 / 20), relx=(3 / 4), rely=.95)
     donate = tk.Button(root, text="Support This Project :)", fg='white', bg="#457E81", activebackground="light blue", command=go_to_github, cursor="trek")
     donate.place(relheight=.05, relwidth=1)
+
 
     backtest_mode()  ##start in Backtest Mode
 
