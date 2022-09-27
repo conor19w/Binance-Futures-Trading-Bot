@@ -210,7 +210,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     change_occurred = True
             if Bots[t.index].use_close_pos and t.trade_status == 1 and (i % TIME_INTERVAL == 0 or TIME_INTERVAL == 1):
                 ## Check each interval if the close position was met
-                close_pos = Bots[t.index].check_close_pos()
+                close_pos = Bots[t.index].check_close_pos(t.trade_direction)
                 if close_pos:
                     if Trade_Each_Coin_With_Separate_Accounts:
                         t, account_balance[t.index] = Helper.close_pos(t, account_balance[t.index], fee, Close_1min[t.index][i])
@@ -259,7 +259,11 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     profitgraph[0].append(account_balance[0])
                 active_trades.pop(k)
             elif active_trades[k].trade_status == 4:
-                closed_on_condition.append([active_trades[k].symbol, f'{active_trades[k].trade_start}'])
+                if (active_trades[k].entry_price < Close[active_trades[k].index][Bots[active_trades[k].index].current_index] and active_trades[k].trade_direction == 1) \
+                or (active_trades[k].entry_price > Close[active_trades[k].index][Bots[active_trades[k].index].current_index] and active_trades[k].trade_direction == 0):
+                    winning_trades.append([active_trades[k].symbol, f'{active_trades[k].trade_start}'])
+                else:
+                    losing_trades.append([active_trades[k].symbol, f'{active_trades[k].trade_start}'])
                 if Trade_Each_Coin_With_Separate_Accounts:
                     profitgraph[active_trades[k].index].append(account_balance[active_trades[k].index])
                 else:
