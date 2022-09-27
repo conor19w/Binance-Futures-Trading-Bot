@@ -77,10 +77,9 @@ python3 app.py
 
 ---
 # Contact me [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20Binance%20Trading%20Bot%20I%20found%20on%20Github%20&url=https://github.com/conor19w/Binance-Futures-Trading-Bot&hashtags=Trading,Bot,Trading_Bot,Cryptocurrency_Trading_Bot,Crypto,Bitcoin,Ethereum,Cryptocurrency,Binance,DOGE,dogecoin) #
+* Prioritise your [Trello](https://trello.com/invite/b/iagTNiv0/80cc1828bdac439ed813cc54c9698c06/github-bot) ticket with a [one time payment](https://github.com/sponsors/conor19w)  
+* Get [Custom Strategies](https://www.fiverr.com/share/bzX4oq) Made by me.
 * If you have any queries about anything, or need me to explain any blocks of code please reach out to me on [Discord](https://discord.gg/jBu6thyP66).
 * If you have any suggestions or requests please reach out to me as well.  
 [__Join My public Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
-* Want me to host a Bot for you on AWS, I have a [monthly tier](https://github.com/sponsors/conor19w) available for this join & I'll get in touch to get you set up 😃
-* Prioritise your [Trello](https://trello.com/invite/b/iagTNiv0/80cc1828bdac439ed813cc54c9698c06/github-bot) ticket with a [one time payment](https://github.com/sponsors/conor19w)
-* [One time payment](https://github.com/sponsors/conor19w) for custom strategies available also.
 
