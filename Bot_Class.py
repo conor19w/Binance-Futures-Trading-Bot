@@ -17,12 +17,24 @@ class Bot:
     def __init__(self, symbol: str, Open: [float], Close: [float], High: [float], Low: [float], Volume: [float], Date: [str], OP: int, CP: int, index: int, tick: float,
                  strategy: str, TP_SL_choice: str, SL_mult: float, TP_mult: float, backtesting=0):
         self.symbol = symbol
-        self.Open = Open
-        self.Close = Close
-        self.High = High
-        self.Low = Low
-        self.Volume = Volume
         self.Date = Date
+
+        # Remove extra candle if present
+        shortest = len(Open)
+        if shortest > len(Close):
+            shortest = len(Close)
+        if shortest > len(High):
+            shortest = len(High)
+        if shortest > len(Low):
+            shortest = len(Low)
+        if shortest > len(Volume):
+            shortest = len(Volume)
+        self.Open = Open[:shortest]
+        self.Close = Close[:shortest]
+        self.High = High[:shortest]
+        self.Low = Low[:shortest]
+        self.Volume = Volume[:shortest]
+
         self.OP = OP
         self.CP = CP
         self.index = index
@@ -348,7 +360,7 @@ class Bot:
                                                             self.current_index)
 
         elif self.strategy == 'heikin_ashi_ema2':
-            Trade_Direction, _ = TS.heikin_ashi_ema2(self.Open_H,self.High_H, self.Low_H,
+            Trade_Direction, _ = TS.heikin_ashi_ema2(self.Open_H, self.High_H, self.Low_H,
                                                      self.Close_H, Trade_Direction,
                                                      -99, 0, self.fastd, self.fastk,
                                                      self.EMA200, self.current_index)
@@ -366,15 +378,14 @@ class Bot:
 
         return Trade_Direction, stop_loss_val, take_profit_val
 
-    def check_close_pos(self):
+    def check_close_pos(self, Trade_Direction):
         close_pos = 0
-        Trade_Direction = -99  ## Short (0), Long (1)
         if self.strategy == 'heikin_ashi_ema2':
             _, close_pos = TS.heikin_ashi_ema2(self.Open_H, self.High_H, self.Low_H,
-                                               self.Close_H, Trade_Direction,
-                                               -99, 0, self.fastd, self.fastk,
+                                               self.Close_H, -99, Trade_Direction,
+                                                0, self.fastd, self.fastk,
                                                self.EMA200, self.current_index)
         elif self.strategy == 'heikin_ashi_ema':
-            _, close_pos = TS.heikin_ashi_ema(self.Open_H, self.Close_H, Trade_Direction, -99, 0,
+            _, close_pos = TS.heikin_ashi_ema(self.Open_H, self.Close_H, -99, Trade_Direction, 0,
                                               self.fastd, self.fastk, self.EMA200, self.current_index)
         return close_pos
