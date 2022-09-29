@@ -305,7 +305,8 @@ def get_Klines(symbol, start_str, end_str, path):
                         price_data[f'Low_{unit}m'][-1] = price_data['Low_1m'][-1]  ##update as lowest
                     price_data[f'Volume_{unit}m'][-1] += price_data['Volume_1m'][-1]  ## add on volume
                     price_data[f'Volume_{unit}m'][-1] = round(price_data[f'Volume_{unit}m'][-1])
-                elif not int(str(candle_open)[-5:-3]) % unit == 0 and not int(str(price_data['Date_1m'][-1])[-5:-3]) % unit == 0:
+                elif not int(str(candle_open)[-5:-3]) % unit == 0 and not int(
+                        str(price_data['Date_1m'][-1])[-5:-3]) % unit == 0:
                     ## Check for higher and lower candle inbetween:
                     if price_data['High_1m'][-1] > price_data[f'High_{unit}m'][-1]:
                         price_data[f'High_{unit}m'][-1] = price_data['High_1m'][-1]  ##update as highest
@@ -324,7 +325,8 @@ def get_Klines(symbol, start_str, end_str, path):
                     price_data[f'High_{unit}h'].append(price_data['High_1m'][-1])  ##initialize as highest
                     price_data[f'Low_{unit}h'].append(price_data['Low_1m'][-1])  ##initialize as lowest
                     price_data[f'Volume_{unit}h'].append(price_data['Volume_1m'][-1])  ##initialize
-                if int(str(price_data['Date_1m'][-1])[-8:-6]) % unit == 0 and int(str(price_data['Date_1m'][-1])[-5:-3]) == 0:
+                if int(str(price_data['Date_1m'][-1])[-8:-6]) % unit == 0 and int(
+                        str(price_data['Date_1m'][-1])[-5:-3]) == 0:
                     ##Candle close time
                     price_data[f'Date_{unit}h'].append(price_data['Date_1m'][-1])
                     price_data[f'Close_{unit}h'].append(price_data['Close_1m'][-1])
@@ -463,7 +465,7 @@ def align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, 
             Low[i].append(Low[i][-1])
             Close[i].append(Close[i][-1])
             Open[i].append(Open[i][-1])
-            Volume[i].append(0, Volume[i][-1])
+            Volume[i].insert(0, Volume[i][-1])
 
     return Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume
 
