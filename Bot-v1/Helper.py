@@ -702,7 +702,7 @@ def close_pos(t, account_balance, fee, Close):
     return t, account_balance
 
 
-def print_trades(active_trades: [Trade], trade_price, Date, account_balance, change_occurred, print_to_csv, csv_name):
+def print_trades(active_trades: [Trade], trade_price, Date, account_balance, change_occurred, print_to_csv, csv_name, time_delta):
     ###########################################################################################################
     #####################               PRINT TRADE DETAILS                          ##########################
     ###########################################################################################################
@@ -774,15 +774,15 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
     info['Lowest Candle'] = trade_lowest_info
 
     if change_occurred and len(account_balance) == 1:
-        print(f"\nTime: {Date} , Account Balance: {account_balance[0]}")
+        print(f"\nTime: {Date + time_delta} , Account Balance: {account_balance[0]}")
         print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
-        print(f"Time: {Date} , Account Balance: {account_balance[0]}")
+        print(f"Time: {Date + time_delta} , Account Balance: {account_balance[0]}")
         print("------------------------------------------------------------\n")
         if print_to_csv:
             with open(csv_name, 'a') as O:
                 for i in range(len(active_trades)):
                     O.write(
-                        f'{Date},{account_balance[0]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
+                        f'{Date + time_delta},{account_balance[0]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
                         f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
         total_pnl = 0
         for x in trade_pnl:
@@ -797,9 +797,9 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
         for t in active_trades:
             account_balance_info.append(account_balance[t.index])
         info['Account Balance'] = account_balance_info
-        print(f"\nTime: {Date}")
+        print(f"\nTime: {Date + time_delta}")
         print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
-        print(f"Time: {Date}")
+        print(f"Time: {Date + time_delta}")
         print("------------------------------------------------------------\n")
         if print_to_csv:
             with open(csv_name, 'a') as O:
