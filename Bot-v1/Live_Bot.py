@@ -122,6 +122,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
         High_temp.pop(-1)
         Low_temp.pop(-1)
         Volume_temp.pop(-1)
+        client.futures_ping()  ## ping the server to stay connected
         if len(Date_temp) < 100:
             print(f"Not enough data for {symbol[i]}, Increase your start_str variable in Config_File so we have a buffer of candles ")
             symbol.pop(i)
@@ -214,6 +215,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
             rightnow = datetime.now().time()  ##time right now
             timer = timedelta(hours=0, minutes=0, seconds=15)  ##how often to run code below
             if (datetime.combine(date.today(), rightnow) - datetime.combine(yesterdate, start)) > timer:
+                client.futures_ping()  ## ping the server to stay connected
                 start = datetime.now().time()  ##reset start
                 yesterdate = date.today()
                 all_orders = client.futures_get_all_orders()
