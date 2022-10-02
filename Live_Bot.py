@@ -20,6 +20,9 @@ streams = []  ##store streams allowing the option to start and stop streams if n
 new_candle_flag = 0
 Data = {}
 
+time_delta = timedelta(hours=1)  ## Adjust time for printing based off GMT (This is GMT+1)
+
+
 ## If you are getting a rate limit error on startup this will add a delay for downloading candlesticks to start
 RATE_LIMIT_WAIT = False  ## It will not slow down the bot, it will only slow down the startup by about (4 x (number of coins you're trading)) seconds
 
@@ -302,7 +305,7 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, buffer: str,
                         i += 1
                 print_flag = 0
                 temp_symbols = [active_trades[t].symbol for t in range(len(active_trades))]
-                print(f"Account Balance: {account_balance}, {str(datetime.utcfromtimestamp(round(Bots[0].Date[-1]/1000)))}: Active Trades: {temp_symbols}")
+                print(f"Account Balance: {account_balance}, {str(datetime.utcfromtimestamp(round(Bots[0].Date[-1]/1000)) + time_delta)}: Active Trades: {temp_symbols}")
                 #Helper.log_info(active_trades, trade_prices, Dates, account_balance, csv_name, indicators)
                 try:
                     print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance},"

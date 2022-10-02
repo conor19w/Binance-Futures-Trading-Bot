@@ -1,6 +1,8 @@
 import os
 import pprint
 import time
+from datetime import timedelta
+
 from binance.client import Client
 import matplotlib.pyplot as plt
 from copy import copy
@@ -12,6 +14,7 @@ from Config_File import API_KEY, API_SECRET
 from Helper import Trade
 import matplotlib
 
+time_delta = timedelta(hours=1)  ## Adjust time for printing based off GMT (This is GMT+1)
 
 def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIME_INTERVAL, Number_Of_Trades,
                    Trade_All_Symbols, Trade_Each_Coin_With_Separate_Accounts, only_show_profitable_coins, percent_gain_threshold, particular_drawdown, min_dd,
@@ -228,10 +231,10 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 trade_price.append(Bots[t.index].Close[Bots[t.index].current_index])
             if Trade_Each_Coin_With_Separate_Accounts:
                 pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][i],
-                                                                                  account_balance, change_occurred, print_to_csv, csv_name, path, csv_path)
+                                                                                  account_balance, change_occurred, print_to_csv, csv_name, path, csv_path, time_delta)
             else:
                 pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][i],
-                                                                                  [account_balance[0]], change_occurred, print_to_csv, csv_name, path, csv_path)
+                                                                                  [account_balance[0]], change_occurred, print_to_csv, csv_name, path, csv_path, time_delta)
             if negative_balance_flag and not Trade_Each_Coin_With_Separate_Accounts:
                 print("**************** You have been liquidated *******************")
                 profitgraph[0].append(0)

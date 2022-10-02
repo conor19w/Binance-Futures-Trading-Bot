@@ -14,6 +14,8 @@ from Helper import Trade_Manager, get_historical, Trade, Trade_Stats, Data_Handl
 from Config_File import *
 from Config_File import symbol  #explicitly importing to remove a warning
 
+time_delta = timedelta(hours=1)  ## GMT+1
+
 streams = []  ##store streams allowing the option to start and stop streams if needed
 new_candle_flag = 0
 Data = {}
@@ -340,7 +342,7 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                 temp_symbols = []
                 for t in active_trades:
                     temp_symbols.append(t.symbol)
-                print(f"Account Balance: {account_balance}, {Bots[0].Date[-1]}: Active Trades: {temp_symbols}")
+                print(f"Account Balance: {account_balance}, {Bots[0].Date[-1]+time_delta}: Active Trades: {temp_symbols}")
                 try:
                     print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance},"
                           f" Average Trade Profit: ${(account_balance - startup_account_balance) / TS.total_number_of_trades}")

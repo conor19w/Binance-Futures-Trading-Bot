@@ -1,6 +1,8 @@
 import os
 import pprint
 import time
+from datetime import timedelta
+
 from binance.client import Client
 import matplotlib.pyplot as plt
 from copy import copy
@@ -35,6 +37,8 @@ path = f'{graph_folder_location}{plot_strategy_name}_{start}_{end}//'  ## where 
 buffer = 300 ## buffer of candle sticks
 use_trailing_stop = 0  ##flag to use trailing stop, If on when the takeprofitval margin is reached a trailing stop will be set with the below percentage distance
 trailing_stop_callback = .005  ## 1% trailing stop activated by hitting the takeprofitval for a coin
+
+time_delta = timedelta(hours=1)  ## Adjust time for printing based off GMT (This is GMT+1)
 
 symbol = ['ETHUSDT', 'BTCUSDT', 'NEARUSDT', 'DOGEUSDT']#, '1000SHIBUSDT']#, 'BTCUSDT']  #['ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
           #'CTSIUSDT','ICPUSDT','KNCUSDT','LINAUSDT','RAYUSDT']  #, 'COTIUSDT', 'ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
@@ -251,10 +255,10 @@ for i in range((buffer - 1)*TIME_INTERVAL, len(Close_1min[0]) - 1):
             trade_price.append(Bots[t.index].Close[-1])
         if Trade_Each_Coin_With_Separate_Accounts:
             pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][i],
-                                                                              account_balance, change_occurred, print_to_csv, csv_name)
+                                                                              account_balance, change_occurred, print_to_csv, csv_name, time_delta)
         else:
             pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][i],
-                                                                              [account_balance[0]], change_occurred, print_to_csv, csv_name)
+                                                                              [account_balance[0]], change_occurred, print_to_csv, csv_name, time_delta)
         if negative_balance_flag and not Trade_Each_Coin_With_Separate_Accounts:
             print("**************** You have been liquidated *******************")
             profitgraph[0].append(0)
