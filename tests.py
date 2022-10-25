@@ -1,7 +1,10 @@
 import time
 from copy import copy
 from datetime import datetime
-
+from ta.trend import ema_indicator, macd_signal, macd, sma_indicator, adx, sma_indicator, cci, ichimoku_a, ichimoku_b, \
+    ichimoku_base_line, ichimoku_conversion_line
+from numpy import random
+import pandas as pd
 from binance import Client, ThreadedWebsocketManager
 
 import Helper
@@ -107,3 +110,43 @@ Part 2 for checking the live data against the historical, need to run the websoc
 #          Helper.get_aligned_candles([], [], [], [], [], [], [], [], [], [], [], symbol, Interval, start, end)
 # for d, o, c, h, l, v in zip(Date[0], Open[0], Close[0], High[0], Low[0], Volume[0]):
 #     print(f"{d}, Open: {o}, Close: {c}, High: {h}, Low: {l}, Volume: {v}")
+
+'''Test the Error in EMA when we throw away old values
+Error is quite large at times, reduce by using a larger buffer by increasing the buffer_mult'''
+window_size = 1650
+buffer_mult = 1
+buffer = window_size*buffer_mult + 1
+
+x = random.randint(100, size=10000)
+
+EMA_easy = list(ema_indicator(pd.Series(x), window=window_size))
+print(EMA_easy)
+j = -1
+for i in range(10000):
+    try:
+        EMA_hard = list(ema_indicator(pd.Series(x[i-buffer:i]), window=window_size, fillna=True))
+        print(EMA_easy[j], EMA_hard[-1], f"Error: {round(100*(EMA_easy[j] - EMA_hard[-1])/EMA_easy[j], 4)}%")
+    except Exception as e:
+        print(e)
+    j+=1
+
+
+'''Test the Error in SMA when we throw away old values,
+    There is no error with SMAs'''
+#
+# window_size = 1650
+# buffer_mult = 1
+# buffer = window_size*buffer_mult + 1
+#
+# x = random.randint(100, size=10000)
+#
+# EMA_easy = list(sma_indicator(pd.Series(x), window=window_size))
+# print(EMA_easy)
+# j = -1
+# for i in range(10000):
+#     try:
+#         EMA_hard = list(sma_indicator(pd.Series(x[i-buffer:i]), window=window_size, fillna=True))
+#         print(EMA_easy[j], EMA_hard[-1], f"Error: {round(100*(EMA_easy[j] - EMA_hard[-1])/EMA_easy[j], 4)}%")
+#     except Exception as e:
+#         print(e)
+#     j+=1
