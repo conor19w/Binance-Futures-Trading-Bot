@@ -110,7 +110,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
             Bots.append(Bot(symbol[k], Open[k][:buffer], Close[k][:buffer], High[k][:buffer], Low[k][:buffer], Volume[k][:buffer], Date[k][:buffer],
                             Order_precision_temp, Coin_precision_temp, k, tick_temp, strategy, TP_SL_choice, SL_mult,
                             TP_mult, 1))
-        Bots[k].add_hist([])
+        Bots[k].add_hist([], [], [], [], [], [])
 
     # Initialize vars for profit calculation
     tradeNO = 0  ##number of trades
