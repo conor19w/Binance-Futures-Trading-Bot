@@ -39,6 +39,35 @@ class Data_Handler:
             print(f"Error in handling of websocket, Error: {e}")
             self.socket_failed = True
 
+class Data_Handler_multi:
+    def __init__(self, symbol):
+        self.new_data = False
+        self.price_data = {s: {'Date': None, 'Close': None,
+                                    'Open': None, 'High': None, 'Low': None,
+                                    'Volume': None, 'new_candle': False}
+                           for s in symbol}
+
+
+    def handle_socket_message(self, msg):
+        try:
+            if msg != '':
+                payload = msg['k']
+                if payload['x']:
+                    if msg['ps'] not in self.price_data:
+                        self.price_data[msg['ps']] = {'Date': payload['T'], 'Close': float(payload['c']),
+                                                          'Open': float(payload['o']), 'High': float(payload['h']), 'Low': float(payload['l']),
+                                                          'Volume': float(payload['q']), 'new_candle': True}
+                    else:
+                        self.price_data[msg['ps']]['Date'] = payload['T']
+                        self.price_data[msg['ps']]['Close'] = float(payload['c'])
+                        self.price_data[msg['ps']]['Open'] = float(payload['o'])
+                        self.price_data[msg['ps']]['High'] = float(payload['h'])
+                        self.price_data[msg['ps']]['Low'] = float(payload['l'])
+                        self.price_data[msg['ps']]['Volume'] = float(payload['q'])
+                        self.price_data[msg['ps']]['new_candle'] = True
+                    #print(self.price_data)
+        except Exception as e:
+            print(f"Error in handling of websocket, Error: {e}")
 
 class Trade_Stats:
     def __init__(self):

@@ -103,13 +103,13 @@ if __name__ == "__main__":
         label1 = tk.Label(frame, text="Start (dd-mm-yy):", bg="light blue")
         label1.place(relx=.01, rely=.1)
         start = tk.Entry(frame)
-        start.insert(0, "01-03-22")
+        start.insert(0, "19-10-22")
         start.place(relx=.16, rely=.1, relwidth=.085)
 
         label2 = tk.Label(frame, text="End (dd-mm-yy):", bg="light blue")
         label2.place(relx=.01, rely=.15)
         end = tk.Entry(frame)
-        end.insert(0, "19-09-22")
+        end.insert(0, "26-10-22")
         end.place(relx=.16, rely=.15, relwidth=.085)
         Live_Bot.configure(bg="#457E81", fg='white')
         Backtester.configure(bg="light blue", fg="black")
@@ -119,12 +119,12 @@ if __name__ == "__main__":
         label5.place(relx=.25, rely=.1)
         start_balance = tk.Entry(frame)
         start_balance.place(relx=.375, rely=.1, relwidth=.075)
-        start_balance.insert(0, "1000")
+        start_balance.insert(0, "87")
 
         label6 = tk.Label(frame, text="Order Size (% of account):", bg="light blue")
         label6.place(relx=.25, rely=.15)
         order_size = tk.Entry(frame)
-        order_size.insert(0, "2.5")
+        order_size.insert(0, "1.25")
         order_size.place(relx=.43, rely=.15, relwidth=.075)
 
         label7 = tk.Label(frame, text="leverage:", bg="light blue")
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         label15.place(relx=.63, rely=.375)
         slippage = tk.Entry(frame)
         slippage.place(relx=.75, rely=.375, relwidth=.075)
-        slippage.insert(0, "0.0")
+        slippage.insert(0, "0.1")
 
         run_Backtest = tk.Button(frame, text="Run Backtest", fg='white', bg="#457E81",
                                  activebackground="light blue",
@@ -210,15 +210,15 @@ if __name__ == "__main__":
             min_dd_req = 0
             slip = 0
             if profit_required.get() != '':
-                profit_req = round(float(profit_required.get())/100, 3)
+                profit_req = float(profit_required.get())
             if min_dd.get() != '':
-                min_dd_req = round(float(min_dd.get()), 3)
+                min_dd_req = float(min_dd.get())
             if slippage.get() != '':
-                slip = round(float(slippage.get())/100, 4)
+                slip = float(slippage.get())
 
-            P.append(Process(target=run_backtester, args=(float(start_balance.get()), int(leverage.get()), round(float(order_size.get())/100, 3), start.get(), end.get(),
+            P.append(Process(target=run_backtester, args=(float(start_balance.get()), int(leverage.get()), float(order_size.get()), start.get(), end.get(),
                      candle_length.get(), int(number_of_trades.get()), trade_all_coins.get(), isolated_test.get(), only_show_profitable_coins.get(),
-                     profit_req, particular_drawdown.get(), min_dd_req, symbol, use_trail_stop.get(), round(float(trail_stop.get())/100, 3), f"Backtest", slip,
+                     profit_req, particular_drawdown.get(), min_dd_req, symbol, use_trail_stop.get(), float(trail_stop.get()), f"Backtest", slip,
                      strategy.get(), TP_SL.get(), float(SL.get()), float(TP.get()), use_multiprocessing.get())))
             P[-1].start()
 

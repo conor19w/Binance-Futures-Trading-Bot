@@ -18,11 +18,16 @@ time_delta = timedelta(hours=1)  ## Adjust time for printing based off GMT (This
 
 def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIME_INTERVAL, Number_Of_Trades,
                    Trade_All_Symbols, Trade_Each_Coin_With_Separate_Accounts, only_show_profitable_coins, percent_gain_threshold, particular_drawdown, min_dd,
-                   symbol, use_trailing_stop, trailing_stop_callback, csv_name, slippage, strategy='', TP_SL_choice='', SL_mult=1, TP_mult=1, use_multiprocessing_for_downloading_data=False, graph_folder_location='./',
-                   plot_graphs_to_folder=True, print_to_csv=True, fee=.00036, printing_on=True, add_delay=False, buffer=2000):
+                   symbol, use_trailing_stop, trailing_stop_callback, csv_name, slippage, strategy='', TP_SL_choice='', SL_mult:float=1, TP_mult:float=1, use_multiprocessing_for_downloading_data=False, graph_folder_location='./',
+                   plot_graphs_to_folder=True, print_to_csv=True, fee=.00036, printing_on=True, add_delay=False, buffer=2000, trading_on=True, quick_test=True):
     if plot_graphs_to_folder:
         ## Top of script:
         matplotlib.use("Agg")
+    order_Size = round(order_Size/100, 4)
+    slippage = round(slippage / 100, 4)
+    min_dd = round(min_dd, 3)
+    percent_gain_threshold = round(percent_gain_threshold / 100, 3)
+    trailing_stop_callback = round(trailing_stop_callback / 100, 3)
 
     path = f'{graph_folder_location}Backtests//{strategy}//{start}_{end}//'  ## where you want to store the graphs
     csv_path = path+f"//{TIME_INTERVAL}//"
@@ -86,7 +91,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
     if len(Open[0]) < 300:
         print("Not Enough Candles Increase the period over which you are running a backtest")
         time.sleep(20)
-
+    wins_and_lossses = {}
     for k in range(len(symbol)):
         Coin_precision_temp = -99
         Order_precision_temp = -99
@@ -96,10 +101,16 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 Coin_precision_temp = int(x[1])
                 Order_precision_temp = int(x[2])
                 tick_temp = float(x[3])
+                wins_and_lossses[symbol[k]] = {'wins': 0, 'losses': 0, 'trades': 0}
                 break
-        Bots.append(Bot(symbol[k], Open[k], Close[k], High[k], Low[k], Volume[k], Date[k],
-                Order_precision_temp, Coin_precision_temp, k, tick_temp, strategy, TP_SL_choice, SL_mult, TP_mult, 1))
-        Bots[k].add_hist([], [], [], [], [], [])
+        if quick_test:
+            Bots.append(Bot(symbol[k], Open[k], Close[k], High[k], Low[k], Volume[k], Date[k],
+                        Order_precision_temp, Coin_precision_temp, k, tick_temp, strategy, TP_SL_choice, SL_mult, TP_mult, 1))
+        else:
+            Bots.append(Bot(symbol[k], Open[k][:buffer], Close[k][:buffer], High[k][:buffer], Low[k][:buffer], Volume[k][:buffer], Date[k][:buffer],
+                            Order_precision_temp, Coin_precision_temp, k, tick_temp, strategy, TP_SL_choice, SL_mult,
+                            TP_mult, 1))
+        Bots[k].add_hist([])
 
     # Initialize vars for profit calculation
     tradeNO = 0  ##number of trades
@@ -127,7 +138,18 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         ##give each coin next piece of data
         if (i + 1) % TIME_INTERVAL == 0 or TIME_INTERVAL == 1:
             for k in range(len(symbol)):
-                Bots[k].current_index = int(i / TIME_INTERVAL)
+                if quick_test:
+                    Bots[k].current_index = int(i / TIME_INTERVAL)
+                else:
+                    try:
+                        Bots[k].handle_socket_message(-99, Date[k][int(i / TIME_INTERVAL)], Close[k][int(i / TIME_INTERVAL)],
+                                                      Volume[k][int(i / TIME_INTERVAL)], Open[k][int(i / TIME_INTERVAL)],
+                                                      High[k][int(i / TIME_INTERVAL)], Low[k][int(i / TIME_INTERVAL)])
+                    except Exception as e:
+                        print(f"Error at handle_socket_message: {e}")
+            if str(Date[0][int(i / TIME_INTERVAL)]) == start_trading_date:
+                trading_on = True
+                print("Trading Started")
 
             for k in range(len(Bots)):
                 trade_flag = 0
@@ -135,15 +157,21 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     if t.index == k:
                         trade_flag = 1
                         break
-                if trade_flag == 0 and len(Bots[k].Date) > i / TIME_INTERVAL:
+                if trade_flag == 0 and (len(Bots[k].Date) > i / TIME_INTERVAL or not quick_test):
                     temp_dec = Bots[k].Make_decision()
                     if temp_dec[0] != -99:
                         new_trades.append([k, temp_dec])
+                # if Bots[k].symbol == 'BAKEUSDT':
+                #     print(Bots[k].Date[Bots[k].current_index], Bots[k].Close[Bots[k].current_index], Bots[k].High[Bots[k].current_index], Bots[k].Low[Bots[k].current_index], Bots[k].Open[Bots[k].current_index])
+
+            # bot_trades = [trade.symbol for trade in active_trades]  ## Open/ attempting to open trades
+            # temp_dec = [Bots[i].Make_decision() for i in range(len(Bots))]  ## get all signals
+            # new_trades = [[i, temp_dec[i]] for i in range(len(Bots)) if temp_dec[i][0] != -99 and Bots[i].symbol not in bot_trades and len(Bots[i].Date) > i / TIME_INTERVAL]  ## get new trades, exclude (trades that didn't give a long
 
         if len(active_trades) == Number_Of_Trades:
             new_trades = []
             ##Sort out new trades to be opened
-        while len(new_trades) > 0 and len(active_trades) < Number_Of_Trades:
+        while len(new_trades) > 0 and len(active_trades) < Number_Of_Trades and trading_on:
             [index, [trade_direction, stop_loss, take_profit]] = new_trades.pop(0)
             order_qty = 0
             entry_price = 0
@@ -250,6 +278,8 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 winning_trades.append([active_trades[k].symbol, f'{active_trades[k].trade_start}'])
                 if Trade_Each_Coin_With_Separate_Accounts:
                     profitgraph[active_trades[k].index].append(account_balance[active_trades[k].index])
+                    wins_and_lossses[active_trades[k].symbol]['wins'] += 1
+                    wins_and_lossses[active_trades[k].symbol]['trades'] += 1
                 else:
                     profitgraph[0].append(account_balance[0])
                 active_trades.pop(k)
@@ -258,6 +288,8 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 losing_trades.append([active_trades[k].symbol, f'{active_trades[k].trade_start}'])
                 if Trade_Each_Coin_With_Separate_Accounts:
                     profitgraph[active_trades[k].index].append(account_balance[active_trades[k].index])
+                    wins_and_lossses[active_trades[k].symbol]['losses'] += 1
+                    wins_and_lossses[active_trades[k].symbol]['trades'] += 1
                 else:
                     profitgraph[0].append(account_balance[0])
                 active_trades.pop(k)
@@ -393,19 +425,25 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     sortino_ratio = (CAGR - risk_free_rate) / neg_vol
                     calmar_ratio = CAGR / max_dd
                     if (particular_drawdown and max_dd < min_dd) or not particular_drawdown:
-                        useful_coins.append(symbol[j])
-                        print("Symbol:", symbol[j], "fee:", fee)
-                        print(f"{original_time_interval} OHLC Candle Sticks from {start} to {end}")
-                        print("Account Balance:", account_balance[j])
-                        print("% Gain on Account:", ((account_balance[j] - originalBalance[j]) * 100) / originalBalance[j])
-                        print("Total Returns:", account_balance[j] - originalBalance[j])
-                        print(f"Annualized Volatility: {round(vol, 4)}%")
-                        print(f"CAGR: {round(CAGR, 4)}%")
-                        print("Sharpe Ratio:", round(Sharpe_ratio, 4))
-                        print("Sortino Ratio:", round(sortino_ratio, 4))
-                        print("Calmar Ratio:", round(calmar_ratio, 4))
-                        print(f"Max Drawdown: {round(max_dd, 4)}%")
-                        print(f"Average Win: {round(average * 100, 4)}%\n")
+                        accuracy = (wins_and_lossses[symbol[j]]['wins']*100)/wins_and_lossses[symbol[j]]['trades']
+                        check_accuracy_percent = False
+                        accuracy_percent = 90
+                        if accuracy_percent < accuracy and check_accuracy_percent or not check_accuracy_percent:
+                            useful_coins.append(symbol[j])
+                            print("Symbol:", symbol[j], "fee:", fee)
+                            print(f"{original_time_interval} OHLC Candle Sticks from {start} to {end}")
+                            print("Account Balance:", account_balance[j])
+                            print("% Gain on Account:", ((account_balance[j] - originalBalance[j]) * 100) / originalBalance[j])
+                            print("Total Returns:", account_balance[j] - originalBalance[j])
+                            print(f"Annualized Volatility: {round(vol, 4)}%")
+                            print(f"CAGR: {round(CAGR, 4)}%")
+                            print(f"Accuracy: {accuracy}%")
+                            print(f"Trades Taken: {wins_and_lossses[symbol[j]]['trades']}")
+                            print("Sharpe Ratio:", round(Sharpe_ratio, 4))
+                            print("Sortino Ratio:", round(sortino_ratio, 4))
+                            print("Calmar Ratio:", round(calmar_ratio, 4))
+                            print(f"Max Drawdown: {round(max_dd, 4)}%")
+                            print(f"Average Win: {round(average * 100, 4)}%\n")
                         if plot_graphs_to_folder:
                             if not os.path.exists(path + f'{original_time_interval}'):
                                 os.makedirs(path + f'{original_time_interval}')
@@ -430,3 +468,44 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         print(f"Losing Trades:\n {len(losing_trades)}")
         print(f"Trades Closed on Condition:\n {closed_on_condition}")
 
+
+if __name__ == "__main__":
+    start = "01-08-22"
+    end = "26-10-22"
+    account_balance = 87  ## Starting account size
+    leverage = 10
+    order_Size = 1.25  ## 1.25% of account balance per trade with 10x leverage the position size would be 12.5%
+    TIME_INTERVAL = '5m'  ## valid intervals: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d
+    Number_Of_Trades = 5  ## max amount of trades the bot will have open at any time
+    slippage = .1  ## .1% recommended to use at least .1% slippage, the more slippage the strategy can survive the better the signals
+    TP_SL_choice = '%'  ## type of TP/SL used in backtest, list of valid values: '%', 'x (ATR)', 'x (Swing High/Low) level 1', 'x (Swing Close) level 1', 'x (Swing High/Low) level 2', 'x (Swing Close) level 2', 'x (Swing High/Low) level 3', 'x (Swing Close) level 3'
+    SL_mult = .5  ## multiplier for the 'TP_SL_choice' above
+    TP_mult = 1  ## multiplier for the 'TP_SL_choice' above
+    strategy = 'tripleEMAStochasticRSIATR'  ##name of strategy you want to run
+
+    quick_test = True ## if true the bot will run a faster backtest, but the test is more accurate when false (This is due to the live bot throwing away old candles to save memory)
+    use_trailing_stop = False  ## flag to use the trailing stop with callback distance defined below
+    trailing_stop_callback = 1  ## 1% keep the trailing stop this percent away from the last high/ low
+    Trade_Each_Coin_With_Separate_Accounts = False  ## Isolated test will generate graphs for each coin as if it was trading separately from the other coins
+    only_show_profitable_coins = False  # flag for the below percentage
+    percent_gain_threshold = 1  ## percentage for 'only_show_profitable_coins' flag, will only show coins at the end of the backtest that have made this amount of profit or more
+    particular_drawdown = False  ## Flag for minimum drawdown below
+    min_dd = 1  ## 1%, Only print coins which have had less than this drawdown when the above flag 'particular_drawdown' is True
+
+    symbol = ['BTCUSDT', 'BAKEUSDT']  ## list of coins to trade, example: ['ETHUSDT', 'BNBUSDT']
+    Trade_All_Symbols = True  ## will test on all coins on exchange if true
+
+
+    ## Variables you probably don't need to change:
+    csv_name = f"Backtest"  ## default no need to change
+    trading_on = True  ## Set to false to use the trading start time below, CAUTION ensure trading is withing start and end or you will get errors
+    start_trading_date = '2022-10-24 18:00:00'  ## Particular time to start trading at not used if trading_on = True
+    use_multiprocessing_for_downloading_data = True ## use multiprocessing for quicker backtesting
+
+    run_backtester(account_balance, leverage, order_Size, start, end, TIME_INTERVAL, Number_Of_Trades,
+                   Trade_All_Symbols, Trade_Each_Coin_With_Separate_Accounts, only_show_profitable_coins,
+                   percent_gain_threshold, particular_drawdown, min_dd,
+                   symbol, use_trailing_stop, trailing_stop_callback, csv_name, slippage, strategy, TP_SL_choice,
+                   SL_mult, TP_mult, use_multiprocessing_for_downloading_data, graph_folder_location='./',
+                   plot_graphs_to_folder=True, print_to_csv=True, fee=.00036, printing_on=True, add_delay=False,
+                   buffer=int(2016), trading_on=trading_on, quick_test=quick_test)
