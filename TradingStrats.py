@@ -701,11 +701,11 @@ def SetSLTP(stop_loss_val_arr, take_profit_val_arr, peaks, troughs, Close, High,
         take_profit_val = take_profit_val_arr[current_index]
         stop_loss_val = stop_loss_val_arr[current_index]
 
-    if TP_SL_choice == 'x (ATR)':
+    elif TP_SL_choice == 'x (ATR)':
         take_profit_val = take_profit_val_arr[current_index]
         stop_loss_val = stop_loss_val_arr[current_index]
 
-    if TP_SL_choice == 'x (Swing High/Low) level 1' or TP_SL_choice == 'x (Swing High/Low) level 2' or TP_SL_choice == 'x (Swing High/Low) level 3':
+    elif TP_SL_choice == 'x (Swing High/Low) level 1' or TP_SL_choice == 'x (Swing High/Low) level 2' or TP_SL_choice == 'x (Swing High/Low) level 3':
         high_swing = High[current_index]
         low_swing = Low[current_index]
         high_flag = 0
@@ -733,7 +733,7 @@ def SetSLTP(stop_loss_val_arr, take_profit_val_arr, peaks, troughs, Close, High,
             stop_loss_val = SL * (Close[current_index] - low_swing)
             take_profit_val = TP * stop_loss_val
 
-    if TP_SL_choice == 'x (Swing Close) level 1' or TP_SL_choice == 'x (Swing Close) level 2' or TP_SL_choice == 'x (Swing Close) level 3':
+    elif TP_SL_choice == 'x (Swing Close) level 1' or TP_SL_choice == 'x (Swing Close) level 2' or TP_SL_choice == 'x (Swing Close) level 3':
         high_swing = Close[current_index]
         low_swing = Close[current_index]
         high_flag = 0
