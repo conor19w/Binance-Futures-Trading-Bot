@@ -13,7 +13,6 @@ from Bot_Class import Bot
 from Config_File import API_KEY, API_SECRET
 from Helper import Trade
 import matplotlib
-
 time_delta = timedelta(hours=1)  ## Adjust time for printing based off GMT (This is GMT+1)
 
 def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIME_INTERVAL, Number_Of_Trades,
@@ -147,7 +146,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                                                       High[k][int(i / TIME_INTERVAL)], Low[k][int(i / TIME_INTERVAL)])
                     except Exception as e:
                         print(f"Error at handle_socket_message: {e}")
-            if str(Date[0][int(i / TIME_INTERVAL)]) == start_trading_date:
+            if not trading_on and str(Date[0][int(i / TIME_INTERVAL)]) == start_trading_date:
                 trading_on = True
                 print("Trading Started")
 
