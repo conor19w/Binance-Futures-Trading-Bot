@@ -415,7 +415,7 @@ if __name__ == '__main__':
     client = Client(api_key=API_KEY, api_secret=API_SECRET)
 
     if Trade_All_Coins:
-        x = client.futures_exchange_info()
+        x = client.futures_exchange_info()['symbols']
         symbol = [y['symbol'] for y in x if (y['status'] == 'TRADING' and 'USDT' in y['symbol'] and not '_' in y['symbol'])]
 
     pp = PrettyPrinter()  ##for printing json text cleanly (inspect binance API call returns)
