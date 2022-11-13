@@ -136,7 +136,6 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, buffer: str,
                 temp_dec = [Bots[i].Make_decision() for i in range(len(Bots))] ## get all signals
                 new_trades = [[i, temp_dec[i]] for i in range(len(Bots)) if temp_dec[i][0]!=-99 and Bots[i].symbol
                               not in open_trades+bot_trades] ## get new trades, exclude (trades that didn't give a long/short signal) AND (those tht already have an active position already)
-                new_trades = []
             ##Sort out new trades to be opened
             while len(new_trades) > 0 and len(active_trades) < Max_Number_Of_Trades:
                 '''
