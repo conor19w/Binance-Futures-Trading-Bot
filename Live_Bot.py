@@ -164,116 +164,120 @@ def Check_for_signals(pipe: Pipe, leverage: int, order_Size: float, buffer: str,
             ##Clear trades, so they don't carry to next candle
             new_trades = []
 
-            time.sleep(10)  ## Sleep for 10 seconds to give the CPU a break
-            client.futures_ping()  ## ping the server every 15 seconds
+            rightnow = datetime.now().time()  ##time right now
+            timer = timedelta(hours=0, minutes=0, seconds=15)  ##how often to run code below
+            if (datetime.combine(date.today(), rightnow) - datetime.combine(yesterdate, start)) > timer:
+                client.futures_ping()  ## ping the server every 15 seconds
+                start = datetime.now().time()  ##reset start
+                yesterdate = date.today()
 
-            ##Set Tp's and SL's
-            proceed_with_below = False  ## Check If we need to set any TP's or SL's
-            for trade in active_trades:
-                if trade.trade_status == 0:
-                    proceed_with_below = True
-            trade_index = 0
-            while trade_index < len(active_trades):
-                if not proceed_with_below:
-                    break ## Break out of this loop if all trades have TP's and SL's
-                pop_flag = False
+                ##Set Tp's and SL's
+                proceed_with_below = False ## Check If we need to set any TP's or SL's
+                for trade in active_trades:
+                    if trade.trade_status == 0:
+                        proceed_with_below = True
+                trade_index = 0
+                while trade_index < len(active_trades):
+                    if not proceed_with_below:
+                        break ## Break out of this loop if all trades have TP's and SL's
+                    pop_flag = False
 
-                if active_trades[trade_index].trade_status == 0 and float(client.futures_position_information(symbol=active_trades[trade_index].symbol)[0]['notional']) != 0:
+                    if active_trades[trade_index].trade_status == 0 and float(client.futures_position_information(symbol=active_trades[trade_index].symbol)[0]['notional']) != 0:
 
-                    active_trades[trade_index].entry_price = float(client.futures_position_information(symbol=active_trades[trade_index].symbol)[0]['entryPrice'])
-                    take_profit_val = 0
-                    stop_loss_val = 0
-                    if active_trades[trade_index].trade_direction:
-                        take_profit_val = active_trades[trade_index].TP_val + active_trades[trade_index].entry_price
-                        stop_loss_val = active_trades[trade_index].entry_price - active_trades[trade_index].SL_val
+                        active_trades[trade_index].entry_price = float(client.futures_position_information(symbol=active_trades[trade_index].symbol)[0]['entryPrice'])
+                        take_profit_val = 0
+                        stop_loss_val = 0
+                        if active_trades[trade_index].trade_direction:
+                            take_profit_val = active_trades[trade_index].TP_val + active_trades[trade_index].entry_price
+                            stop_loss_val = active_trades[trade_index].entry_price - active_trades[trade_index].SL_val
+                        else:
+                            take_profit_val = active_trades[trade_index].entry_price - active_trades[trade_index].TP_val
+                            stop_loss_val = active_trades[trade_index].entry_price + active_trades[trade_index].SL_val
+
+                        ##This position has been opened
+                        if active_trades[trade_index].TP_id == '':
+                            active_trades[trade_index].TP_id = TM.place_TP(symbol=active_trades[trade_index].symbol, TP=[take_profit_val, active_trades[trade_index].position_size],
+                                                                           trade_direction=active_trades[trade_index].trade_direction, CP=Bots[active_trades[trade_index].index].CP,
+                                                                           tick_size=Bots[active_trades[trade_index].index].tick_size, time=Bots[trade_index].Date[-1])
+
+                        active_trades[trade_index].SL_id = TM.place_SL(symbol=active_trades[trade_index].symbol, SL=stop_loss_val, trade_direction=active_trades[trade_index].trade_direction,
+                                                                       CP=Bots[active_trades[trade_index].index].CP, tick_size=Bots[active_trades[trade_index].index].tick_size, time=Bots[trade_index].Date[-1])
+                        active_trades[trade_index].trade_status = 1 ## In a Trade
+                        ##Order would trigger immediately so close the position
+                        if active_trades[trade_index].SL_id == -1 or active_trades[trade_index].TP_id == -1:
+                            TM.close_position(symbol=active_trades[trade_index].symbol,
+                                              trade_direction=active_trades[trade_index].trade_direction,
+                                              total_position_size=active_trades[trade_index].position_size, time=Bots[trade_index].Date[-1])
+                            print(f"Closed Trade on {active_trades[trade_index].symbol} as SL OR TP would have thrown a trigger immediately error")
+                            pop_flag = True
+                            break
+
+                    if active_trades[trade_index].trade_status == 0:
+                        ## trade hasn't opened yet so check it hasn't gone past threshold
+                        order_notional = leverage * order_Size * account_balance
+                        _, _, _, active_trades[trade_index].trade_status = TM.open_trade_check_threshold(symbol=active_trades[trade_index].symbol,
+                                                                               trade_direction=active_trades[trade_index].trade_direction,
+                                                                               order_notional=order_notional,
+                                                                               CP=Bots[active_trades[trade_index].index].CP, OP=Bots[active_trades[trade_index].index].OP,
+                                                                               tick_size=Bots[active_trades[trade_index].index].tick_size,
+                                                                               time=Bots[active_trades[trade_index].index].Date[-1], close=Bots[active_trades[trade_index].index].Close[-1],
+                                                                               trading_threshold=trading_threshold, orderID=active_trades[trade_index].order_id,
+                                                                               old_entry_price=active_trades[trade_index].entry_price)
+                        if active_trades[trade_index].trade_status == -99:
+                            pop_flag = True  ## pop off trade as threshold was reached
+                    if pop_flag:
+                        try:
+                            client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)  ##Close open orders on that symbol
+                        except Exception as e:
+                            print(f"Failed to cancel Trade on {active_trades[trade_index].symbol}, Error: {e}")
+                            pop_flag = False
+                            trade_index += 1
+                        if pop_flag:
+                            active_trades.pop(trade_index)
                     else:
-                        take_profit_val = active_trades[trade_index].entry_price - active_trades[trade_index].TP_val
-                        stop_loss_val = active_trades[trade_index].entry_price + active_trades[trade_index].SL_val
-
-                    ##This position has been opened
-                    if active_trades[trade_index].TP_id == '':
-                        active_trades[trade_index].TP_id = TM.place_TP(symbol=active_trades[trade_index].symbol, TP=[take_profit_val, active_trades[trade_index].position_size],
-                                                                       trade_direction=active_trades[trade_index].trade_direction, CP=Bots[active_trades[trade_index].index].CP,
-                                                                       tick_size=Bots[active_trades[trade_index].index].tick_size, time=Bots[trade_index].Date[-1])
-
-                    active_trades[trade_index].SL_id = TM.place_SL(symbol=active_trades[trade_index].symbol, SL=stop_loss_val, trade_direction=active_trades[trade_index].trade_direction,
-                                                                   CP=Bots[active_trades[trade_index].index].CP, tick_size=Bots[active_trades[trade_index].index].tick_size, time=Bots[trade_index].Date[-1])
-                    active_trades[trade_index].trade_status = 1 ## In a Trade
-                    ##Order would trigger immediately so close the position
-                    if active_trades[trade_index].SL_id == -1 or active_trades[trade_index].TP_id == -1:
-                        TM.close_position(symbol=active_trades[trade_index].symbol,
-                                          trade_direction=active_trades[trade_index].trade_direction,
-                                          total_position_size=active_trades[trade_index].position_size, time=Bots[trade_index].Date[-1])
-                        print(f"Closed Trade on {active_trades[trade_index].symbol} as SL OR TP would have thrown a trigger immediately error")
-                        pop_flag = True
-                        break
-
-                if active_trades[trade_index].trade_status == 0:
-                    ## trade hasn't opened yet so check it hasn't gone past threshold
-                    order_notional = leverage * order_Size * account_balance
-                    _, _, _, active_trades[trade_index].trade_status = TM.open_trade_check_threshold(symbol=active_trades[trade_index].symbol,
-                                                                           trade_direction=active_trades[trade_index].trade_direction,
-                                                                           order_notional=order_notional,
-                                                                           CP=Bots[active_trades[trade_index].index].CP, OP=Bots[active_trades[trade_index].index].OP,
-                                                                           tick_size=Bots[active_trades[trade_index].index].tick_size,
-                                                                           time=Bots[active_trades[trade_index].index].Date[-1], close=Bots[active_trades[trade_index].index].Close[-1],
-                                                                           trading_threshold=trading_threshold, orderID=active_trades[trade_index].order_id,
-                                                                           old_entry_price=active_trades[trade_index].entry_price)
-                    if active_trades[trade_index].trade_status == -99:
-                        pop_flag = True  ## pop off trade as threshold was reached
-                if pop_flag:
-                    try:
-                        client.futures_cancel_all_open_orders(symbol=active_trades[trade_index].symbol)  ##Close open orders on that symbol
-                    except Exception as e:
-                        print(f"Failed to cancel Trade on {active_trades[trade_index].symbol}, Error: {e}")
-                        pop_flag = False
                         trade_index += 1
-                    if pop_flag:
-                        active_trades.pop(trade_index)
-                else:
-                    trade_index += 1
 
-            ##Check If positions have been closed manually by the user or If trades have hit their TP values or SL value and move SL/ Cancel open orders cause the trade is finished
-            i = 0
-            while i < len(active_trades):
-                position_info = client.futures_position_information(symbol=active_trades[i].symbol)[0]
-                all_orders = client.futures_get_all_orders()
-                if float(position_info['positionAmt']) == 0 and (active_trades[i].trade_status == -99 or active_trades[i].trade_status == 1):
-                    pop_flag = True
-                    try:
-                        client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol)  ##Close open orders on that symbol
+                ##Check If positions have been closed manually by the user or If trades have hit their TP values or SL value and move SL/ Cancel open orders cause the trade is finished
+                i = 0
+                while i < len(active_trades):
+                    position_info = client.futures_position_information(symbol=active_trades[i].symbol)[0]
+                    all_orders = client.futures_get_all_orders()
+                    if float(position_info['positionAmt']) == 0 and (active_trades[i].trade_status == -99 or active_trades[i].trade_status == 1):
+                        pop_flag = True
+                        try:
+                            client.futures_cancel_all_open_orders(symbol=active_trades[i].symbol)  ##Close open orders on that symbol
 
-                    except Exception as e:
-                        print(f"Failed to cancel orders on {active_trades[i].symbol}, Error: {e}")
-                    for order in all_orders:
-                        if order['symbol'] == active_trades[i].symbol and order['orderId'] == \
-                                active_trades[i].TP_id and order['status'] == 'FILLED':
-                            ##Trading Statistics
-                            TS.wins += 1
-                            TS.total_number_of_trades += 1
-                            account_balance = 0
-                            account_balance_info = client.futures_account_balance()
-                            for item in account_balance_info:
-                                if item['asset'] == 'USDT':
-                                    account_balance = float(item['balance'])
-                                    break
-                        elif order['symbol'] == active_trades[i].symbol and order['orderId'] == \
-                                active_trades[i].SL_id and order['status'] == 'FILLED':
-                            ##Trading Statistics
-                            TS.losses += 1
-                            TS.total_number_of_trades += 1
-                            account_balance = 0
-                            account_balance_info = client.futures_account_balance()
-                            for item in account_balance_info:
-                                if item['asset'] == 'USDT':
-                                    account_balance = float(item['balance'])
-                                    break
-                    if pop_flag:
-                        active_trades.pop(i)
+                        except Exception as e:
+                            print(f"Failed to cancel orders on {active_trades[i].symbol}, Error: {e}")
+                        for order in all_orders:
+                            if order['symbol'] == active_trades[i].symbol and order['orderId'] == \
+                                    active_trades[i].TP_id and order['status'] == 'FILLED':
+                                ##Trading Statistics
+                                TS.wins += 1
+                                TS.total_number_of_trades += 1
+                                account_balance = 0
+                                account_balance_info = client.futures_account_balance()
+                                for item in account_balance_info:
+                                    if item['asset'] == 'USDT':
+                                        account_balance = float(item['balance'])
+                                        break
+                            elif order['symbol'] == active_trades[i].symbol and order['orderId'] == \
+                                    active_trades[i].SL_id and order['status'] == 'FILLED':
+                                ##Trading Statistics
+                                TS.losses += 1
+                                TS.total_number_of_trades += 1
+                                account_balance = 0
+                                account_balance_info = client.futures_account_balance()
+                                for item in account_balance_info:
+                                    if item['asset'] == 'USDT':
+                                        account_balance = float(item['balance'])
+                                        break
+                        if pop_flag:
+                            active_trades.pop(i)
+                        else:
+                            i += 1
                     else:
                         i += 1
-                else:
-                    i += 1
 
             if print_flag:
                 account_balance = 0
