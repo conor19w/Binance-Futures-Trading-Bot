@@ -326,7 +326,7 @@ if __name__ == "__main__":
     label4 = tk.Label(root, text="Strategy:", bg="light blue")
     label4.place(relx=.55, rely=.1)
     strategy_options = ["StochRSIMACD", "tripleEMAStochasticRSIATR", "tripleEMA", "breakout", "stochBB", "goldenCross",
-                        "candle_wick", "fibMACD", "EMA_cross", "heikin_ashi_ema2", "heikin_ashi_ema", "ema_crossover"]
+                        "candle_wick", "fibMACD", "EMA_cross", "heikin_ashi_ema2", "heikin_ashi_ema"]
     strategy = StringVar()
     strategy.set("StochRSIMACD")
     strategy_options_dropdown = tk.OptionMenu(root, strategy, *strategy_options)

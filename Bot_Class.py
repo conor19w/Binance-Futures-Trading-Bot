@@ -138,9 +138,6 @@ class Bot:
             self.fastd = np.array(stochrsi_d(pd.Series(self.Close)))
             self.fastk = np.array(stochrsi_k(pd.Series(self.Close)))
             self.EMA200 = np.array(ema_indicator(pd.Series(self.Close), window=200))
-        elif self.strategy == 'ema_crossover':
-            self.EMA_short = np.array(ema_indicator(pd.Series(self.Close), window=10))
-            self.EMA_long = np.array(ema_indicator(pd.Series(self.Close), window=20))
 
     def update_TP_SL(self):
         ## Run Once in Backtester/ Run every candle in Live Bot
