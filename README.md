@@ -5,8 +5,6 @@
 * See Documentation below to implement your TA strategies.
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
-* Works best with Python 3.8.10 on Linux.
-* On Windows you may run into issues, using the docker file / reducing the number of coins you are trading might help
 * Utilizes [python-Binance](https://python-binance.readthedocs.io/en/latest/) Client to execute orders and pull data from Binance
 * Utilizes [ta](https://technical-analysis-library-in-python.readthedocs.io/en/latest/) library for Technical indicators
 * [Set up windows to sync time once a day](https://www.makeuseof.com/tag/synchronise-computer-time-internet-custom-schedule-windows-7/#:~:text=Go%20to%20%3E%20Start%20and%20type,on%20the%20right%20hand%20side) if you don't do this binance will eventually reject orders with a timestamp error.
