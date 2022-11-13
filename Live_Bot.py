@@ -331,8 +331,9 @@ def run_bot(API_KEY, API_SECRET, leverage, order_Size, buffer, Interval, Max_Num
     client = Client(api_key=API_KEY, api_secret=API_SECRET)
 
     if Trade_All_Coins:
-        x = client.futures_ticker()
-        symbol = [y['symbol'] for y in x if (('USDT' in y['symbol']) and not('_' in y['symbol']))]
+        x = client.futures_exchange_info()['symbols']
+        symbol = [y['symbol'] for y in x if
+                  (y['status'] == 'TRADING' and 'USDT' in y['symbol'] and not '_' in y['symbol'])]
 
     twm = ThreadedWebsocketManager(api_key=API_KEY, api_secret=API_SECRET)
     twm.start()  ##start manager

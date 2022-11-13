@@ -22,12 +22,8 @@ Data = {}
 client = Client(api_key=API_KEY, api_secret=API_SECRET)
 
 if Trade_All_Coins:
-    symbol = []
-    x = client.futures_ticker()
-    for y in x:
-        symbol.append(y['symbol'])
-    symbol = [x for x in symbol if 'USDT' in x]
-    symbol = [x for x in symbol if not '_' in x]
+    x = client.futures_exchange_info()['symbols']
+    symbol = [y['symbol'] for y in x if (y['status'] == 'TRADING' and 'USDT' in y['symbol'] and not '_' in y['symbol'])]
 
 DH: [Data_Handler] = []
 
@@ -43,6 +39,7 @@ def web_soc_process(pipe: Pipe, twm: ThreadedWebsocketManager):
     global DH, Data, streams
     ##keep process running
     while True:
+        time.sleep(3)
         ##Check if all coins we are trading have received a new data point
         count = 0
         for data in DH:
