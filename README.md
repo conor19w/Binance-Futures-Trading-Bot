@@ -31,7 +31,6 @@ python3 Live_Bot.py
 ```
 * Settings are in __Config_File.py__
 * Trade a single position at a time by setting ```Number_Of_Trades = 1```, to trade multiple coins just increment this value.
-* Choose the ```Interval``` you want to trade and the ```buffer``` of candlesticks your strategy will need this will be dependent on indicators you need to ensure you have a sufficient buffer, or you will get errors.
 * ```leverage``` and ```order_Size``` should be changed according to your preference
 * ```symbol[]``` is a list of the symbols you wish to trade, If you wish to trade all symbols set ```Trade_All_Coins = True```.
 * __Trailing stop: set ```use_trailing_stop = 1``` and change ```trailing_stop_percent``` to suit your strategy to use the trailing stop (Min val .001 i.e .1%, Max 5 i.e. 5%). The trailing stop will be placed when the take profit value margin of increase/decrease is reached from your strategy__.
@@ -41,6 +40,16 @@ python3 Live_Bot.py
 candle_wick, fibMACD, EMA_cross, heikin_ashi_ema2 & heikin_ashi_ema
 * ```TP_SL_choice``` correspond to the type of SL/TP seen in the dropdowns in the GUI see below for adding custom ones.
 * ```SL_mult``` and ```TP_mult``` correspond to the numbers preceding the TP and SL choice dropdowns.
+* Choose the ```Interval``` you want to trade and the ```buffer``` of candlesticks your strategy will need this will be dependent on indicators you need to ensure you have a sufficient buffer, or you will get errors. 
+* Buffer sizes should be about 5 times the length of your largest EMA. In TradingStrats.py you'll find all the strategies, taking ```tripleEMAStochasticRSIATR``` as an example:  
+That strategy has a 50EMA as its largest EMA, so you need at least 250 candles.
+If you're trading the:
+  * 1m timeframe this would be 250 minutes buffer 
+  * 3m timeframe would be 750 minutes buffer 
+  * 5m timeframe would be 1250 minutes buffer 
+  etc...  
+(not sure that this is valid buffer input but you can convert these amounts to hours/ days) 
+
 
 __Docker container creation__ (Recommended for anyone having issues running the bot):
 * Navigate to the project directory in your terminal window
