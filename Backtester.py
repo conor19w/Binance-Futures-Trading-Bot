@@ -328,7 +328,8 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 num_wins += 1
                 average += (profitgraph[0][i] - profitgraph[0][i - 1]) / profitgraph[0][i]
 
-        average /= num_wins
+        if num_wins != 0:
+            average /= num_wins
         CAGR = 0
         vol = 0
         Sharpe_ratio = 0
