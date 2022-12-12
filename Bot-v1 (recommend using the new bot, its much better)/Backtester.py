@@ -39,12 +39,10 @@ use_trailing_stop = 0  ##flag to use trailing stop, If on when the takeprofitval
 trailing_stop_callback = .005  ## 1% trailing stop activated by hitting the takeprofitval for a coin
 
 time_delta = timedelta(hours=1)  ## Adjust time for printing based off GMT (This is GMT+1)
-
 symbol = ['ETHUSDT', 'BTCUSDT', 'NEARUSDT', 'DOGEUSDT']#, '1000SHIBUSDT']#, 'BTCUSDT']  #['ZILUSDT','WAVESUSDT','RENUSDT','RAYUSDT','LINAUSDT','CTKUSDT']#,'AKROUSDT','ANCUSDT','API3USDT','BAKEUSDT',
           #'CTSIUSDT','ICPUSDT','KNCUSDT','LINAUSDT','RAYUSDT']  #, 'COTIUSDT', 'ETHUSDT']  ## If Above is false strategy will only trade the list of coins specified here
 print_to_csv = False
 csv_name = 'myFile.csv'
-
 
 if plot_graphs_to_folder and not os.path.exists(f'{graph_folder_location}'):
     os.makedirs(f'{graph_folder_location}')
