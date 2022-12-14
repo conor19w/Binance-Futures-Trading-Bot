@@ -51,7 +51,7 @@ If you're trading the:
 (not sure that this is valid buffer input but you can convert these amounts to hours/ days) 
 
 
-__Docker container creation__ (Recommended for anyone having issues running the bot):
+__Docker container creation__:
 * Navigate to the project directory in your terminal window
 * Run the following Command this will create a docker image with the current state of your Config.py and choice of strategy in Bot_Class.py:
 
@@ -63,10 +63,16 @@ sudo docker run -it live_bot
 
 ---
 ### GUI for Backtesting and Live Trading ###
-__Just Run ```app.py``` to get the GUI__
+* Run ```app.py``` to get the GUI
 ```commandline
 python3 app.py
 ```
+* Otherwise run a backtest from the ```Backtester.py``` Script by configuring the inputs found in: 
+```
+__name__ == "__main__":
+```
+Backtests are saved in a folder named backtests on completion of a backtest, along with a csv file of the trades taken.
+
 ![](files/Backtester.PNG)
 * Backtests are displayed in the terminal while running, the results are then saved to a csv file in the current directory along with a graph image.  
 
