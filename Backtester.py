@@ -520,7 +520,7 @@ if __name__ == "__main__":
      Trade Graphing Settings
     '''
     graph_buys_and_sells = True
-    auto_open_graph_images = True ## Set to true to open all the trade graphs on completion (Caution this may use up a lot of memory)
+    auto_open_graph_images = False ## Set to true to open all the trade graphs on completion (Caution this may use up a lot of memory)
     graph_buys_and_sells_window_before = 5 ## graph 10 candles before the trade opened
     graph_buys_and_sells_window_after = 5 ## graph 10 candles after the trade opened
 
