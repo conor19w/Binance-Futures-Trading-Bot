@@ -1223,7 +1223,7 @@ def get_candles_for_graphing(Bot: Bot_Class.Bot, trade:Trade, graph_before, grap
 
     return trade
 
-def generate_trade_graphs(trades: [trade_info], trade_graph_folder):
+def generate_trade_graphs(trades: [trade_info], trade_graph_folder, auto_open_graph_images):
     print("Generating Trade Graphs...")
     os.makedirs(f'{trade_graph_folder}//losing_trades')
     os.makedirs(f'{trade_graph_folder}//winning_trades')
@@ -1305,11 +1305,11 @@ def generate_trade_graphs(trades: [trade_info], trade_graph_folder):
         if trade.trade_success == 1:
             fig.update_layout(title=f'{trade.start_time}: {trade.symbol} Winning Trade',
                               xaxis_rangeslider_visible=False, template='plotly_dark')
-            plotly.offline.plot(fig, filename=f"{trade_graph_folder}//winning_trades//{trade.symbol}//{trade.start_time}.html", auto_open=False)
+            plotly.offline.plot(fig, filename=f"{trade_graph_folder}//winning_trades//{trade.symbol}//{trade.start_time}.html", auto_open=auto_open_graph_images)
         else:
             fig.update_layout(title=f'{trade.start_time}: {trade.symbol} Losing Trade',
                               xaxis_rangeslider_visible=False, template='plotly_dark')
-            plotly.offline.plot(fig, filename=f"{trade_graph_folder}//losing_trades//{trade.symbol}//{trade.start_time}.html", auto_open=False)
+            plotly.offline.plot(fig, filename=f"{trade_graph_folder}//losing_trades//{trade.symbol}//{trade.start_time}.html", auto_open=auto_open_graph_images)
 
     print("Finished Generating Trade Graphs")
 

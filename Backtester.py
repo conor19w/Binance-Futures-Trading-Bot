@@ -20,7 +20,7 @@ def run_backtester(account_balance_start, leverage, order_size,  start, end, TIM
                    percent_gain_threshold, particular_drawdown, min_dd, symbol, use_trailing_stop,
                    trailing_stop_callback, slippage, strategy='', TP_SL_choice='',
                    SL_mult:float=1, TP_mult:float=1, use_multiprocessing_for_downloading_data=False,
-                   graph_folder_location='./', plot_graphs_to_folder=True, print_to_csv=True, fee=.00036,
+                   graph_folder_location='./', plot_graphs_to_folder=True, auto_open_graph_images=False, print_to_csv=True, fee=.00036,
                    printing_on=True, add_delay=False, buffer=2000, trading_on=True, quick_test=True, graph_buys_and_sells = True,
                    graph_before=10, graph_after=10):
     if plot_graphs_to_folder:
@@ -486,7 +486,7 @@ def run_backtester(account_balance_start, leverage, order_size,  start, end, TIM
         print(f"Trades Closed on Condition:\n {closed_on_condition}")
 
     if graph_buys_and_sells:
-        Helper.generate_trade_graphs(trades_for_graphing, backtest_path) ## trades: [symbol, entry_price, TP_price, SL_price, indicators, candles]
+        Helper.generate_trade_graphs(trades_for_graphing, backtest_path, auto_open_graph_images) ## trades: [symbol, entry_price, TP_price, SL_price, indicators, candles]
 
 if __name__ == "__main__":
     start = "01-12-22"
@@ -515,7 +515,12 @@ if __name__ == "__main__":
 
     symbol = ['BTCUSDT', 'BAKEUSDT']  ## list of coins to trade, example: ['ETHUSDT', 'BNBUSDT']
     Trade_All_Symbols = False  ## will test on all coins on exchange if true
+
+    '''
+     Trade Graphing Settings
+    '''
     graph_buys_and_sells = True
+    auto_open_graph_images = True ## Set to true to open all the trade graphs on completion (Caution this may use up a lot of memory)
     graph_buys_and_sells_window_before = 5 ## graph 10 candles before the trade opened
     graph_buys_and_sells_window_after = 5 ## graph 10 candles after the trade opened
 
@@ -531,4 +536,5 @@ if __name__ == "__main__":
                    SL_mult, TP_mult, use_multiprocessing_for_downloading_data, graph_folder_location='./',
                    plot_graphs_to_folder=True, print_to_csv=True, fee=fee, printing_on=True, add_delay=False,
                    buffer=buffer, trading_on=trading_on, quick_test=quick_test, graph_buys_and_sells=graph_buys_and_sells,
-                   graph_before=graph_buys_and_sells_window_before, graph_after=graph_buys_and_sells_window_after)
+                   auto_open_graph_images=auto_open_graph_images, graph_before=graph_buys_and_sells_window_before,
+                   graph_after=graph_buys_and_sells_window_after)
