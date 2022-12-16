@@ -305,7 +305,7 @@ if __name__ == "__main__":
     Live_Bot.place(relwidth=(1/4), relheight=(1/20), relx=0, rely=.95)
     Backtester = tk.Button(root, text="Backtester", fg='black', bg="light blue", activebackground="light blue", cursor="trek", command=backtest_mode)
     Backtester.place(relwidth=(1/4), relheight=(1/20), relx=(1/4), rely=.95)
-    host = tk.Button(root, text="Hosting on AWS", fg='white', bg="#457E81", activebackground="light blue", cursor="trek", command=host_mode)
+    host = tk.Button(root, text="Web App", fg='white', bg="#457E81", activebackground="light blue", cursor="trek", command=host_mode)
     host.place(relwidth=(1/4), relheight=(1/20), relx=(2/4), rely=.95)
     host = tk.Button(root, text="Suggestions", fg='white', bg="#457E81", activebackground="light blue", cursor="trek", command=go_to_trello)
     host.place(relwidth=(1 / 4), relheight=(1 / 20), relx=(3 / 4), rely=.95)
