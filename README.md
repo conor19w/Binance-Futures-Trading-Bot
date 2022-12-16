@@ -7,6 +7,7 @@
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)
 * Utilizes [python-Binance](https://python-binance.readthedocs.io/en/latest/) Client to execute orders and pull data from Binance
 * Utilizes [ta](https://technical-analysis-library-in-python.readthedocs.io/en/latest/) library for Technical indicators
+* Utilizes [plotly](https://plotly.com/graphing-libraries/) for generating interactive Trade graphs.
 * [Set up windows to sync time once a day](https://www.makeuseof.com/tag/synchronise-computer-time-internet-custom-schedule-windows-7/#:~:text=Go%20to%20%3E%20Start%20and%20type,on%20the%20right%20hand%20side) if you don't do this binance will eventually reject orders with a timestamp error.
 
 #### Creating Custom Strategies: ####
@@ -72,6 +73,9 @@ python3 app.py
 __name__ == "__main__":
 ```
 Backtests are saved in a folder named backtests on completion of a backtest, along with a csv file of the trades taken.
+* An interactive html file is generated for each trade (using [plotly](https://plotly.com/graphing-libraries/)), so you can do analysis on winning and losing trades.
+![](files/trade_example.PNG)
+
 
 ![](files/Backtester.PNG)
 * Backtests are displayed in the terminal while running, the results are then saved to a csv file in the current directory along with a graph image.  

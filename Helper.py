@@ -1,17 +1,23 @@
-import time
-
+import numpy as np
+import pandas as pd
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from binance.enums import *
 from datetime import datetime
+from pprint import PrettyPrinter
+import plotly
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
+from matplotlib import pyplot as plt
+
+import Bot_Class
 from Config_File import API_KEY, API_SECRET
 from joblib import load, dump
 import sys, os
 from tabulate import tabulate
 import multiprocessing
-client = Client(api_key=API_KEY,
-                api_secret=API_SECRET)  ##Binance keys needed to get historical data/ Trade on an account
 
+client = Client(api_key=API_KEY, api_secret=API_SECRET)  ##Binance keys needed to Trade on an account, can remove keys if backtesting
 price_data_path = '.'
 
 class Data_Handler:
@@ -76,13 +82,27 @@ class Trade_Stats:
         self.losses = 0
 
 
+class trade_info:
+    def __init__(self, symbol, TP_price, SL_price, trade_direction):
+        self.slippage = None
+        self.symbol = symbol
+        self.entry_price = None
+        self.TP_price = TP_price
+        self.SL_price = SL_price
+        self.trade_direction = trade_direction
+        self.trade_success = False
+        self.trade_start_index = -99
+        self.indicators = {}
+        self.candles = {}
+        self.start_time = ''
+
 class Trade:
-    def __init__(self, index: int, position_size: float, tp_val: float, stop_loss_val: float, trade_direction: int, order_id_temp: int, symbol: str):
+    def __init__(self, index: int, position_size: float, take_profit_val: float, stop_loss_val: float, trade_direction: int, order_id_temp: int, symbol: str):
         self.index = index
         self.symbol = symbol
         self.entry_price = -99
         self.position_size = position_size
-        self.TP_val = tp_val
+        self.TP_val = take_profit_val
         self.SL_val = stop_loss_val
         self.trade_direction = trade_direction
         self.order_id = order_id_temp
@@ -94,6 +114,7 @@ class Trade:
         self.Lowest_val = 999999
         self.trail_activated = False
         self.same_candle = True
+        self.trade_info: trade_info = trade_info(symbol, take_profit_val, stop_loss_val, trade_direction)
     def print_vals(self):
         return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status, self.Highest_val, self.Lowest_val
 
@@ -343,7 +364,7 @@ def get_TIME_INTERVAL(TIME_INTERVAL):
 
 
 def get_Klines(symbol, start_str, end_str, path):
-    ##Manipulate dates to american format:
+    ## Manipulate dates to american format:
     start_date = f'{start_str[3:5]}-{start_str[0:2]}-{start_str[6:]}'
     end_date = f'{end_str[3:5]}-{end_str[0:2]}-{end_str[6:]}'
     print(f"Downloading CandleStick Data for {symbol}...")
@@ -375,24 +396,26 @@ def get_Klines(symbol, start_str, end_str, path):
     for kline in client.futures_historical_klines(symbol, '1m', start_str=start_date, end_str=end_date):
         #:return: list of OHLCV values (Open time, Open, High, Low, Close, Volume, Close time, Quote asset volume, Number of trades, Taker buy base asset volume, Taker buy quote asset volume, Ignore)
         candle_open = datetime.utcfromtimestamp(round(kline[0] / 1000))
+        candle_close = datetime.utcfromtimestamp((round(kline[6] / 1000)))
         price_data['Open_1m'].append(float(kline[1]))
         price_data['High_1m'].append(float(kline[2]))
         price_data['Low_1m'].append(float(kline[3]))
         price_data['Close_1m'].append(float(kline[4]))
         price_data['Volume_1m'].append(round(float(kline[7])))
-        price_data['Date_1m'].append(datetime.utcfromtimestamp((round(kline[6] / 1000))))
+        price_data['Date_1m'].append(candle_open)
+
         for unit in [3, 5, 15, 30]:
             try:
                 ## Construct the 3m, 5m, 15m, and 30m candles
                 if int(str(candle_open)[-5:-3]) % unit == 0:
                     ##Candle open
+                    price_data[f'Date_{unit}m'].append(candle_open)
                     price_data[f'Open_{unit}m'].append(price_data['Open_1m'][-1])
                     price_data[f'High_{unit}m'].append(price_data['High_1m'][-1])  ##initialize as highest
                     price_data[f'Low_{unit}m'].append(price_data['Low_1m'][-1])  ##initialize as lowest
                     price_data[f'Volume_{unit}m'].append(price_data['Volume_1m'][-1])  ##initialize
-                if int(str(price_data['Date_1m'][-1])[-5:-3]) % unit == 0:
+                if int(str(candle_close)[-5:-3]) % unit == 0:
                     ##Candle close time
-                    price_data[f'Date_{unit}m'].append(price_data['Date_1m'][-1])
                     price_data[f'Close_{unit}m'].append(price_data['Close_1m'][-1])
                     ##Check if higher high or lower low present:
                     if price_data['High_1m'][-1] > price_data[f'High_{unit}m'][-1]:
@@ -401,7 +424,7 @@ def get_Klines(symbol, start_str, end_str, path):
                         price_data[f'Low_{unit}m'][-1] = price_data['Low_1m'][-1]  ##update as lowest
                     price_data[f'Volume_{unit}m'][-1] += price_data['Volume_1m'][-1]  ## add on volume
                     price_data[f'Volume_{unit}m'][-1] = round(price_data[f'Volume_{unit}m'][-1])
-                elif not int(str(candle_open)[-5:-3]) % unit == 0 and not int(str(price_data['Date_1m'][-1])[-5:-3]) % unit == 0:
+                elif not int(str(candle_open)[-5:-3]) % unit == 0 and not int(str(candle_close)[-5:-3]) % unit == 0:
                     ## Check for higher and lower candle inbetween:
                     if price_data['High_1m'][-1] > price_data[f'High_{unit}m'][-1]:
                         price_data[f'High_{unit}m'][-1] = price_data['High_1m'][-1]  ##update as highest
@@ -420,7 +443,7 @@ def get_Klines(symbol, start_str, end_str, path):
                     price_data[f'High_{unit}h'].append(price_data['High_1m'][-1])  ##initialize as highest
                     price_data[f'Low_{unit}h'].append(price_data['Low_1m'][-1])  ##initialize as lowest
                     price_data[f'Volume_{unit}h'].append(price_data['Volume_1m'][-1])  ##initialize
-                if int(str(price_data['Date_1m'][-1])[-8:-6]) % unit == 0 and int(str(price_data['Date_1m'][-1])[-5:-3]) == 0:
+                if int(str(candle_close)[-8:-6]) % unit == 0 and int(str(candle_close)[-5:-3]) == 0:
                     ##Candle close time
                     price_data[f'Date_{unit}h'].append(price_data['Date_1m'][-1])
                     price_data[f'Close_{unit}h'].append(price_data['Close_1m'][-1])
@@ -432,7 +455,7 @@ def get_Klines(symbol, start_str, end_str, path):
                     price_data[f'Volume_{unit}h'][-1] += price_data['Volume_1m'][-1]  ## add on volume
                     price_data[f'Volume_{unit}h'][-1] = round(price_data[f'Volume_{unit}h'][-1])
                 elif not (int(str(candle_open)[-8:-6]) % unit == 0 and int(str(candle_open)[-5:-3]) == 0) and \
-                        not (int(str(price_data['Date_1m'][-1])[-8:-6]) % unit == 0 and int(str(price_data['Date_1m'][-1])[-5:-3]) == 0):
+                        not (int(str(candle_close)[-8:-6]) % unit == 0 and int(str(candle_close)[-5:-3]) == 0):
                     ## Check for higher and lower candle inbetween:
                     if price_data['High_1m'][-1] > price_data[f'High_{unit}h'][-1]:
                         price_data[f'High_{unit}h'][-1] = price_data['High_1m'][-1]  ##update as highest
@@ -1031,3 +1054,280 @@ def log_info(active_trades: [Trade], trade_price, Dates, account_balance, csv_na
     with open(csv_name, 'a') as O:
         for i in range(len(active_trades)):
             O.write(f"Account Balance: {account_balance}" + "\n" + tabulate(info, headers='keys', tablefmt='fancy_grid') + "\n")
+
+
+
+def generate_trade_graphs1(trades: [trade_info], graph_before, trade_graph_folder):
+    # pp = PrettyPrinter()
+    os.makedirs(f'{trade_graph_folder}//losing_trades')
+    os.makedirs(f'{trade_graph_folder}//winning_trades')
+    for trade, i in zip(trades, range(len(trades))):
+        if not os.path.exists(f'{trade_graph_folder}//losing_trades//{trade.symbol}'):
+            os.makedirs(f'{trade_graph_folder}//losing_trades//{trade.symbol}')
+        if not os.path.exists(f'{trade_graph_folder}//winning_trades//{trade.symbol}'):
+            os.makedirs(f'{trade_graph_folder}//winning_trades//{trade.symbol}')
+
+        # define width of candlestick elements
+        width = .2
+        width2 = .05
+
+        # define up and down prices
+        up_close = []
+        up_open = []
+        up_high = []
+        up_low = []
+        up_index = []
+        down_index = []
+        down_close = []
+        down_open = []
+        down_high = []
+        down_low = []
+        dates = []
+        for j in range(len(trade.candles["Close"])):
+            if trade.candles["Close"][j] >= trade.candles["Open"][j]:
+                dates.append(str(trade.candles["Date"][j])[-8:])
+                up_index.append(str(trade.candles["Date"][j])[-8:])
+                up_close.append(trade.candles["Close"][j])
+                up_open.append(trade.candles["Open"][j])
+                up_high.append(trade.candles["High"][j])
+                up_low.append(trade.candles["Low"][j])
+
+            else:
+                dates.append(str(trade.candles["Date"][j])[-8:])
+                down_index.append(str(trade.candles["Date"][j])[-8:])
+                down_close.append(trade.candles["Close"][j])
+                down_open.append(trade.candles["Open"][j])
+                down_high.append(trade.candles["High"][j])
+                down_low.append(trade.candles["Low"][j])
+        up_close = np.array(up_close)
+        up_open = np.array(up_open)
+        up_high = np.array(up_high)
+        up_low = np.array(up_low)
+
+        down_close = np.array(down_close)
+        down_open = np.array(down_open)
+        down_high = np.array(down_high)
+        down_low = np.array(down_low)
+
+        # define colors to use
+        col1 = 'green'
+        col2 = 'red'
+
+        up_i = 0
+        down_i = 0
+        up_flag = False
+        down_flag = False
+        plt.axhline(y=trade.entry_price, color='y', linestyle='dotted', linewidth=1, label=f'entry price={trade.entry_price}')
+        plt.axhline(y=trade.TP_price, color='g', linestyle='dotted', linewidth=1, label=f'TP={trade.TP_price}')
+        plt.axhline(y=trade.SL_price, color='r', linestyle='dotted', linewidth=1, label=f'SL={trade.SL_price}')
+        while (up_i < len(up_index) and not up_flag) or (down_i < len(down_index) and not down_flag):
+            if up_index[up_i] < down_index[down_i] and not up_flag:
+                plt.bar(up_index[up_i], up_close[up_i] - up_open[up_i], width, bottom=up_open[up_i], color=col1)
+                plt.bar(up_index[up_i], up_high[up_i] - up_close[up_i], width2, bottom=up_close[up_i],
+                           color=col1)
+                plt.bar(up_index[up_i], up_low[up_i] - up_open[up_i], width2, bottom=up_open[up_i], color=col1)
+                up_i += 1
+                if up_i == len(up_index):
+                    up_i -= 1
+                    up_flag = True
+            elif down_flag:
+                plt.bar(up_index[up_i], up_close[up_i] - up_open[up_i], width, bottom=up_open[up_i], color=col1)
+                plt.bar(up_index[up_i], up_high[up_i] - up_close[up_i], width2, bottom=up_close[up_i],color=col1)
+                plt.bar(up_index[up_i], up_low[up_i] - up_open[up_i], width2, bottom=up_open[up_i], color=col1)
+                up_i += 1
+                if up_i == len(up_index):
+                    up_i -= 1
+                    up_flag = True
+            elif up_index[up_i] > down_index[down_i] and not down_flag:
+                plt.bar(down_index[down_i], down_close[down_i] - down_open[down_i], width, bottom=down_open[down_i],color=col2)
+                plt.bar(down_index[down_i], down_high[down_i] - down_open[down_i], width2, bottom=down_open[down_i],color=col2)
+                plt.bar(down_index[down_i], down_low[down_i] - down_close[down_i], width2, bottom=down_close[down_i],color=col2)
+                down_i += 1
+                if down_i == len(down_index):
+                    down_i -= 1
+                    down_flag = True
+            elif up_flag:
+                plt.bar(down_index[down_i], down_close[down_i] - down_open[down_i], width, bottom=down_open[down_i],color=col2)
+                plt.bar(down_index[down_i], down_high[down_i] - down_open[down_i], width2, bottom=down_open[down_i],color=col2)
+                plt.bar(down_index[down_i], down_low[down_i] - down_close[down_i], width2, bottom=down_close[down_i],color=col2)
+                down_i += 1
+                if down_i == len(down_index):
+                    down_i -= 1
+                    down_flag = True
+
+        if trade.trade_direction == 1:
+            plt.plot(dates[graph_before + 1], trade.candles["Low"][graph_before + 1] * .999, '^', markersize=4,color='g')
+        else:
+            plt.plot(dates[graph_before + 1], trade.candles["High"][graph_before + 1] * 1.001, 'v', markersize=4,color='r')
+
+        plt.gcf().autofmt_xdate()
+        # rotate x-axis tick labels
+        plt.xticks(fontsize=4,rotation=60, ha='right')
+        # create legend
+        plt.legend(fontsize=5, loc="upper left")
+        if trade.trade_success == 1:
+            plt.title(f'{trade.start_time}: {trade.symbol} Winning Trade')
+            plt.savefig(f'{trade_graph_folder}//winning_trades//{trade.symbol}//{trade.start_time}.png', dpi=500)
+            plt.close()
+        else:
+            plt.title(f'{trade.start_time}: {trade.symbol} Losing Trade')
+            plt.savefig(f'{trade_graph_folder}//losing_trades//{trade.symbol}//{trade.start_time}.png', dpi=500)
+            plt.close()
+        print(f"Trade Graph {i+1} of {len(trades)} complete")
+
+
+def get_candles_for_graphing(Bot: Bot_Class.Bot, trade:Trade, graph_before, graph_after):
+    try:
+        if Bot.using_heikin_ashi:
+            trade.trade_info.candles = {"Date": Bot.Date[trade.trade_info.trade_start_index - graph_before:
+                                                         Bot.current_index + graph_after],
+                                        "Open": Bot.Open_H[trade.trade_info.trade_start_index - graph_before:
+                                                         Bot.current_index + graph_after],
+                                        "Close": Bot.Close_H[trade.trade_info.trade_start_index - graph_before:
+                                                           Bot.current_index + graph_after],
+                                        "High": Bot.High_H[trade.trade_info.trade_start_index - graph_before:
+                                                         Bot.current_index + graph_after],
+                                        "Low": Bot.Low_H[trade.trade_info.trade_start_index - graph_before:
+                                                       Bot.current_index + graph_after],
+                                        "Volume": Bot.Volume[trade.trade_info.trade_start_index - graph_before:
+                                                             Bot.current_index + graph_after], }
+        else:
+            trade.trade_info.candles = {"Date": Bot.Date[trade.trade_info.trade_start_index - graph_before:
+                                                Bot.current_index + graph_after],
+                                        "Open": Bot.Open[trade.trade_info.trade_start_index - graph_before:
+                                                Bot.current_index + graph_after],
+                                        "Close": Bot.Close[trade.trade_info.trade_start_index - graph_before:
+                                                Bot.current_index + graph_after],
+                                        "High": Bot.High[trade.trade_info.trade_start_index - graph_before:
+                                               Bot.current_index + graph_after],
+                                        "Low": Bot.Low[trade.trade_info.trade_start_index - graph_before:
+                                              Bot.current_index + graph_after],
+                                        "Volume": Bot.Volume[trade.trade_info.trade_start_index - graph_before:
+                                                 Bot.current_index + graph_after], }
+    except:
+        if Bot.using_heikin_ashi:
+            trade.trade_info.candles = {
+                "Date": Bot.Date[trade.trade_info.trade_start_index - graph_before:Bot.current_index],
+                "Open": Bot.Open_H[trade.trade_info.trade_start_index - graph_before:Bot.current_index],
+                "Close": Bot.Close_H[trade.trade_info.trade_start_index - graph_before:Bot.current_index],
+                "High": Bot.High_H[trade.trade_info.trade_start_index - graph_before:Bot.current_index],
+                "Low": Bot.Low_H[trade.trade_info.trade_start_index - graph_before:Bot.current_index],
+                "Volume": Bot.Volume[trade.trade_info.trade_start_index - graph_before:Bot.current_index], }
+        else:
+            trade.trade_info.candles = {"Date": Bot.Date[trade.trade_info.trade_start_index - graph_before:Bot.current_index],
+                                        "Open": Bot.Open[trade.trade_info.trade_start_index - graph_before:Bot.current_index],
+                                        "Close": Bot.Close[trade.trade_info.trade_start_index - graph_before:Bot.current_index],
+                                        "High": Bot.High[trade.trade_info.trade_start_index - graph_before:Bot.current_index],
+                                        "Low": Bot.Low[trade.trade_info.trade_start_index - graph_before:Bot.current_index],
+                                        "Volume": Bot.Volume[trade.trade_info.trade_start_index - graph_before:Bot.current_index], }
+
+    return trade
+
+def generate_trade_graphs(trades: [trade_info], trade_graph_folder):
+    print("Generating Trade Graphs...")
+    os.makedirs(f'{trade_graph_folder}//losing_trades')
+    os.makedirs(f'{trade_graph_folder}//winning_trades')
+    for trade in trades:
+        if not os.path.exists(f'{trade_graph_folder}//losing_trades//{trade.symbol}'):
+            os.makedirs(f'{trade_graph_folder}//losing_trades//{trade.symbol}')
+        if not os.path.exists(f'{trade_graph_folder}//winning_trades//{trade.symbol}'):
+            os.makedirs(f'{trade_graph_folder}//winning_trades//{trade.symbol}')
+
+        data = {"Date": trade.candles["Date"],
+                "Close": trade.candles["Close"],
+                "Open": trade.candles["Open"],
+                "High": trade.candles["High"],
+                "Low": trade.candles["Low"],
+        }
+        df = pd.DataFrame(data)
+        keys = list(trade.indicators.keys())
+        max_number_of_axis = 2
+        for key in keys:
+            if trade.indicators[key]['plotting_axis'] > max_number_of_axis:
+                max_number_of_axis = trade.indicators[key]['plotting_axis']
+
+        row_heights = [.5,.1]
+        sub_height = 0
+        specs = [[{"type": "Candlestick"}], [{"type": "scatter"}]]
+        if len(row_heights)<max_number_of_axis:
+            sub_height = (1 - row_heights[0]) / (max_number_of_axis - 1)
+        while len(row_heights)<max_number_of_axis:
+            row_heights.append(sub_height)
+            specs.append([{"type": "scatter"}])
+
+        fig = make_subplots(
+            rows=max_number_of_axis, cols=1,
+            row_heights=row_heights,
+            specs=specs, shared_xaxes=True)
+
+        fig.add_candlestick(x=df['Date'],
+                            open=df['Open'],
+                            close=df['Close'],
+                            high=df['High'],
+                            low=df['Low'],
+                            name='Candles')
+
+        if trade.trade_direction == 1:
+            fig.add_trace(
+                go.Scatter(x=[trade.start_time],
+                           y=[trade.entry_price],
+                           mode='markers',
+                           name='Long',
+                           marker=go.scatter.Marker(size=20,
+                                            symbol="triangle-up",
+                                            color="green")
+                           ), row=1, col=1)
+        else:
+            fig.add_trace(
+                go.Scatter(x=[trade.start_time],
+                           y=[trade.entry_price],
+                           mode='markers',
+                           name='Short',
+                           marker=go.scatter.Marker(size=20,
+                                            symbol="triangle-down",
+                                            color="red")
+                                     ), row=1, col=1)
+        fig.add_trace(
+            go.Scatter(x=df['Date'],
+                       y=trade.candles['Volume'],
+                       name="Volume",
+                       ), row=2, col=1)
+        for key in keys:
+            fig.add_trace(
+                go.Scatter(x=df['Date'],
+                           y=trade.indicators[key]['values'],
+                           name=key,
+                           ), row=trade.indicators[key]['plotting_axis'], col=1)
+
+        fig.add_hline(y=trade.TP_price, line_color='lightseagreen', name="TP", row=1, col=1)
+        fig.add_hline(y=trade.SL_price, line_color='red', name="SL", row=1, col=1 )
+
+        if trade.trade_success == 1:
+            fig.update_layout(title=f'{trade.start_time}: {trade.symbol} Winning Trade',
+                              xaxis_rangeslider_visible=False, template='plotly_dark')
+            plotly.offline.plot(fig, filename=f"{trade_graph_folder}//winning_trades//{trade.symbol}//{trade.start_time}.html", auto_open=False)
+        else:
+            fig.update_layout(title=f'{trade.start_time}: {trade.symbol} Losing Trade',
+                              xaxis_rangeslider_visible=False, template='plotly_dark')
+            plotly.offline.plot(fig, filename=f"{trade_graph_folder}//losing_trades//{trade.symbol}//{trade.start_time}.html", auto_open=False)
+
+    print("Finished Generating Trade Graphs")
+
+
+
+def get_indicators_for_graphing(indicators:{}, trade:Trade, graph_before, graph_after, current_index):
+    keys = list(indicators.keys())
+
+    ## Graphing indicators on other axis, matplotlib can't draw these correctly most of the time so leaving for now
+    for key in keys:
+        try:
+            trade.trade_info.indicators[key] = {}
+            trade.trade_info.indicators[key]["values"] = indicators[key]["values"][trade.trade_info.trade_start_index - graph_before:
+                                                               current_index + graph_after]
+            trade.trade_info.indicators[key]["plotting_axis"] = indicators[key]["plotting_axis"]
+        except:
+            trade.trade_info.indicators[key] = {}
+            trade.trade_info.indicators[key]["values"] = indicators[key]["values"][trade.trade_info.trade_start_index - graph_before: current_index]
+            trade.trade_info.indicators[key]["plotting_axis"] = indicators[key]["plotting_axis"]
+
+    return trade

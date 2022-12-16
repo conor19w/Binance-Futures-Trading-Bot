@@ -61,6 +61,35 @@ def web_soc_process(pipe: Pipe, twm: ThreadedWebsocketManager):
                 Data[data.symbol] = data.next_candle
             pipe.send(Data)
 
+def combine_data(Bots: [Bot_Class.Bot], symbol, streams, buffer, Interval, client):
+    print("Combining Historical and web socket data...")
+    i = 0
+    while i < len(Bots):
+        Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp = get_historical(symbol=symbol[i],
+                                                                                            start_string=buffer,
+                                                                                            Interval=Interval)
+        ##Pop off last candle as it is a duplicate, luki009's suggestion
+        Date_temp.pop(-1)
+        Open_temp.pop(-1)
+        Close_temp.pop(-1)
+        High_temp.pop(-1)
+        Low_temp.pop(-1)
+        Volume_temp.pop(-1)
+        client.futures_ping()  ## ping the server to stay connected
+        if len(Date_temp) < 100:
+            print(
+                f"Not enough data for {symbol[i]}, Increase your buffer variable in Config_File.py so you have a buffer of candles")
+            symbol.pop(i)
+            Bots.pop(i)
+            streams.pop(i)
+        else:
+            Bots[i].add_hist(Date_temp=Date_temp, Open_temp=Open_temp, Close_temp=Close_temp, High_temp=High_temp,
+                             Low_temp=Low_temp, Volume_temp=Volume_temp)
+            i += 1
+        if RATE_LIMIT_WAIT:
+            time.sleep(1)  ##wait a second to avoid API rate limit (if you are getting a rate limit error)
+    print("Finished Combining data, Searching for trades now...")
+
 
 def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, client: Client, use_trailing_stop, trailing_stop_callback):
     global new_candle_flag, symbol, Data
@@ -108,29 +137,9 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
             except:
                 pass
 
-    print("Combining Historical and web socket data...")
-    i = 0
-    while i < len(Bots):
-        Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp = get_historical(symbol[i], start_string, Interval)
-        ##Pop off last candle as it is a duplicate, luki009's suggestion
-        Date_temp.pop(-1)
-        Open_temp.pop(-1)
-        Close_temp.pop(-1)
-        High_temp.pop(-1)
-        Low_temp.pop(-1)
-        Volume_temp.pop(-1)
-        client.futures_ping()  ## ping the server to stay connected
-        if len(Date_temp) < 100:
-            print(f"Not enough data for {symbol[i]}, Increase your start_str variable in Config_File so we have a buffer of candles ")
-            symbol.pop(i)
-            Bots.pop(i)
-            streams.pop(i)
-        else:
-            Bots[i].add_hist(Date_temp, Open_temp, Close_temp, High_temp, Low_temp, Volume_temp)
-            i += 1
-        if RATE_LIMIT_WAIT:
-            time.sleep(2)  ##wait a few second to avoid api rate limit
-    print("Finished.")
+    thread_combine_data = Thread(target=combine_data, args=(Bots, symbol, streams, buffer, Interval, client))
+    thread_combine_data.start()
+
     AccountBalance = 0
     y = client.futures_account_balance()
     for x in y:
@@ -157,33 +166,36 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
     while True:
         try:
             if new_candle_flag:
+                get_new_trades = True
                 for Bot in Bots:
                     Bot.handle_socket_message(Data[Bot.symbol])
+                    if not Bot.add_hist_complete:
+                        get_new_trades = False
                 print_flag = 1
                 new_candle_flag = 0
+                if get_new_trades:
+                    ##Ensure Bot doesn't interfere with positions opened manually by the user
+                    open_trades = []
+                    position_info = client.futures_position_information()
+                    for position in position_info:
+                        if float(position['notional']) != 0.0:
+                            open_trades.append(position['symbol'])
 
-                ##Ensure Bot doesn't interfere with positions opened manually by the user
-                open_trades = []
-                position_info = client.futures_position_information()
-                for position in position_info:
-                    if float(position['notional']) != 0.0:
-                        open_trades.append(position['symbol'])
-
-                for i in range(len(Bots)):
-                    trade_flag = 0
-                    for t in active_trades:
-                        if t.index == i:
-                            trade_flag = 1
-                            break
-                    for s in open_trades:
-                        if s == Bots[i].symbol:
-                            trade_flag = 1
-                            break
-                    if trade_flag == 0:
-                        temp_dec = Bots[i].Make_decision()
-                        # print(Data[i].symbol,temp_dec)
-                        if temp_dec[0] != -99:
-                            new_trades.append([i, temp_dec])  ##[index,[trade_direction,SL,TP]]
+                    for i in range(len(Bots)):
+                        trade_flag = 0
+                        for t in active_trades:
+                            if t.index == i:
+                                trade_flag = 1
+                                break
+                        for s in open_trades:
+                            if s == Bots[i].symbol:
+                                trade_flag = 1
+                                break
+                        if trade_flag == 0:
+                            temp_dec = Bots[i].Make_decision()
+                            # print(Data[i].symbol,temp_dec)
+                            if temp_dec[0] != -99:
+                                new_trades.append([i, temp_dec])  ##[index,[trade_direction,SL,TP]]
             ##Sort out new trades to be opened
             while len(new_trades) > 0 and len(active_trades) < Max_Number_Of_Trades:
                 account_balance = 0
@@ -341,13 +353,15 @@ def Check_for_signals(pipe: Pipe, leverage, order_Size, Max_Number_Of_Trades, cl
                 temp_symbols = []
                 for t in active_trades:
                     temp_symbols.append(t.symbol)
-                print(f"Account Balance: {account_balance}, {Bots[0].Date[-1]+time_delta}: Active Trades: {temp_symbols}")
+                try:
+                    print(f"Account Balance: {account_balance}, {str(datetime.utcfromtimestamp(round(Bots[0].Date[-1] / 1000)) + time_delta)}: Active Trades: {temp_symbols}")
+                except:
+                    pass
                 try:
                     print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance},"
                           f" Average Trade Profit: ${(account_balance - startup_account_balance) / TS.total_number_of_trades}")
                 except:
-                    print(
-                        f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance}")
+                    print(f"wins: {TS.wins}, losses: {TS.losses}, Total Profit: {account_balance - startup_account_balance}")
 
 
         except BinanceAPIException as e:

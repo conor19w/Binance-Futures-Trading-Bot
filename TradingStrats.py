@@ -595,6 +595,12 @@ def breakout(Trade_Direction, Close, VolumeStream, max_Close, min_Close, max_Vol
             Trade_Direction = 0
     return Trade_Direction
 
+def ema_crossover(Trade_Direction, current_index, ema_short, ema_long):
+    if ema_short[current_index-1] > ema_long[current_index-1] and ema_short[current_index] < ema_long[current_index]:
+        Trade_Direction = 0
+    elif ema_short[current_index-1] < ema_long[current_index-1] and ema_short[current_index] > ema_long[current_index]:
+        Trade_Direction = 1
+    return Trade_Direction
 
 # def fakeout(Trade_Direction, Close, VolumeStream, High, Low, SL, TP, TP_choice, SL_choice):
 #     invert = 1

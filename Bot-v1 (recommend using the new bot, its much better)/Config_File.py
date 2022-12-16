@@ -5,7 +5,7 @@ API_SECRET = ''
 ################## settings, these are very strategy dependant ensure you have enough data for your chosen strategy ##################################
 order_Size = .02
 leverage = 10
-start_string = '4 hour ago' ## Buffer of candle sticks be careful if you don't provide enough the bot will throw an error
+buffer = '4 hour ago' ## Buffer of candle sticks be careful if you don't provide enough the bot will throw an error
 Interval = '1m' ##candle sticks you want to trade
 Max_Number_Of_Trades = 1  ## How many positions we can have open at once
 use_heikin_ashi = 0 ## Create heikin ashi candles that can be referenced in Bot_Class.Bot.make_decision()

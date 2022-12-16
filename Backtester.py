@@ -1,7 +1,7 @@
 import os
 import pprint
 import time
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from binance.client import Client
 import matplotlib.pyplot as plt
@@ -15,38 +15,36 @@ from Helper import Trade
 import matplotlib
 time_delta = timedelta(hours=1)  ## Adjust time for printing based off GMT (This is GMT+1)
 
-def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIME_INTERVAL, Number_Of_Trades,
-                   Trade_All_Symbols, Trade_Each_Coin_With_Separate_Accounts, only_show_profitable_coins, percent_gain_threshold, particular_drawdown, min_dd,
-                   symbol, use_trailing_stop, trailing_stop_callback, csv_name, slippage, strategy='', TP_SL_choice='', SL_mult:float=1, TP_mult:float=1, use_multiprocessing_for_downloading_data=False, graph_folder_location='./',
-                   plot_graphs_to_folder=True, print_to_csv=True, fee=.00036, printing_on=True, add_delay=False, buffer=2000, trading_on=True, quick_test=True):
+def run_backtester(account_balance_start, leverage, order_size,  start, end, TIME_INTERVAL, Number_Of_Trades,
+                   Trade_All_Symbols, Trade_Each_Coin_With_Separate_Accounts, only_show_profitable_coins,
+                   percent_gain_threshold, particular_drawdown, min_dd, symbol, use_trailing_stop,
+                   trailing_stop_callback, slippage, strategy='', TP_SL_choice='',
+                   SL_mult:float=1, TP_mult:float=1, use_multiprocessing_for_downloading_data=False,
+                   graph_folder_location='./', plot_graphs_to_folder=True, print_to_csv=True, fee=.00036,
+                   printing_on=True, add_delay=False, buffer=2000, trading_on=True, quick_test=True, graph_buys_and_sells = True,
+                   graph_before=10, graph_after=10):
     if plot_graphs_to_folder:
         ## Top of script:
         matplotlib.use("Agg")
-    order_Size = round(order_Size/100, 4)
+    order_size = round(order_size/100, 4)
     slippage = round(slippage / 100, 4)
     min_dd = round(min_dd, 3)
     percent_gain_threshold = round(percent_gain_threshold / 100, 3)
     trailing_stop_callback = round(trailing_stop_callback / 100, 3)
 
+    trades_for_graphing: [Helper.trade_info] = []  ## trades: [symbol, entry_price, TP_price, SL_price, indicators, candles]
     path = f'{graph_folder_location}Backtests//{strategy}//{start}_{end}//'  ## where you want to store the graphs
-    csv_path = path+f"//{TIME_INTERVAL}//"
-    if plot_graphs_to_folder and not os.path.exists(path+f'{TIME_INTERVAL}'):
-        os.makedirs(path+f'{TIME_INTERVAL}')
+    now = datetime.now()
+    os.makedirs(path + f'{TIME_INTERVAL}//Backtest_{now.day}-{now.month}-{now.year}_{now.hour}:{now.minute}:{now.second}')
+    backtest_path = path + f'{TIME_INTERVAL}//Backtest_{now.day}-{now.month}-{now.year}_{now.hour}:{now.minute}:{now.second}//'
+    csv_name = "trade_log.csv"
+    ####################################################################################################
+    ####################################################################################################
 
-    ####################################################################################################
-    ####################################################################################################
-    
     if print_to_csv:
-        i = 1
-        not_found = False
-        while not not_found:
-            try:
-                with open(csv_path+csv_name+f"{i}.csv", 'x') as O:
-                    O.write('Date,Account Balance,symbol,Entry Price,Position Size,Current Price,TP val,SL val,Trade Direction,Highest Candle,Lowest Candle,Trade Status\n')
-                    not_found = True
-                    csv_name = csv_name+f"{i}.csv"
-            except:
-                i += 1
+        with open(backtest_path+csv_name, 'x') as O:
+            O.write('Date,Account Balance,symbol,Entry Price,Position Size,Current Price,TP val,SL val,Trade Direction,Highest Candle,Lowest Candle,Trade Status\n')
+
     client = Client(api_key=API_KEY, api_secret=API_SECRET)
     if Trade_All_Symbols:
         symbol = []  ## reset symbol before we fill with all symbols below
@@ -160,12 +158,6 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     temp_dec = Bots[k].Make_decision()
                     if temp_dec[0] != -99:
                         new_trades.append([k, temp_dec])
-                # if Bots[k].symbol == 'BAKEUSDT':
-                #     print(Bots[k].Date[Bots[k].current_index], Bots[k].Close[Bots[k].current_index], Bots[k].High[Bots[k].current_index], Bots[k].Low[Bots[k].current_index], Bots[k].Open[Bots[k].current_index])
-
-            # bot_trades = [trade.symbol for trade in active_trades]  ## Open/ attempting to open trades
-            # temp_dec = [Bots[i].Make_decision() for i in range(len(Bots))]  ## get all signals
-            # new_trades = [[i, temp_dec[i]] for i in range(len(Bots)) if temp_dec[i][0] != -99 and Bots[i].symbol not in bot_trades and len(Bots[i].Date) > i / TIME_INTERVAL]  ## get new trades, exclude (trades that didn't give a long
 
         if len(active_trades) == Number_Of_Trades:
             new_trades = []
@@ -175,12 +167,12 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
             order_qty = 0
             entry_price = 0
             if Trade_Each_Coin_With_Separate_Accounts:
-                Order_Notional = account_balance[index] * leverage * order_Size
+                Order_Notional = account_balance[index] * leverage * order_size
                 order_qty, entry_price, account_balance[index] = Helper.open_trade(Bots[index].symbol, Order_Notional,
                                                                         account_balance[index], Open_1min[index][i+1],
                                                                         fee, Bots[index].OP, Bots[index].CP, trade_direction, slippage)
             else:
-                Order_Notional = account_balance[0] * leverage * order_Size
+                Order_Notional = account_balance[0] * leverage * order_size
                 order_qty, entry_price, account_balance[0] = Helper.open_trade(Bots[index].symbol, Order_Notional,
                                                                                account_balance[0],
                                                                                Open_1min[index][i+1],
@@ -210,6 +202,9 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 active_trades.append(Trade(index, order_qty, take_profit_val, stop_loss_val, trade_direction, 0, Bots[index].symbol))
                 active_trades[-1].entry_price = entry_price
                 active_trades[-1].trade_start = Date_1min[index][i]
+                active_trades[-1].trade_info.entry_price = entry_price
+                active_trades[-1].trade_info.trade_start_index = Bots[index].current_index
+                active_trades[-1].trade_info.start_time = Date_1min[index][i+1]
                 change_occurred = True
                 ##Empty the list of trades
                 if len(active_trades) == Number_Of_Trades:
@@ -258,10 +253,10 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                 trade_price.append(Bots[t.index].Close[Bots[t.index].current_index])
             if Trade_Each_Coin_With_Separate_Accounts:
                 pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][i],
-                                                                                  account_balance, change_occurred, print_to_csv, csv_name, path, csv_path, time_delta)
+                                                                                  account_balance, change_occurred, print_to_csv, csv_name, path, backtest_path, time_delta)
             else:
                 pnl, negative_balance_flag, change_occurred = Helper.print_trades(active_trades, trade_price, Date_1min[0][i],
-                                                                                  [account_balance[0]], change_occurred, print_to_csv, csv_name, path, csv_path, time_delta)
+                                                                                  [account_balance[0]], change_occurred, print_to_csv, csv_name, path, backtest_path, time_delta)
             if negative_balance_flag and not Trade_Each_Coin_With_Separate_Accounts:
                 print("**************** You have been liquidated *******************")
                 profitgraph[0].append(0)
@@ -281,6 +276,11 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     wins_and_lossses[active_trades[k].symbol]['trades'] += 1
                 else:
                     profitgraph[0].append(account_balance[0])
+                active_trades[k].trade_info.trade_success = True
+                active_trades[k] = Helper.get_candles_for_graphing(Bots[active_trades[k].index], active_trades[k], graph_before, graph_after)
+                active_trades[k] = Helper.get_indicators_for_graphing(Bots[active_trades[k].index].indicators, active_trades[k], graph_before,
+                                                                      graph_after, Bots[active_trades[k].index].current_index)
+                trades_for_graphing.append(active_trades[k].trade_info)
                 active_trades.pop(k)
             elif active_trades[k].trade_status == 3:
                 ## Loss
@@ -291,13 +291,32 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                     wins_and_lossses[active_trades[k].symbol]['trades'] += 1
                 else:
                     profitgraph[0].append(account_balance[0])
+                active_trades[k] = Helper.get_candles_for_graphing(Bots[active_trades[k].index], active_trades[k],
+                                                                   graph_before, graph_after)
+                active_trades[k] = Helper.get_indicators_for_graphing(Bots[active_trades[k].index].indicators,
+                                                                      active_trades[k], graph_before, graph_after,
+                                                                      Bots[active_trades[k].index].current_index)
+                trades_for_graphing.append(active_trades[k].trade_info)
                 active_trades.pop(k)
             elif active_trades[k].trade_status == 4:
                 if (active_trades[k].entry_price < Close[active_trades[k].index][Bots[active_trades[k].index].current_index] and active_trades[k].trade_direction == 1) \
                 or (active_trades[k].entry_price > Close[active_trades[k].index][Bots[active_trades[k].index].current_index] and active_trades[k].trade_direction == 0):
                     winning_trades.append([active_trades[k].symbol, f'{active_trades[k].trade_start}'])
+                    active_trades[k].trade_info.trade_success = True
+                    active_trades[k] = Helper.get_candles_for_graphing(Bots[active_trades[k].index], active_trades[k],
+                                                                       graph_before, graph_after)
+                    active_trades[k] = Helper.get_indicators_for_graphing(Bots[active_trades[k].index].indicators,
+                                                                          active_trades[k], graph_before, graph_after,
+                                                                          Bots[active_trades[k].index].current_index)
+                    trades_for_graphing.append(active_trades[k].trade_info)
                 else:
                     losing_trades.append([active_trades[k].symbol, f'{active_trades[k].trade_start}'])
+                    active_trades[k] = Helper.get_candles_for_graphing(Bots[active_trades[k].index], active_trades[k],
+                                                                       graph_before, graph_after)
+                    active_trades[k] = Helper.get_indicators_for_graphing(Bots[active_trades[k].index].indicators,
+                                                                          active_trades[k], graph_before, graph_after,
+                                                                          Bots[active_trades[k].index].current_index)
+                    trades_for_graphing.append(active_trades[k].trade_info)
                 if Trade_Each_Coin_With_Separate_Accounts:
                     profitgraph[active_trades[k].index].append(account_balance[active_trades[k].index])
                 else:
@@ -356,7 +375,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
 
         print("\nSettings:")
         print('leverage:', leverage)
-        print('order_Size:', order_Size)
+        print('order_size:', order_size)
         print('fee:', fee)
         print("\nSymbol(s):", symbol, "fee:", fee)
         print(f"{original_time_interval} OHLC Candle Sticks from {start} to {end}")
@@ -386,8 +405,7 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         if plot_graphs_to_folder:
             if not os.path.exists(path + f'{original_time_interval}'):
                 os.makedirs(path + f'{original_time_interval}')
-            name_of_plot = f'{csv_name[:-4]}'  ## Name of the graph, will overwrite if it already exists
-            plt.savefig(f'{csv_path}{name_of_plot}.png', dpi=300, bbox_inches='tight')
+            plt.savefig(f'{backtest_path}equity_curve.png', dpi=300)
             plt.close()
         else:
             plt.show()
@@ -451,14 +469,13 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
                             plt.title(f"{symbol[j]}: {original_time_interval} from {start} to {end}")
                             plt.ylabel('Account Balance')
                             plt.xlabel('Number of Trades')
-                            name_of_plot = f'{symbol[j]}_{csv_name[:-4]}'  ## Name of the graph, will overwrite if it already exists
-                            plt.savefig(f'{csv_path}{name_of_plot}.png', dpi=300, bbox_inches='tight')
+                            plt.savefig(f'{backtest_path}{symbol[j]}_equity_curve.png', dpi=300, bbox_inches='tight')
                             plt.close()
                 except Exception as e:
                     print(e)
         print("\nSettings:")
         print('leverage:', leverage)
-        print('order_Size:', order_Size)
+        print('order_size:', order_size)
         print('fee:', fee)
         print(f"symbol = {useful_coins}")
         print("\nOverall Stats based on all coins")
@@ -468,20 +485,24 @@ def run_backtester(account_balance_start, leverage, order_Size,  start, end, TIM
         print(f"Losing Trades:\n {len(losing_trades)}")
         print(f"Trades Closed on Condition:\n {closed_on_condition}")
 
+    if graph_buys_and_sells:
+        Helper.generate_trade_graphs(trades_for_graphing, backtest_path) ## trades: [symbol, entry_price, TP_price, SL_price, indicators, candles]
 
 if __name__ == "__main__":
-    start = "01-08-22"
-    end = "26-10-22"
+    start = "01-12-22"
+    end = "11-12-22"
+    buffer = 500 ## candlestick buffer, should be 5x your largest EMA length
     account_balance = 87  ## Starting account size
+    fee = .00036 ## .036%
     leverage = 10
-    order_Size = 1.25  ## 1.25% of account balance per trade with 10x leverage the position size would be 12.5%
+    order_size = 1.25  ## 1.25% of account balance per trade with 10x leverage the position size would be 12.5%
     TIME_INTERVAL = '5m'  ## valid intervals: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d
     Number_Of_Trades = 5  ## max amount of trades the bot will have open at any time
     slippage = .1  ## .1% recommended to use at least .1% slippage, the more slippage the strategy can survive the better the signals
     TP_SL_choice = '%'  ## type of TP/SL used in backtest, list of valid values: '%', 'x (ATR)', 'x (Swing High/Low) level 1', 'x (Swing Close) level 1', 'x (Swing High/Low) level 2', 'x (Swing Close) level 2', 'x (Swing High/Low) level 3', 'x (Swing Close) level 3'
     SL_mult = .5  ## multiplier for the 'TP_SL_choice' above
     TP_mult = 1  ## multiplier for the 'TP_SL_choice' above
-    strategy = 'tripleEMAStochasticRSIATR'  ##name of strategy you want to run
+    strategy = 'StochRSIMACD'  ##name of strategy you want to run
 
     quick_test = True ## if true the bot will run a faster backtest, but the test is more accurate when false (This is due to the live bot throwing away old candles to save memory)
     use_trailing_stop = False  ## flag to use the trailing stop with callback distance defined below
@@ -493,19 +514,21 @@ if __name__ == "__main__":
     min_dd = 1  ## 1%, Only print coins which have had less than this drawdown when the above flag 'particular_drawdown' is True
 
     symbol = ['BTCUSDT', 'BAKEUSDT']  ## list of coins to trade, example: ['ETHUSDT', 'BNBUSDT']
-    Trade_All_Symbols = True  ## will test on all coins on exchange if true
-
+    Trade_All_Symbols = False  ## will test on all coins on exchange if true
+    graph_buys_and_sells = True
+    graph_buys_and_sells_window_before = 5 ## graph 10 candles before the trade opened
+    graph_buys_and_sells_window_after = 5 ## graph 10 candles after the trade opened
 
     ## Variables you probably don't need to change:
-    csv_name = f"Backtest"  ## default no need to change
     trading_on = True  ## Set to false to use the trading start time below, CAUTION ensure trading is withing start and end or you will get errors
     start_trading_date = '2022-10-24 18:00:00'  ## Particular time to start trading at not used if trading_on = True
     use_multiprocessing_for_downloading_data = True ## use multiprocessing for quicker backtesting
 
-    run_backtester(account_balance, leverage, order_Size, start, end, TIME_INTERVAL, Number_Of_Trades,
+    run_backtester(account_balance, leverage, order_size, start, end, TIME_INTERVAL, Number_Of_Trades,
                    Trade_All_Symbols, Trade_Each_Coin_With_Separate_Accounts, only_show_profitable_coins,
                    percent_gain_threshold, particular_drawdown, min_dd,
-                   symbol, use_trailing_stop, trailing_stop_callback, csv_name, slippage, strategy, TP_SL_choice,
+                   symbol, use_trailing_stop, trailing_stop_callback, slippage, strategy, TP_SL_choice,
                    SL_mult, TP_mult, use_multiprocessing_for_downloading_data, graph_folder_location='./',
-                   plot_graphs_to_folder=True, print_to_csv=True, fee=.00036, printing_on=True, add_delay=False,
-                   buffer=int(2016), trading_on=trading_on, quick_test=quick_test)
+                   plot_graphs_to_folder=True, print_to_csv=True, fee=fee, printing_on=True, add_delay=False,
+                   buffer=buffer, trading_on=trading_on, quick_test=quick_test, graph_buys_and_sells=graph_buys_and_sells,
+                   graph_before=graph_buys_and_sells_window_before, graph_after=graph_buys_and_sells_window_after)
