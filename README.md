@@ -75,7 +75,7 @@ __name__ == "__main__":
 Backtests are saved in a folder named backtests on completion of a backtest, along with a csv file of the trades taken.
 An interactive html file is generated for each trade (using [plotly](https://plotly.com/graphing-libraries/)), so you can do analysis on winning and losing trades.
 
-![](files/trade_example.PNG)
+![](files/trade_example.png)
 
 
 ![](files/Backtester.PNG)
