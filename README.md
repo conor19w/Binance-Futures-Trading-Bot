@@ -71,6 +71,8 @@ python3 app.py
 
 ![](files/Live_Trading.PNG)
 ![](files/Backtester.PNG)
+
+Backtests are displayed in the terminal while running, the results are then saved to a csv file in the Backtests directory along with a graph image and trades taken graphs (see below).
 ![](files/BacktesterLog.PNG)
 
 
@@ -82,8 +84,6 @@ Backtests are saved in a folder named backtests on completion of a backtest, alo
 An interactive html file is generated for each trade (using [plotly](https://plotly.com/graphing-libraries/)), so you can do analysis on winning and losing trades.
 
 ![](files/trade_example.png)
-
-* Backtests are displayed in the terminal while running, the results are then saved to a csv file in the current directory along with a graph image.
 
 ---
 ### YouTube Channels with Strategy Ideas: ###
