@@ -68,6 +68,12 @@ sudo docker run -it live_bot
 ```commandline
 python3 app.py
 ```
+
+![](files/Live_Trading.PNG)
+![](files/Backtester.PNG)
+![](files/BacktesterLog.PNG)
+
+
 * Otherwise run a backtest from the ```Backtester.py``` Script by configuring the inputs found in: 
 ```
 __name__ == "__main__":
@@ -77,14 +83,7 @@ An interactive html file is generated for each trade (using [plotly](https://plo
 
 ![](files/trade_example.png)
 
-
-![](files/Backtester.PNG)
-* Backtests are displayed in the terminal while running, the results are then saved to a csv file in the current directory along with a graph image.  
-
-![](files/BacktesterLog.PNG)
-
-
-![](files/Live_Trading.PNG)
+* Backtests are displayed in the terminal while running, the results are then saved to a csv file in the current directory along with a graph image.
 
 ---
 ### YouTube Channels with Strategy Ideas: ###
