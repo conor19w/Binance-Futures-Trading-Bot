@@ -218,7 +218,7 @@ if __name__ == "__main__":
 
             P.append(Process(target=run_backtester, args=(float(start_balance.get()), int(leverage.get()), float(order_size.get()), start.get(), end.get(),
                      candle_length.get(), int(number_of_trades.get()), trade_all_coins.get(), isolated_test.get(), only_show_profitable_coins.get(),
-                     profit_req, particular_drawdown.get(), min_dd_req, symbol, use_trail_stop.get(), float(trail_stop.get()), f"Backtest", slip,
+                     profit_req, particular_drawdown.get(), min_dd_req, symbol, use_trail_stop.get(), float(trail_stop.get()), slip,
                      strategy.get(), TP_SL.get(), float(SL.get()), float(TP.get()), use_multiprocessing.get())))
             P[-1].start()
 
