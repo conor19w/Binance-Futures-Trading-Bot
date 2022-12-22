@@ -98,7 +98,6 @@ An interactive html file is generated for each trade (using [plotly](https://plo
 * Prioritise your [Trello](https://trello.com/invite/b/iagTNiv0/80cc1828bdac439ed813cc54c9698c06/github-bot) ticket with a [one time payment](https://github.com/sponsors/conor19w)  
 * Get Custom Strategies made to your specifications by reaching out to me on discord for a quote price.
 * If you have any queries about anything, or need me to explain any blocks of code please reach out to me on [Discord](https://discord.gg/jBu6thyP66).
-* If you have any suggestions or requests please reach out to me as well.  
-* 
+* If you have any suggestions or requests please reach out to me as well.
 [__Join My public Discord Server__](https://discord.gg/jBu6thyP66) __&__ [__Follow The Twitter__](https://twitter.com/futures_bot)
 
