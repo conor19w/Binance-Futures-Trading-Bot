@@ -247,7 +247,7 @@ def get_TIME_INTERVAL(TIME_INTERVAL):
 
 
 def get_Klines(symbol, start_str, end_str, path):
-    ##Manipulate dates to american format:
+    ## Manipulate dates to american format:
     start_date = f'{start_str[3:5]}-{start_str[0:2]}-{start_str[6:]}'
     end_date = f'{end_str[3:5]}-{end_str[0:2]}-{end_str[6:]}'
     print(f"Downloading CandleStick Data for {symbol}...")
@@ -279,24 +279,26 @@ def get_Klines(symbol, start_str, end_str, path):
     for kline in client.futures_historical_klines(symbol, '1m', start_str=start_date, end_str=end_date):
         #:return: list of OHLCV values (Open time, Open, High, Low, Close, Volume, Close time, Quote asset volume, Number of trades, Taker buy base asset volume, Taker buy quote asset volume, Ignore)
         candle_open = datetime.utcfromtimestamp(round(kline[0] / 1000))
+        candle_close = datetime.utcfromtimestamp((round(kline[6] / 1000)))
         price_data['Open_1m'].append(float(kline[1]))
         price_data['High_1m'].append(float(kline[2]))
         price_data['Low_1m'].append(float(kline[3]))
         price_data['Close_1m'].append(float(kline[4]))
         price_data['Volume_1m'].append(round(float(kline[7])))
-        price_data['Date_1m'].append(datetime.utcfromtimestamp((round(kline[6] / 1000))))
+        price_data['Date_1m'].append(candle_open)
+
         for unit in [3, 5, 15, 30]:
             try:
                 ## Construct the 3m, 5m, 15m, and 30m candles
                 if int(str(candle_open)[-5:-3]) % unit == 0:
                     ##Candle open
+                    price_data[f'Date_{unit}m'].append(candle_open)
                     price_data[f'Open_{unit}m'].append(price_data['Open_1m'][-1])
                     price_data[f'High_{unit}m'].append(price_data['High_1m'][-1])  ##initialize as highest
                     price_data[f'Low_{unit}m'].append(price_data['Low_1m'][-1])  ##initialize as lowest
                     price_data[f'Volume_{unit}m'].append(price_data['Volume_1m'][-1])  ##initialize
-                if int(str(price_data['Date_1m'][-1])[-5:-3]) % unit == 0:
+                if int(str(candle_close)[-5:-3]) % unit == 0:
                     ##Candle close time
-                    price_data[f'Date_{unit}m'].append(price_data['Date_1m'][-1])
                     price_data[f'Close_{unit}m'].append(price_data['Close_1m'][-1])
                     ##Check if higher high or lower low present:
                     if price_data['High_1m'][-1] > price_data[f'High_{unit}m'][-1]:
@@ -305,8 +307,7 @@ def get_Klines(symbol, start_str, end_str, path):
                         price_data[f'Low_{unit}m'][-1] = price_data['Low_1m'][-1]  ##update as lowest
                     price_data[f'Volume_{unit}m'][-1] += price_data['Volume_1m'][-1]  ## add on volume
                     price_data[f'Volume_{unit}m'][-1] = round(price_data[f'Volume_{unit}m'][-1])
-                elif not int(str(candle_open)[-5:-3]) % unit == 0 and not int(
-                        str(price_data['Date_1m'][-1])[-5:-3]) % unit == 0:
+                elif not int(str(candle_open)[-5:-3]) % unit == 0 and not int(str(candle_close)[-5:-3]) % unit == 0:
                     ## Check for higher and lower candle inbetween:
                     if price_data['High_1m'][-1] > price_data[f'High_{unit}m'][-1]:
                         price_data[f'High_{unit}m'][-1] = price_data['High_1m'][-1]  ##update as highest
@@ -325,8 +326,7 @@ def get_Klines(symbol, start_str, end_str, path):
                     price_data[f'High_{unit}h'].append(price_data['High_1m'][-1])  ##initialize as highest
                     price_data[f'Low_{unit}h'].append(price_data['Low_1m'][-1])  ##initialize as lowest
                     price_data[f'Volume_{unit}h'].append(price_data['Volume_1m'][-1])  ##initialize
-                if int(str(price_data['Date_1m'][-1])[-8:-6]) % unit == 0 and int(
-                        str(price_data['Date_1m'][-1])[-5:-3]) == 0:
+                if int(str(candle_close)[-8:-6]) % unit == 0 and int(str(candle_close)[-5:-3]) == 0:
                     ##Candle close time
                     price_data[f'Date_{unit}h'].append(price_data['Date_1m'][-1])
                     price_data[f'Close_{unit}h'].append(price_data['Close_1m'][-1])
@@ -338,8 +338,7 @@ def get_Klines(symbol, start_str, end_str, path):
                     price_data[f'Volume_{unit}h'][-1] += price_data['Volume_1m'][-1]  ## add on volume
                     price_data[f'Volume_{unit}h'][-1] = round(price_data[f'Volume_{unit}h'][-1])
                 elif not (int(str(candle_open)[-8:-6]) % unit == 0 and int(str(candle_open)[-5:-3]) == 0) and \
-                        not (int(str(price_data['Date_1m'][-1])[-8:-6]) % unit == 0 and int(
-                            str(price_data['Date_1m'][-1])[-5:-3]) == 0):
+                        not (int(str(candle_close)[-8:-6]) % unit == 0 and int(str(candle_close)[-5:-3]) == 0):
                     ## Check for higher and lower candle inbetween:
                     if price_data['High_1m'][-1] > price_data[f'High_{unit}h'][-1]:
                         price_data[f'High_{unit}h'][-1] = price_data['High_1m'][-1]  ##update as highest
@@ -367,6 +366,7 @@ def get_Klines(symbol, start_str, end_str, path):
         if len(price_data[f'Date_{unit}h']) < len(price_data[f'Close_{unit}h']):
             price_data[f'Close_{unit}h'].pop(-1)  ## remove the last candle
 
+
     try:
         for kline in client.futures_historical_klines(symbol, '1d', start_str=start_date, end_str=end_date):
             price_data['Date_1d'].append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
@@ -375,7 +375,7 @@ def get_Klines(symbol, start_str, end_str, path):
             price_data['Low_1d'].append(float(kline[3]))
             price_data['Close_1d'].append(float(kline[4]))
     except Exception as e:
-        print("Error downloading daily candles:", e)
+        print("Error downloading daily candles:",e)
 
     try:
         print("Saving Price data")
