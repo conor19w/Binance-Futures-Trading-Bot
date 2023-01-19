@@ -35,8 +35,8 @@ def run_backtester(account_balance_start, leverage, order_size,  start, end, TIM
     trades_for_graphing: [Helper.trade_info] = []  ## trades: [symbol, entry_price, TP_price, SL_price, indicators, candles]
     path = f'{graph_folder_location}Backtests//{strategy}//{start}_{end}//'  ## where you want to store the graphs
     now = datetime.now()
-    os.makedirs(path + f'{TIME_INTERVAL}//Backtest_{now.day}-{now.month}-{now.year}_{now.hour}:{now.minute}:{now.second}')
-    backtest_path = path + f'{TIME_INTERVAL}//Backtest_{now.day}-{now.month}-{now.year}_{now.hour}:{now.minute}:{now.second}//'
+    os.makedirs(path + f'{TIME_INTERVAL}//Backtest_{now.day}-{now.month}-{now.year}_{now.hour}_{now.minute}_{now.second}')
+    backtest_path = path + f'{TIME_INTERVAL}//Backtest_{now.day}-{now.month}-{now.year}_{now.hour}_{now.minute}_{now.second}//'
     csv_name = "trade_log.csv"
     ####################################################################################################
     ####################################################################################################
@@ -489,22 +489,21 @@ def run_backtester(account_balance_start, leverage, order_size,  start, end, TIM
         Helper.generate_trade_graphs(trades_for_graphing, backtest_path, auto_open_graph_images) ## trades: [symbol, entry_price, TP_price, SL_price, indicators, candles]
 
 if __name__ == "__main__":
-    start = "01-12-22"
-    end = "11-12-22"
+    start = "01-11-22"
+    end = "01-12-22"
     buffer = 500 ## candlestick buffer, should be 5x your largest EMA length
-    account_balance = 87  ## Starting account size
+    account_balance = 100  ## Starting account size
     fee = .00036 ## .036%
     leverage = 10
     order_size = 1.25  ## 1.25% of account balance per trade with 10x leverage the position size would be 12.5%
     TIME_INTERVAL = '5m'  ## valid intervals: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d
     Number_Of_Trades = 5  ## max amount of trades the bot will have open at any time
-    slippage = .1  ## .1% recommended to use at least .1% slippage, the more slippage the strategy can survive the better the signals
+    slippage = .01  ## .01% recommended to use at least .01% slippage, the more slippage the strategy can survive the better the signals
     TP_SL_choice = '%'  ## type of TP/SL used in backtest, list of valid values: '%', 'x (ATR)', 'x (Swing High/Low) level 1', 'x (Swing Close) level 1', 'x (Swing High/Low) level 2', 'x (Swing Close) level 2', 'x (Swing High/Low) level 3', 'x (Swing Close) level 3'
     SL_mult = .5  ## multiplier for the 'TP_SL_choice' above
     TP_mult = 1  ## multiplier for the 'TP_SL_choice' above
     strategy = 'StochRSIMACD'  ##name of strategy you want to run
 
-    quick_test = True ## if true the bot will run a faster backtest, but the test is more accurate when false (This is due to the live bot throwing away old candles to save memory)
     use_trailing_stop = False  ## flag to use the trailing stop with callback distance defined below
     trailing_stop_callback = 1  ## 1% keep the trailing stop this percent away from the last high/ low
     Trade_Each_Coin_With_Separate_Accounts = False  ## Isolated test will generate graphs for each coin as if it was trading separately from the other coins
@@ -521,8 +520,8 @@ if __name__ == "__main__":
     '''
     graph_buys_and_sells = True
     auto_open_graph_images = False ## Set to true to open all the trade graphs on completion (Caution this may use up a lot of memory)
-    graph_buys_and_sells_window_before = 5 ## graph 10 candles before the trade opened
-    graph_buys_and_sells_window_after = 5 ## graph 10 candles after the trade opened
+    graph_buys_and_sells_window_before = 5 ## graph 5 candles before the trade opened
+    graph_buys_and_sells_window_after = 5 ## graph 5 candles after the trade opened
 
     ## Variables you probably don't need to change:
     trading_on = True  ## Set to false to use the trading start time below, CAUTION ensure trading is withing start and end or you will get errors
@@ -535,6 +534,6 @@ if __name__ == "__main__":
                    symbol, use_trailing_stop, trailing_stop_callback, slippage, strategy, TP_SL_choice,
                    SL_mult, TP_mult, use_multiprocessing_for_downloading_data, graph_folder_location='./',
                    plot_graphs_to_folder=True, print_to_csv=True, fee=fee, printing_on=True, add_delay=False,
-                   buffer=buffer, trading_on=trading_on, quick_test=quick_test, graph_buys_and_sells=graph_buys_and_sells,
+                   buffer=buffer, trading_on=trading_on, quick_test=True, graph_buys_and_sells=graph_buys_and_sells,
                    auto_open_graph_images=auto_open_graph_images, graph_before=graph_buys_and_sells_window_before,
                    graph_after=graph_buys_and_sells_window_after)
