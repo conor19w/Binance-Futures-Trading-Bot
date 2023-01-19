@@ -533,10 +533,14 @@ def get_heikin_ashi(Open, Close, High, Low):
 
 def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume,
                         symbol, TIME_INTERVAL, start, end):
-    print("Loading Price Data")
     i = 0
+
+    price_data_path = '.'
+    if not os.path.exists(price_data_path + f'//price_data//'):
+        os.makedirs(price_data_path + f'//price_data//')
     while i < len(symbol):
-        path = f"{desktop_path}//price_data//{symbol[i]}_{start}_{end}.joblib"
+        print(f"Loading {symbol[i]}")
+        path = f"{price_data_path}//price_data//{symbol[i]}_{start}_{end}.joblib"
         try:
             price_data = load(path)
             Date.append(price_data[f'Date_{TIME_INTERVAL}'])
@@ -596,8 +600,6 @@ def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, D
             symbol.pop(i)
             i -= 1
         i += 1
-    print("Aligning Data Sets... This may take a few minutes")
-
     Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = \
         align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume)
     return Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume, symbol
