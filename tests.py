@@ -9,8 +9,8 @@ from binance import Client, ThreadedWebsocketManager
 
 import Helper
 symbol = ['ETHUSDT']
-start = '05-09-22'
-end = '10-09-22'
+start = '10-01-23'
+end = '23-01-23'
 client = Client()
 
 '''
@@ -29,8 +29,8 @@ Test the candles I generate are the same as the ones binance feeds us
 #         High_binance.append(float(kline[2]))
 #         Low_binance.append(float(kline[3]))
 #         Close_binance.append(float(kline[4]))
-#         Volume_binance.append(round(float(kline[5])))
-#         Date_binance.append(datetime.utcfromtimestamp((round(kline[6] / 1000))))
+#         Volume_binance.append(round(float(kline[7])))
+#         Date_binance.append(datetime.utcfromtimestamp((round(kline[0] / 1000))))
 #
 #     if not (Date_binance[:len(Date_created[0])] == Date_created[0] and Open_binance[:len(Open_created[0])] == Open_created[0] and Close_binance[:len(Close_created[0])] == Close_created[0] and
 #             High_binance[:len(High_created[0])] == High_created[0] and Low_binance[:len(Low_created[0])] == Low_created[0]) and TIME_INTERVAL == '1m':
