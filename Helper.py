@@ -439,13 +439,13 @@ def get_Klines(symbol, start_str, end_str, path):
                 ## Construct the 1h, 2h, 4h, 6h, 8h and 12h candles
                 if int(str(candle_open)[-8:-6]) % unit == 0 and int(str(candle_open)[-5:-3]) == 0:
                     ##Candle open
+                    price_data[f'Date_{unit}h'].append(candle_open)
                     price_data[f'Open_{unit}h'].append(price_data['Open_1m'][-1])
                     price_data[f'High_{unit}h'].append(price_data['High_1m'][-1])  ##initialize as highest
                     price_data[f'Low_{unit}h'].append(price_data['Low_1m'][-1])  ##initialize as lowest
                     price_data[f'Volume_{unit}h'].append(price_data['Volume_1m'][-1])  ##initialize
                 if int(str(candle_close)[-8:-6]) % unit == 0 and int(str(candle_close)[-5:-3]) == 0:
                     ##Candle close time
-                    price_data[f'Date_{unit}h'].append(price_data['Date_1m'][-1])
                     price_data[f'Close_{unit}h'].append(price_data['Close_1m'][-1])
                     ##Check if higher high or lower low present:
                     if price_data['High_1m'][-1] > price_data[f'High_{unit}h'][-1]:
