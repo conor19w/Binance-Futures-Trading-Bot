@@ -29,8 +29,6 @@ def candle_wick(Trade_Direction, Close, Open, High, Low, current_index):
 
 
 def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, current_index):
-    stop_loss_val = 0
-    take_profit_val = 0
     period = 100  ##Record peaks and troughs in last period timesteps
 
     Close_peaks = []  ##Store peak values
@@ -96,13 +94,13 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
         fib_level_6 = min_Close
 
         ##Take profit targets, Don't think this is configured properly so maybe have a look at fibonacci extensions and fix here, Right hand side is ment to be the corresponding extension level
-        fib_retracement_level_1 = fib_level_0 + 1.236 * (max_Close - min_Close) - Close[
-            current_index]  ##target max_Close+1.236*(max_Close - min_Close)
-        fib_retracement_level_2 = fib_level_0 + 1.382 * (max_Close - min_Close) - Close[current_index]
-        fib_retracement_level_3 = fib_level_0 + 1.5 * (max_Close - min_Close) - Close[current_index]
-        fib_retracement_level_4 = fib_level_0 + 1.618 * (max_Close - min_Close) - Close[current_index]
-        fib_retracement_level_5 = fib_level_0 + 1.786 * (max_Close - min_Close) - Close[current_index]
-        fib_retracement_level_6 = fib_level_0 + 2 * (max_Close - min_Close) - Close[current_index]
+        # fib_retracement_level_1 = fib_level_0 + 1.236 * (max_Close - min_Close) - Close[
+        #     current_index]  ##target max_Close+1.236*(max_Close - min_Close)
+        # fib_retracement_level_2 = fib_level_0 + 1.382 * (max_Close - min_Close) - Close[current_index]
+        # fib_retracement_level_3 = fib_level_0 + 1.5 * (max_Close - min_Close) - Close[current_index]
+        # fib_retracement_level_4 = fib_level_0 + 1.618 * (max_Close - min_Close) - Close[current_index]
+        # fib_retracement_level_5 = fib_level_0 + 1.786 * (max_Close - min_Close) - Close[current_index]
+        # fib_retracement_level_6 = fib_level_0 + 2 * (max_Close - min_Close) - Close[current_index]
 
         ## fib_level_0>Low[current_index - 2]>fib_level_1: recent low was between two of our levels
         ## Close[current_index - 3]>fib_level_1 and Close[current_index - 4]>fib_level_1 and Close[-6]>fib_level_1: Ensure the bottom level was respected  ie. no recent close below it
@@ -113,8 +111,8 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 1")
                 Trade_Direction = 1  ##signal a buy
-                take_profit_val = fib_retracement_level_1  ##target the corresponding extensiuon level
-                stop_loss_val = Close[current_index] - fib_level_1 * 1.0001  ##stoploss below bottom level with a bit extra
+                # take_profit_val = fib_retracement_level_1  ##target the corresponding extensiuon level
+                # stop_loss_val = Close[current_index] - fib_level_1 * 1.0001  ##stoploss below bottom level with a bit extra
         elif fib_level_1 > Low[current_index - 2] > fib_level_2 and Close[current_index - 3] > fib_level_2 and Close[current_index - 4] > fib_level_2 and Close[
             -6] > fib_level_2:
             if Close[current_index - 2] < Open[current_index - 2] < Close[current_index - 1] < Close[current_index] and (
@@ -122,8 +120,8 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 1")
                 Trade_Direction = 1  ##signal a buy
-                take_profit_val = fib_retracement_level_2
-                stop_loss_val = Close[current_index] - fib_level_2 * 1.0001
+                # take_profit_val = fib_retracement_level_2
+                # stop_loss_val = Close[current_index] - fib_level_2 * 1.0001
 
         elif fib_level_2 > Low[current_index - 1] > fib_level_3 and Close[current_index - 2] > fib_level_3 and Close[current_index - 3] > fib_level_3 and Close[
             current_index - 4] > fib_level_3:
@@ -132,8 +130,8 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 2")
                 Trade_Direction = 1  ##signal a buy
-                take_profit_val = fib_retracement_level_3
-                stop_loss_val = Close[current_index] - fib_level_3 * 1.0001
+                # take_profit_val = fib_retracement_level_3
+                # stop_loss_val = Close[current_index] - fib_level_3 * 1.0001
 
         elif fib_level_3 > Low[current_index - 1] > fib_level_4 and Close[current_index - 2] > fib_level_4 and Close[current_index - 3] > fib_level_4 and Close[
             current_index - 4] > fib_level_4:
@@ -142,8 +140,8 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 3")
                 Trade_Direction = 1  ##signal a buy
-                take_profit_val = fib_retracement_level_4
-                stop_loss_val = Close[current_index] - fib_level_4 * 1.0001
+                # take_profit_val = fib_retracement_level_4
+                # stop_loss_val = Close[current_index] - fib_level_4 * 1.0001
         elif fib_level_4 > Low[current_index - 1] > fib_level_5 and Close[current_index - 2] > fib_level_5 and Close[current_index - 3] > fib_level_5 and Close[
             current_index - 4] > fib_level_5:
             if Close[current_index - 1] < Open[current_index - 1] < Close[current_index] < Close[current_index] and (
@@ -151,8 +149,8 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 4")
                 Trade_Direction = 1  ##signal a buy
-                take_profit_val = fib_retracement_level_5
-                stop_loss_val = Close[current_index] - fib_level_5 * 1.0001
+                # take_profit_val = fib_retracement_level_5
+                # stop_loss_val = Close[current_index] - fib_level_5 * 1.0001
         elif fib_level_5 > Low[current_index - 1] > fib_level_6 and Close[current_index - 2] > fib_level_6 and Close[current_index - 3] > fib_level_6 and Close[
             current_index - 4] > fib_level_6:
             if Close[current_index - 1] < Open[current_index - 1] < Close[current_index] < Close[current_index] and (
@@ -160,8 +158,8 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bullish Engulfing Candle and cross up on MACD
                 # print("level 5")
                 Trade_Direction = 1  ##signal a buy
-                take_profit_val = fib_retracement_level_6
-                stop_loss_val = Close[current_index] - fib_level_6 * 1.0001
+                # take_profit_val = fib_retracement_level_6
+                # stop_loss_val = Close[current_index] - fib_level_6 * 1.0001
 
     elif trend == 0:
         ##Find the start and end of the pullback
@@ -205,12 +203,12 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
         fib_level_6 = max_Close
 
         ##Take profit targets, Don't think this is configured properly so maybe have a look at fibonacci extensions and fix here, Right hand side is ment to be the corresponding extension level
-        fib_retracement_level_1 = Close[current_index] - (fib_level_0 + 1.236 * (max_Close - min_Close))
-        fib_retracement_level_2 = Close[current_index] - (fib_level_0 + 1.382 * (max_Close - min_Close))
-        fib_retracement_level_3 = Close[current_index] - (fib_level_0 + 1.5 * (max_Close - min_Close))
-        fib_retracement_level_4 = Close[current_index] - (fib_level_0 + 1.618 * (max_Close - min_Close))
-        fib_retracement_level_5 = Close[current_index] - (fib_level_0 + 1.786 * (max_Close - min_Close))
-        fib_retracement_level_6 = Close[current_index] - (fib_level_0 + 2 * (max_Close - min_Close))
+        # fib_retracement_level_1 = Close[current_index] - (fib_level_0 + 1.236 * (max_Close - min_Close))
+        # fib_retracement_level_2 = Close[current_index] - (fib_level_0 + 1.382 * (max_Close - min_Close))
+        # fib_retracement_level_3 = Close[current_index] - (fib_level_0 + 1.5 * (max_Close - min_Close))
+        # fib_retracement_level_4 = Close[current_index] - (fib_level_0 + 1.618 * (max_Close - min_Close))
+        # fib_retracement_level_5 = Close[current_index] - (fib_level_0 + 1.786 * (max_Close - min_Close))
+        # fib_retracement_level_6 = Close[current_index] - (fib_level_0 + 2 * (max_Close - min_Close))
 
         ## fib_level_0 < High[current_index - 2] < fib_level_1: recent low was between two of our levels
         ## Close[current_index - 3] < fib_level_1 and Close[current_index - 4] < fib_level_1 and Close[-6] < fib_level_1: Ensure the Top level was respected, ie no recent close above it
@@ -221,8 +219,8 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
-                take_profit_val = fib_retracement_level_1  ##target corresponding extension level
-                stop_loss_val = fib_level_1 * 1.0001 - Close[current_index]  ##stoploss above Top level with a bit extra
+                # take_profit_val = fib_retracement_level_1  ##target corresponding extension level
+                # stop_loss_val = fib_level_1 * 1.0001 - Close[current_index]  ##stoploss above Top level with a bit extra
         elif fib_level_1 < High[current_index - 2] < fib_level_2 and Close[current_index - 3] < fib_level_2 and Close[current_index - 4] < fib_level_2 and Close[
             -6] < fib_level_2:
             if Close[current_index - 2] > Open[current_index - 2] > Close[current_index - 1] > Close[current_index] and (
@@ -230,8 +228,8 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
-                take_profit_val = fib_retracement_level_2
-                stop_loss_val = fib_level_2 * 1.0001 - Close[current_index]
+                # take_profit_val = fib_retracement_level_2
+                # stop_loss_val = fib_level_2 * 1.0001 - Close[current_index]
         elif fib_level_2 < High[current_index - 2] < fib_level_3 and Close[current_index - 3] < fib_level_3 and Close[current_index - 4] < fib_level_3 and Close[
             -6] < fib_level_3:
             if Close[current_index - 2] > Open[current_index - 2] > Close[current_index - 1] > Close[current_index] and (
@@ -239,8 +237,8 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
-                take_profit_val = fib_retracement_level_3
-                stop_loss_val = fib_level_3 * 1.0001 - Close[current_index]
+                # take_profit_val = fib_retracement_level_3
+                # stop_loss_val = fib_level_3 * 1.0001 - Close[current_index]
         elif fib_level_3 < High[current_index - 2] < fib_level_4 and Close[current_index - 3] < fib_level_4 and Close[current_index - 4] < fib_level_4 and Close[
             -6] < fib_level_4:
             if Close[current_index - 2] > Open[current_index - 2] > Close[current_index - 1] > Close[current_index] and (
@@ -248,8 +246,8 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
-                take_profit_val = fib_retracement_level_4
-                stop_loss_val = fib_level_4 * 1.0001 - Close[current_index]
+                # take_profit_val = fib_retracement_level_4
+                # stop_loss_val = fib_level_4 * 1.0001 - Close[current_index]
         elif fib_level_4 < High[current_index - 2] < fib_level_5 and Close[current_index - 3] < fib_level_5 and Close[current_index - 4] < fib_level_5 and Close[
             -6] < fib_level_5:
             if Close[current_index - 2] > Open[current_index - 2] > Close[current_index - 1] > Close[current_index] and (
@@ -257,8 +255,8 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
-                take_profit_val = fib_retracement_level_5
-                stop_loss_val = fib_level_5 * 1.0001 - Close[current_index]
+                # take_profit_val = fib_retracement_level_5
+                # stop_loss_val = fib_level_5 * 1.0001 - Close[current_index]
         elif fib_level_5 < High[current_index - 2] < fib_level_6 and Close[current_index - 3] < fib_level_6 and Close[current_index - 4] < fib_level_6 and Close[
             -6] < fib_level_6:
             if Close[current_index - 2] > Open[current_index - 2] > Close[current_index - 1] > Close[current_index] and (
@@ -266,10 +264,10 @@ def fibMACD(Trade_Direction, Close, Open, High, Low, MACD_signal, MACD, EMA200, 
                 current_index]):  ##Bearish Engulfing Candle and cross down on MACD
                 # print("level 1")
                 Trade_Direction = 0  ##signal a sell
-                take_profit_val = fib_retracement_level_6
-                stop_loss_val = fib_level_6 * 1.0001 - Close[current_index]
+                # take_profit_val = fib_retracement_level_6
+                # stop_loss_val = fib_level_6 * 1.0001 - Close[current_index]
 
-    return Trade_Direction, stop_loss_val, take_profit_val
+    return Trade_Direction #, stop_loss_val, take_profit_val
 
 
 def goldenCross(Trade_Direction, Close, EMA100, EMA50, EMA20, RSI, current_index):

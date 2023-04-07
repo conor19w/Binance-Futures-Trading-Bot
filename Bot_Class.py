@@ -358,7 +358,7 @@ class Bot:
         elif self.strategy == 'candle_wick':
             Trade_Direction = TS.candle_wick(Trade_Direction, self.Close, self.Open, self.High, self.Low, self.current_index)
         elif self.strategy == 'fibMACD':
-            Trade_Direction, stop_loss_val, take_profit_val = TS.fibMACD(Trade_Direction, self.Close, self.Open,
+            Trade_Direction = TS.fibMACD(Trade_Direction, self.Close, self.Open,
                                                                          self.High, self.Low, self.indicators["MACD_signal"]["values"],
                                                                          self.indicators["MACD"]["values"], self.indicators["EMA"]["values"],
                                                                          self.current_index)
@@ -381,7 +381,7 @@ class Bot:
                                                self.indicators["ema_long"]["values"])
 
         ## Get TP/SL values if we enter a trade:
-        if Trade_Direction != -99 and self.strategy!="fibMACD":
+        if Trade_Direction != -99:
             stop_loss_val, take_profit_val = TS.SetSLTP(self.stop_loss_val, self.take_profit_val, self.peaks,
                                                         self.troughs,
                                                         self.Close, self.High, self.Low, Trade_Direction, self.SL_mult,
