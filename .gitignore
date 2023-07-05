@@ -1,4 +1,7 @@
 __pycache__
 .github
 venv
-
+env
+.env
+price_data
+Backtests

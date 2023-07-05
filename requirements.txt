@@ -1,8 +1,10 @@
 joblib==1.1.0
 matplotlib==3.5.2
-numpy==1.22.3
+numpy==1.25.0
 pandas==1.4.2
 python-binance==1.0.15
 ta==0.10.1
 tabulate==0.8.9
 plotly==5.11.0
+python-dotenv==1.0.0
+scipy>=1.11.1

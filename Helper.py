@@ -1224,6 +1224,7 @@ def get_candles_for_graphing(Bot: Bot_Class.Bot, trade:Trade, graph_before, grap
     return trade
 
 def generate_trade_graphs(trades: [trade_info], trade_graph_folder, auto_open_graph_images):
+    return
     print("Generating Trade Graphs...")
     os.makedirs(f'{trade_graph_folder}//losing_trades')
     os.makedirs(f'{trade_graph_folder}//winning_trades')
