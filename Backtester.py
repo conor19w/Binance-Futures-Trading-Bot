@@ -494,8 +494,8 @@ def run_backtester(account_balance_start, leverage, order_size,  start, end, TIM
         Helper.generate_trade_graphs(trades_for_graphing, backtest_path, auto_open_graph_images) ## trades: [symbol, entry_price, TP_price, SL_price, indicators, candles]
 
 if __name__ == "__main__":
-    start = "01-05-23"
-    end = "01-07-23"
+    start = "01-06-23"
+    end = "04-07-23"
     buffer = 500 ## candlestick buffer, should be 5x your largest EMA length
     account_balance = 1000  ## Starting account size
     fee = .00036 ## .036%
@@ -505,8 +505,8 @@ if __name__ == "__main__":
     Number_Of_Trades = 5  ## max amount of trades the bot will have open at any time
     slippage = .01  ## .01% recommended to use at least .01% slippage, the more slippage the strategy can survive the better the signals
     TP_SL_choice = 'x (ATR)'  ## type of TP/SL used in backtest, list of valid values: '%', 'x (ATR)', 'x (Swing High/Low) level 1', 'x (Swing Close) level 1', 'x (Swing High/Low) level 2', 'x (Swing Close) level 2', 'x (Swing High/Low) level 3', 'x (Swing Close) level 3'
-    SL_mult = 2.5  ## multiplier for the 'TP_SL_choice' above
-    TP_mult = 3 ## multiplier for the 'TP_SL_choice' above
+    SL_mult = .5  ## multiplier for the 'TP_SL_choice' above
+    TP_mult = 1 ## multiplier for the 'TP_SL_choice' above
     strategy = 'bb_confluence'  ##name of strategy you want to run bb_confluence
 
     use_trailing_stop = False  ## flag to use the trailing stop with callback distance defined below
