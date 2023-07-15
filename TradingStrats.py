@@ -14,23 +14,72 @@ import math
 from math import log10, floor
 from copy import copy
 import time
-from Utils import get_trend_direction
+from Utils import calculate_momentum
 
-def bb_confluence(Trade_Direction, Close, Open, High, Low, current_index, Close5m, Close30m,
-                  Close_1h, Close_4h, bollinger_hband_5m, bollinger_lband_5m,
+has_sell_confluence = False
+has_buy_confluence = False
+def bb_confluence(Trade_Direction, Close, Open, High, Low, current_index,
+                  Close5m, Close30m, Close_1h, Close_4h,
+                  bollinger_hband_5m, bollinger_lband_5m,
                   bollinger_hband_30m, bollinger_lband_30m,
                   bollinger_hband_1h, bollinger_lband_1h, bollinger_hband_4h, bollinger_lband_4h,
-                  bollinger_hband_1d, bollinger_lband_1d):
+                  bollinger_hband_1d, bollinger_lband_1d, stochrsi_5m, d_line_5m, k_line_5m, stochrsi_30m, d_line_30m, k_line_30m):
+    global has_sell_confluence
+    global has_buy_confluence
+
     price = Close[current_index]
-    if (price < bollinger_hband_4h[-1] and price > bollinger_lband_4h[-1]) or (price < bollinger_hband_1h[-1] and price > bollinger_lband_1h[-1]) or (price < bollinger_hband_30m[-1] and price > bollinger_lband_30m[-1]):
+    if (price < bollinger_hband_4h[-1] and price > bollinger_lband_4h[-1]) or (price < bollinger_hband_1h[-1] and price > bollinger_lband_1h[-1]) and not (has_sell_confluence or has_buy_confluence): #or (price < bollinger_hband_30m[-1] and price > bollinger_lband_30m[-1]):
         return Trade_Direction
     
-    if price > bollinger_hband_4h[-1]:
-       #if Close_5m[-2] >= bollinger_hband_5m[-2] and Close_5m[-1] <= bollinger_hband_5m[-1]: 
+    if price >= bollinger_hband_4h[-1] and  price >= bollinger_hband_1h[-1] and price >= bollinger_hband_30m[-1] and price >= bollinger_hband_5m[-1]:
+        has_sell_confluence = True
+
+    if price <= bollinger_lband_4h[-1] and price <= bollinger_lband_1h[-1] and price <= bollinger_lband_30m[-1] and price <= bollinger_lband_5m[-1]:
+        has_buy_confluence = True
+    
+
+    # if Close30m[-1] < bollinger_hband_30m[-1] and Close30m[-1] > bollinger_lband_30m[-1]:
+    #     return Trade_Direction
+
+    m5_rejected = price < bollinger_hband_5m[-1] or price > bollinger_lband_5m[-1]
+    if not m5_rejected:
+        return Trade_Direction
+
+    # has_30m_overbought = False
+    # for i in range(1, 8):
+    #     if Close30m[-i] > bollinger_hband_30m[-i]:
+    #         # print('has_5m_overbought', i, Close5m[-i], bollinger_hband_5m[-i])
+    #         has_30m_overbought = True
+    #         break
+
+    # has_30m_oversold = False
+    # for i in range(1, 8):
+    #     if Close30m[-i] < bollinger_lband_30m[-i]:
+    #         # print('has_5m_oversold', i, Close5m[-i], bollinger_lband_5m[-i])
+    #         has_30m_oversold = True
+    #         break
+
+    if not has_buy_confluence and not has_sell_confluence:
+        return Trade_Direction
+
+    # Close5m_len = len(Close5m)
+    # Close_5m_Momentum_1 = calculate_momentum(Close5m)
+    # Close_5m_Momentum_2 = calculate_momentum(Close5m[:Close5m_len-1])
+    # Close_5m_Momentum_3 = calculate_momentum(Close5m[:Close5m_len-2])
+    # momentum_is_decreasing = Close_5m_Momentum_1 <= Close_5m_Momentum_2 <= Close_5m_Momentum_3
+    # momentum_is_rising = Close_5m_Momentum_1 >= Close_5m_Momentum_2 >= Close_5m_Momentum_3
+
+    bullish_reversal = k_line_30m[-1] > d_line_30m[-1] and k_line_30m[-2] < d_line_30m[-2]
+    bearish_reversal = k_line_30m[-1] < d_line_30m[-1] and k_line_30m[-2] > d_line_30m[-2]
+
+    if price > bollinger_hband_4h[-1] and has_sell_confluence: #and bearish_reversal:
+       # if Close_5m[-2] >= bollinger_hband_5m[-2] and Close_5m[-1] <= bollinger_hband_5m[-1]:
         Trade_Direction = 0
-    elif price < bollinger_lband_4h[-1]:
-        #if Close_5m[-2] <= bollinger_lband_5m[-2] and Close_5m[-1] >= bollinger_lband_5m[-1]:
+        has_sell_confluence = False
+    elif price < bollinger_lband_4h[-1] and has_buy_confluence: #and bullish_reversal:
+        # if Close_5m[-2] <= bollinger_lband_5m[-2] and Close_5m[-1] >= bollinger_lband_5m[-1]:
         Trade_Direction = 1
+        has_buy_confluence = False
     return Trade_Direction
 
 
@@ -716,14 +765,39 @@ def pairTrading_Crossover(Trade_Direction, Close1, Close2, CurrentPos, percent_S
     return Trade_Direction,Close1_SL,Close2_SL,Close_pos'''
 
 
-def SetSLTP(stop_loss_val_arr, take_profit_val_arr, peaks, troughs, Close, High, Low, Trade_Direction, SL, TP, TP_SL_choice, current_index):
+def SetSLTP(stop_loss_val_arr, take_profit_val_arr, peaks, troughs, Close, High, Low, Trade_Direction, SL, TP, TP_SL_choice, current_index, indicators):
 
     take_profit_val = -99
     stop_loss_val = -99
 
+    if TP_SL_choice == '1h (Swing High/Low) level 1':
+        i = current_index
+        minIndex = min(0, i - 3*24*60)
+
+        price = Close[current_index]
+
+        if Trade_Direction == 0:
+            if minIndex <= i:
+                amt = High[current_index] + 6
+            else:
+                amt = max(High[minIndex:i])
+            take_profit_val = abs(indicators["bollinger_lband_5m"]["values"][-1] - price)
+            stop_loss_val = max(2*take_profit_val/3, abs(amt - price))
+        else:
+            if minIndex <= i:
+                amt = High[current_index] + 6
+            else:
+                amt = min(Low[minIndex:i])
+            take_profit_val = abs(indicators["bollinger_hband_5m"]["values"][-1] - price)
+            stop_loss_val = max(2*take_profit_val/3, abs(amt - price))
+
     if TP_SL_choice == '%':
         take_profit_val = take_profit_val_arr[current_index]
         stop_loss_val = stop_loss_val_arr[current_index]
+
+    if TP_SL_choice == '1h (Swing High/Low) level 10':
+        take_profit_val = take_profit_val_arr[current_index]
+        stop_loss_val = stop_loss_val_arr[current_index]+3
 
     elif TP_SL_choice == 'x (ATR)':
         take_profit_val = take_profit_val_arr[current_index]

@@ -178,7 +178,6 @@ def run_backtester(account_balance_start, leverage, order_size,  start, end, TIM
                                                                                account_balance[0],
                                                                                Open_1min[index][i+1],
                                                                                fee, Bots[index].OP, Bots[index].CP, trade_direction, slippage)
-
             take_profit_val = -99
             stop_loss_val = -99
             ## Calculate the prices for TP and SL
@@ -368,9 +367,9 @@ def run_backtester(account_balance_start, leverage, order_size,  start, end, TIM
             CAGR = ((df['cum_return'].iloc[-1]) ** (1 / time_CAGR) - 1) * 100  # ((df['cum_return'].iloc[-1])**(1/time_CAGR)-1)*100
             vol = (df['daily_return'].std() * np.sqrt(365)) * 100
             neg_vol = (df[df['daily_return'] < 0]['daily_return'].std() * np.sqrt(365)) * 100
-            Sharpe_ratio = (CAGR - risk_free_rate) / vol
+            Sharpe_ratio = ((CAGR - risk_free_rate) / vol) if vol != 0 else 0
             sortino_ratio = (CAGR - risk_free_rate) / neg_vol
-            calmar_ratio = CAGR / max_dd
+            calmar_ratio = (CAGR / max_dd) if max_dd != 0 else 0
         except:
             pass
 
@@ -494,22 +493,27 @@ def run_backtester(account_balance_start, leverage, order_size,  start, end, TIM
         Helper.generate_trade_graphs(trades_for_graphing, backtest_path, auto_open_graph_images) ## trades: [symbol, entry_price, TP_price, SL_price, indicators, candles]
 
 if __name__ == "__main__":
-    start = "01-06-23"
-    end = "04-07-23"
+
+    # start = "05-07-23"
+    # end = "13-07-23"
+
+    start = "01-04-23"
+    end = "05-07-23"
+
     buffer = 500 ## candlestick buffer, should be 5x your largest EMA length
-    account_balance = 1000  ## Starting account size
+    account_balance = 500  ## Starting account size
     fee = .00036 ## .036%
     leverage = 10
-    order_size = 1.25  ## 1.25% of account balance per trade with 10x leverage the position size would be 12.5%
+    order_size = 1.25  ## 10.25% of account balance per trade with 10x leverage the position size would be 12.5% for 1.25%
     TIME_INTERVAL = '1m'  ## valid intervals: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d
     Number_Of_Trades = 5  ## max amount of trades the bot will have open at any time
     slippage = .01  ## .01% recommended to use at least .01% slippage, the more slippage the strategy can survive the better the signals
-    TP_SL_choice = 'x (ATR)'  ## type of TP/SL used in backtest, list of valid values: '%', 'x (ATR)', 'x (Swing High/Low) level 1', 'x (Swing Close) level 1', 'x (Swing High/Low) level 2', 'x (Swing Close) level 2', 'x (Swing High/Low) level 3', 'x (Swing Close) level 3'
-    SL_mult = .5  ## multiplier for the 'TP_SL_choice' above
-    TP_mult = 1 ## multiplier for the 'TP_SL_choice' above
-    strategy = 'bb_confluence'  ##name of strategy you want to run bb_confluence
+    TP_SL_choice = '1h (Swing High/Low) level 1'  ## type of TP/SL used in backtest, list of valid values: '1h (Swing High/Low) level 1' '%', 'x (ATR)', 'x (Swing High/Low) level 1', 'x (Swing Close) level 1', 'x (Swing High/Low) level 2', 'x (Swing Close) level 2', 'x (Swing High/Low) level 3', 'x (Swing Close) level 3'
+    SL_mult = 2.5 ## multiplier for the 'TP_SL_choice' above
+    TP_mult = 3 ## multiplier for the 'TP_SL_choice' above
+    strategy = 'bb_confluence'  ##name of strategy you want to run bb_confluence StochRSIMACD
 
-    use_trailing_stop = False  ## flag to use the trailing stop with callback distance defined below
+    use_trailing_stop = True  ## flag to use the trailing stop with callback distance defined below
     trailing_stop_callback = 1  ## 1% keep the trailing stop this percent away from the last high/ low
     Trade_Each_Coin_With_Separate_Accounts = False  ## Isolated test will generate graphs for each coin as if it was trading separately from the other coins
     only_show_profitable_coins = False  # flag for the below percentage
@@ -517,7 +521,7 @@ if __name__ == "__main__":
     particular_drawdown = False  ## Flag for minimum drawdown below
     min_dd = 1  ## 1%, Only print coins which have had less than this drawdown when the above flag 'particular_drawdown' is True
 
-    symbol = ['BNBUSDT']  ## list of coins to trade, example: ['ETHUSDT', 'BNBUSDT']
+    symbol = ['BCHUSDT']  ## list of coins to trade, example: ['BTCUSDT', 'BTCDOMUSDT', 'ETHUSDT', 'BNBUSDT', 'BAKEUSDT', 'BCHUSDT']
     Trade_All_Symbols = False  ## will test on all coins on exchange if true
 
     '''

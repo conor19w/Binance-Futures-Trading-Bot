@@ -7,6 +7,7 @@ load_dotenv()
 
 API_KEY = os.getenv('BINANCE_API_KEY')
 API_SECRET = os.getenv('BINANCE_API_SECRET')
+BASE_URL = os.getenv('BASE_URL')
 
 ################## settings, these are very strategy dependant ensure you have enough data for your chosen strategy ##################################
 order_Size = 2.5  # As % of account, i.e 2.5 = 2.5%
@@ -19,7 +20,7 @@ Max_Number_Of_Trades = 8  # How many positions we can have open at once
 use_trailing_stop = 0
 # trailing stop percent, this is .1% range is [.1% - 5%] .ie [0.1 - 5] (increments of .1 only)**
 trailing_stop_callback = 0.1
-use_market_orders = False
+use_market_orders = True
 trading_threshold = 0.1  # %, i.e 0.1 = 0.1%
 
 # New vars needed for the gui, running script from terminal will also need these now

@@ -281,3 +281,10 @@ def get_date_index0(Date, DateList):
         if DateList[i] == Date:
             return i
     return -1
+
+def calculate_momentum(prices, period=5):
+    if len(prices) < period:
+        return None
+    
+    momentum = ((prices[-1] - prices[-period]) / prices[-period]) * 100
+    return momentum

@@ -6,12 +6,12 @@ from ta.momentum import stochrsi_d, stochrsi_k, stoch, stoch_signal, rsi, awesom
 from ta.trend import ema_indicator, macd_signal, macd, sma_indicator, adx, sma_indicator, cci
 from ta.volatility import average_true_range, bollinger_pband, bollinger_hband, bollinger_lband, bollinger_mavg
 from ta.volume import ease_of_movement, on_balance_volume, force_index, money_flow_index
-from ta.momentum import tsi
+from ta.momentum import stochrsi
 from ta.trend import stc
 import numpy as np
 import pandas as pd
 import TradingStrats as TS
-from Utils import construct_higher_timeframe_candles, update_higher_timeframe_candles, get_date_index
+from Utils import calculate_momentum, update_higher_timeframe_candles, get_date_index
 
 
 class Bot:
@@ -201,6 +201,17 @@ class Bot:
             Close4h = self.price_data["Close_4h"]
             Close24h = self.price_data["Close_12h"]
 
+            High5m = self.price_data["High_5m"]
+            High30m = self.price_data["High_30m"]
+            High1h = self.price_data["High_1h"]
+            High4h = self.price_data["High_4h"]
+
+            Low5m = self.price_data["Low_5m"]
+            Low30m = self.price_data["Low_30m"]
+            Low1h = self.price_data["Low_1h"]
+            Low4h = self.price_data["Low_4h"]
+            
+
             Date5m = self.price_data["Date_5m"]
             Date30m = self.price_data["Date_30m"]
             Date1h = self.price_data["Date_1h"]
@@ -209,11 +220,31 @@ class Bot:
 
             # print(len(self.price_data["Close_5m"]),len(self.price_data["Close_30m"]), 'Close1h', len(Close1h),'Close4h', len(Close4h), len(self.Close))
 
+            stochrsi_5m = stochrsi(pd.Series(Close5m, dtype=float))
+            k_line_5m = stochrsi_5m - stochrsi_5m.rolling(window=3).min()
+            k_line_5m /= stochrsi_5m.rolling(window=3).max() - stochrsi_5m.rolling(window=3).min()
+            d_line_5m = k_line_5m.rolling(window=3).mean()
+
+            stochrsi_30m = stochrsi(pd.Series(Close30m, dtype=float))
+            k_line_30m = stochrsi_30m - stochrsi_30m.rolling(window=3).min()
+            k_line_30m /= stochrsi_30m.rolling(window=3).max() - stochrsi_30m.rolling(window=3).min()
+            d_line_30m = k_line_30m.rolling(window=3).mean()
+
             self.indicators = {
                 "Close_5m": {"values": Close5m, "plotting_axis": 3},
                 "Close_30m": {"values": Close30m, "plotting_axis": 3},
                 "Close_1h": {"values": Close1h, "plotting_axis": 3},
                 "Close_4h": {"values": Close4h, "plotting_axis": 3},
+
+                "High_5m": {"values": High5m, "plotting_axis": 3},
+                "High_30m": {"values": High30m, "plotting_axis": 3},
+                "High_1h": {"values": High1h, "plotting_axis": 3},
+                "High_4h": {"values": High4h, "plotting_axis": 3},
+
+                "Low_5m": {"values": Low5m, "plotting_axis": 3},
+                "Low_30m": {"values": Low30m, "plotting_axis": 3},
+                "Low_1h": {"values": Low1h, "plotting_axis": 3},
+                "Low_4h": {"values": Low4h, "plotting_axis": 3},
 
                 "Date_5m": {"values": Date5m, "plotting_axis": 3},
                 "Date_30m": {"values": Date30m, "plotting_axis": 3},
@@ -221,20 +252,36 @@ class Bot:
                 "Date_4h": {"values": Date4h, "plotting_axis": 3},
                 "Date_1d": {"values": Date24h, "plotting_axis": 3},
 
-                "bollinger_hband_5m": {"values": list(bollinger_hband(pd.Series(Close5m, dtype=float), window=20)), "plotting_axis": 3},
-                "bollinger_lband_5m": {"values": list(bollinger_lband(pd.Series(Close5m, dtype=float), window=20)), "plotting_axis": 3},
-                "bollinger_hband_30m": {"values": list(bollinger_hband(pd.Series(Close30m, dtype=float), window=20)), "plotting_axis": 3},
-                "bollinger_lband_30m": {"values": list(bollinger_lband(pd.Series(Close30m, dtype=float), window=20)), "plotting_axis": 3},
-                "bollinger_hband_1h": {"values": list(bollinger_hband(pd.Series(Close1h, dtype=float), window=20)), "plotting_axis": 3},
-                "bollinger_lband_1h": {"values": list(bollinger_lband(pd.Series(Close1h, dtype=float), window=20)), "plotting_axis": 3},
-                "bollinger_hband_4h": {"values": list(bollinger_hband(pd.Series(Close4h, dtype=float), window=20)), "plotting_axis": 3},
-                "bollinger_lband_4h": {"values": list(bollinger_lband(pd.Series(Close4h, dtype=float), window=20)), "plotting_axis": 3},
-                "bollinger_hband_1d": {"values": list(bollinger_hband(pd.Series(Close24h, dtype=float), window=20)), "plotting_axis": 3},
-                "bollinger_lband_1d": {"values": list(bollinger_lband(pd.Series(Close24h, dtype=float), window=20)), "plotting_axis": 3},
+                "bollinger_hband_5m": {"values": list(bollinger_hband(pd.Series(Close5m, dtype=float), window=21)), "plotting_axis": 3},
+                "bollinger_lband_5m": {"values": list(bollinger_lband(pd.Series(Close5m, dtype=float), window=21)), "plotting_axis": 3},
+                "bollinger_hband_30m": {"values": list(bollinger_hband(pd.Series(Close30m, dtype=float), window=21)), "plotting_axis": 3},
+                "bollinger_lband_30m": {"values": list(bollinger_lband(pd.Series(Close30m, dtype=float), window=21)), "plotting_axis": 3},
+                "bollinger_hband_1h": {"values": list(bollinger_hband(pd.Series(Close1h, dtype=float), window=21)), "plotting_axis": 3},
+                "bollinger_lband_1h": {"values": list(bollinger_lband(pd.Series(Close1h, dtype=float), window=21)), "plotting_axis": 3},
+                "bollinger_hband_4h": {"values": list(bollinger_hband(pd.Series(Close4h, dtype=float), window=21)), "plotting_axis": 3},
+                "bollinger_lband_4h": {"values": list(bollinger_lband(pd.Series(Close4h, dtype=float), window=21)), "plotting_axis": 3},
+                "bollinger_hband_1d": {"values": list(bollinger_hband(pd.Series(Close24h, dtype=float), window=21)), "plotting_axis": 3},
+                "bollinger_lband_1d": {"values": list(bollinger_lband(pd.Series(Close24h, dtype=float), window=21)), "plotting_axis": 3},
+
+                "stochrsi_5m": {"values": list(stochrsi_5m), "plotting_axis": 3},
+                "k_line_5m": {"values": list(k_line_5m), "plotting_axis": 3},
+                "d_line_5m": {"values": list(d_line_5m), "plotting_axis": 3},
+
+                "stochrsi_30m": {"values": list(stochrsi_30m), "plotting_axis": 3},
+                "k_line_30m": {"values": list(k_line_30m), "plotting_axis": 3},
+                "d_line_30m": {"values": list(d_line_30m), "plotting_axis": 3},
+
+            
             }
 
     def update_TP_SL(self):
         # Run Once in Backtester/ Run every candle in Live Bot
+        if self.TP_SL_choice == '1h (Swing High/Low) level 1':
+            self.take_profit_val = [2+(self.TP_mult / 100) * self.Close[i]
+                                    for i in range(len(self.Close))]
+            self.stop_loss_val = [5+(self.SL_mult / 100) * self.Close[i]
+                                  for i in range(len(self.Close))]
+            
         if self.TP_SL_choice == '%':
             self.take_profit_val = [(self.TP_mult / 100) * self.Close[i]
                                     for i in range(len(self.Close))]
@@ -487,10 +534,11 @@ class Bot:
 
             Trade_Direction = TS.bb_confluence(Trade_Direction, self.Close, self.Open, self.High, self.Low,
                                                self.current_index,
-                                               self.indicators["Close_5m"]["values"][:Close30mIndex],
-                                               self.indicators["Close_30m"]["values"][:Close5mIndex],
+                                               self.indicators["Close_5m"]["values"][:Close5mIndex],
+                                               self.indicators["Close_30m"]["values"][:Close30mIndex],
                                                self.indicators["Close_1h"]["values"][:Close1hIndex],
                                                self.indicators["Close_4h"]["values"][:Close4hIndex],
+
                                                self.indicators["bollinger_hband_5m"]["values"][:Close5mIndex],
                                                self.indicators["bollinger_lband_5m"]["values"][:Close5mIndex],
                                                self.indicators["bollinger_hband_30m"]["values"][:Close30mIndex],
@@ -500,7 +548,16 @@ class Bot:
                                                self.indicators["bollinger_hband_4h"]["values"][:Close4hIndex],
                                                self.indicators["bollinger_lband_4h"]["values"][:Close4hIndex],
                                                self.indicators["bollinger_hband_1d"]["values"][:Close1dIndex],
-                                               self.indicators["bollinger_lband_1d"]["values"][:Close1dIndex])
+                                               self.indicators["bollinger_lband_1d"]["values"][:Close1dIndex],
+
+                                               self.indicators["stochrsi_5m"]["values"][:Close5mIndex],
+                                               self.indicators["d_line_5m"]["values"][:Close5mIndex],
+                                               self.indicators["k_line_5m"]["values"][:Close5mIndex],
+
+                                               self.indicators["stochrsi_30m"]["values"][:Close30mIndex],
+                                               self.indicators["d_line_30m"]["values"][:Close30mIndex],
+                                               self.indicators["k_line_30m"]["values"][:Close30mIndex],
+                                               )
 
         # Get TP/SL values if we enter a trade:
         if Trade_Direction != -99:
@@ -508,7 +565,7 @@ class Bot:
                                                         self.troughs,
                                                         self.Close, self.High, self.Low, Trade_Direction, self.SL_mult,
                                                         self.TP_mult, self.TP_SL_choice,
-                                                        self.current_index)
+                                                        self.current_index, self.indicators)
         return Trade_Direction, stop_loss_val, take_profit_val
 
     def check_close_pos(self, Trade_Direction):
