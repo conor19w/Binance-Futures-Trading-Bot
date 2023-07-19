@@ -170,14 +170,14 @@ for i in range((buffer - 1)*TIME_INTERVAL, len(Close_1min[0]) - 1):
         if Trade_Each_Coin_With_Separate_Accounts:
             Order_Notional = account_balance[index] * leverage * order_Size
             order_qty, entry_price, account_balance[index] = Helper.open_trade(Bots[index].symbol, Order_Notional,
-                                                                    account_balance[index], Open_1min[index][i+1],
-                                                                    fee, Bots[index].OP)
+                                                                               account_balance[index], Open_1min[index][i+1],
+                                                                               fee, Bots[index].OP)
         else:
             Order_Notional = account_balance[0] * leverage * order_Size
             order_qty, entry_price, account_balance[0] = Helper.open_trade(Bots[index].symbol, Order_Notional,
-                                                                               account_balance[0],
-                                                                               Open_1min[index][i+1],
-                                                                               fee, Bots[index].OP)
+                                                                           account_balance[0],
+                                                                           Open_1min[index][i+1],
+                                                                           fee, Bots[index].OP)
 
         take_profit_val = -99
         stop_loss_val = -99

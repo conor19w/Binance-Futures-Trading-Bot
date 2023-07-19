@@ -10,7 +10,7 @@ from tabulate import tabulate
 client = Client(api_key=API_KEY,
                 api_secret=API_SECRET)  ##Binance keys needed to get historical data/ Trade on an account
 
-desktop_path = f"."
+desktop_path = f""
 
 
 class Data_Handler:
@@ -535,7 +535,7 @@ def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, D
                         symbol, TIME_INTERVAL, start, end):
     i = 0
 
-    price_data_path = '.'
+    price_data_path = ''
     if not os.path.exists(price_data_path + f'//price_data//'):
         os.makedirs(price_data_path + f'//price_data//')
     while i < len(symbol):

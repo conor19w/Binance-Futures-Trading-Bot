@@ -293,7 +293,7 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     root.title("Binance Futures Bot (gui v1)                                                    Developed by Conor White")
-    photo = tk.PhotoImage(file="./icon.png")
+    photo = tk.PhotoImage(file="icon.png")
     root.iconphoto(False, photo)
     root.maxsize(800, 700)
     root.minsize(800, 700)
