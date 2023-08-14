@@ -169,8 +169,8 @@ def run_backtester(account_balance_start, leverage, order_size,  start, end, TIM
             if Trade_Each_Coin_With_Separate_Accounts:
                 Order_Notional = account_balance[index] * leverage * order_size
                 order_qty, entry_price, account_balance[index] = Helper.open_trade(Bots[index].symbol, Order_Notional,
-                                                                                   account_balance[index], Open_1min[index][i+1],
-                                                                                   fee, Bots[index].OP, Bots[index].CP, trade_direction, slippage)
+                                                                        account_balance[index], Open_1min[index][i+1],
+                                                                        fee, Bots[index].OP, Bots[index].CP, trade_direction, slippage)
             else:
                 Order_Notional = account_balance[0] * leverage * order_size
                 order_qty, entry_price, account_balance[0] = Helper.open_trade(Bots[index].symbol, Order_Notional,
@@ -487,6 +487,7 @@ def run_backtester(account_balance_start, leverage, order_size,  start, end, TIM
 
     if graph_buys_and_sells:
         Helper.generate_trade_graphs(trades_for_graphing, backtest_path, auto_open_graph_images) ## trades: [symbol, entry_price, TP_price, SL_price, indicators, candles]
+
 
 if __name__ == "__main__":
     start = "01-11-22"
