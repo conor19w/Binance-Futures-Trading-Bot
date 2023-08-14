@@ -87,7 +87,7 @@ class TradeManager:
     def new_trades_loop(self):
         while True:
             [symbol, OP, CP, tick_size, trade_direction, index, stop_loss_val, take_profit_val] = self.new_trades_q.get()
-            if symbol not in self.get_all_open_trades() and len(self.active_trades) < max_number_of_positions and self.check_margin_sufficient():
+            if symbol not in self.get_all_open_or_pending_trades() and len(self.active_trades) < max_number_of_positions and self.check_margin_sufficient():
                 try:
                     order_id, order_qty, entry_price, trade_status = self.open_trade(symbol, trade_direction, OP, tick_size)
                     if TP_SL_choice in custom_tp_sl_functions:
@@ -118,12 +118,18 @@ class TradeManager:
             self.active_trades[-1].trade_status = 3  ## Signals to close the trade as it doesn't have either a Take Profit or a Stop Loss
 
     '''
-    Gets all opened trades, Including user opened positions
+    Gets all opened trades, User opened positions + Bot opened trades + Pending Bot trades
     '''
-    def get_all_open_trades(self):
+    def get_all_open_or_pending_trades(self):
         open_trades_symbols = [position['symbol'] for position in self.client.futures_position_information() if float(position['notional']) != 0.0]  ## All open Trades
         active_trade_symbols = [trade.symbol for trade in self.active_trades]
         return open_trades_symbols + active_trade_symbols
+
+    '''
+    Gets all opened trades from binance
+    '''
+    def get_all_open_trades(self):
+        return [position['symbol'] for position in self.client.futures_position_information() if float(position['notional']) != 0.0]
 
     '''
     Checks if we have sufficient margin remaining to open a new trade
@@ -136,6 +142,7 @@ class TradeManager:
     Checks if any trades have gone past our specified threshold in live_trading_config.py
     '''
     def check_threshold_loop(self):
+        count = 0
         while True:
             try:
                 time.sleep(5)
@@ -145,8 +152,11 @@ class TradeManager:
                         current_price = float(self.client.futures_symbol_ticker(symbol=trade.symbol)['price'])
                         if (abs(trade.entry_price - current_price) / trade.entry_price) > trading_threshold / 100:
                             trade.trade_status = 2
-                ## clean up task for trades in status 2
-                self.cancel_and_remove_trades()
+                ## clean up task for completed trades
+                if count == 2:
+                    self.cancel_and_remove_trades()
+                    count = 0
+                count += 1
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -201,6 +211,16 @@ class TradeManager:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                     log.error(f'cancel_and_remove_trades() - error occurred closing open orders on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+            elif self.active_trades[i].trade_status == 1:
+                try:
+                    if self.active_trades[i].symbol not in self.get_all_open_trades():
+                        self.client.futures_cancel_all_open_orders(symbol=self.active_trades[i].symbol)
+                        log.info(f'cancel_and_remove_trades() - orders cancelled on {self.active_trades[i].symbol} as trade was closed, possibly by the user')
+                        self.active_trades.pop(i)
+                except Exception as e:
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    log.error(f'cancel_and_remove_trades() - error occurred cancelling a trade on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
             else:
                 i += 1
 
