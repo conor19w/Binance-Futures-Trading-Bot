@@ -1,4 +1,6 @@
 __pycache__
 .github
 venv
-
+.idea
+testing.py
+back_testing.py
