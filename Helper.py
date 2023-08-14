@@ -217,19 +217,13 @@ class CustomClient:
                     info['Market Price'].append(position['markPrice'])
                     try:
                         info['TP'].append(open_orders[f'{position["symbol"]}_TP'])
-                        if info['Direction'][-1] == 'LONG':
-                            info['Distance to TP (%)'].append(((float(info['TP'][-1]) - float(info['Entry Price'][-1]))/ float(info['Entry Price'][-1])) * 100)
-                        else:
-                            info['Distance to TP (%)'].append(((float(info['Entry Price'][-1]) - float(info['TP'][-1])) / float(info['Entry Price'][-1])) * 100)
+                        info['Distance to TP (%)'].append(abs(((float(info['Market Price'][-1]) - float(info['TP'][-1])) / float(info['Market Price'][-1])) * 100))
                     except:
                         info['TP'].append('Not opened yet')
                         info['Distance to TP (%)'].append('Not available yet')
                     try:
                         info['SL'].append(open_orders[f'{position["symbol"]}_SL'])
-                        if info['Direction'][-1] == 'SHORT':
-                            info['Distance to SL (%)'].append(((float(info['SL'][-1]) - float(info['Entry Price'][-1]))/ float(info['Entry Price'][-1])) * 100)
-                        else:
-                            info['Distance to SL (%)'].append(((float(info['Entry Price'][-1]) - float(info['SL'][-1])) / float(info['Entry Price'][-1])) * 100)
+                        info['Distance to SL (%)'].append(abs(((float(info['Market Price'][-1]) - float(info['SL'][-1])) / float(info['Market Price'][-1])) * 100))
                     except:
                         info['SL'].append('Not opened yet')
                         info['Distance to SL (%)'].append('Not available yet')
