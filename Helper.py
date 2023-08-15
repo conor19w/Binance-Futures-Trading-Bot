@@ -208,7 +208,7 @@ class CustomClient:
                 open_orders.update(open_orders_SL)
                 for position in position_information:
                     info['Symbol'].append(position['symbol'])
-                    info['Position Size (USDT)'].append(position['notional'])
+                    info['Position Size'].append(position['positionAmt'])
                     if float(position['notional']) > 0:
                         info['Direction'].append('LONG')
                     else:
