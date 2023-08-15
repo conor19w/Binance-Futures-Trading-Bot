@@ -146,15 +146,16 @@ class TradeManager:
         while True:
             try:
                 time.sleep(5)
+                open_trades = self.get_all_open_trades()
                 ## Check trading threshold for each trade
                 for trade in self.active_trades:
-                    if trade.trade_status == 0:
+                    if trade.trade_status == 0 and trade.symbol not in open_trades:
                         current_price = float(self.client.futures_symbol_ticker(symbol=trade.symbol)['price'])
                         if (abs(trade.entry_price - current_price) / trade.entry_price) > trading_threshold / 100:
                             trade.trade_status = 2
                 ## clean up task for completed trades
                 if count == 2:
-                    self.cancel_and_remove_trades()
+                    self.cancel_and_remove_trades(open_trades)
                     count = 0
                 count += 1
             except Exception as e:
@@ -165,7 +166,7 @@ class TradeManager:
     '''
     Function that removes finished trades from the active_trades list
     '''
-    def cancel_and_remove_trades(self):
+    def cancel_and_remove_trades(self, open_trades):
         i = 0
         while i < len(self.active_trades):
             if self.active_trades[i].trade_status == 2:
@@ -175,7 +176,7 @@ class TradeManager:
                         log.info(f'cancel_and_remove_trades() - orders cancelled on {self.active_trades[i].symbol} as price surpassed the trading threshold set in live_trading_config.py')
                         self.active_trades.pop(i)
                     else:
-                        self.active_trades[i].trade_status = 1
+                        self.active_trades[i].trade_status = 0
                         i += 1
                 except Exception as e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -213,7 +214,7 @@ class TradeManager:
                     log.error(f'cancel_and_remove_trades() - error occurred closing open orders on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
             elif self.active_trades[i].trade_status == 1:
                 try:
-                    if self.active_trades[i].symbol not in self.get_all_open_trades():
+                    if self.active_trades[i].symbol not in open_trades:
                         self.client.futures_cancel_all_open_orders(symbol=self.active_trades[i].symbol)
                         log.info(f'cancel_and_remove_trades() - orders cancelled on {self.active_trades[i].symbol} as trade was closed, possibly by the user')
                         self.active_trades.pop(i)
@@ -366,8 +367,8 @@ class TradeManager:
     '''
     def place_TP(self, symbol: str, TP: [float, float], trade_direction: int, CP: int, tick_size: float):
         TP_ID = ''
+        TP_val = 0
         try:
-            TP_val = 0
             order = ''
             order_side = ''
             if CP == 0:
@@ -400,7 +401,7 @@ class TradeManager:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            log.error(f"place_TP() - Error occurred placing TP on {symbol}, Error: {e}, {exc_type, fname, exc_tb.tb_lineno}")
+            log.error(f"place_TP() - Error occurred placing TP on {symbol}, price: {TP_val}, amount: {TP[1]}, Error: {e}, {exc_type, fname, exc_tb.tb_lineno}")
             return -1
 
         return TP_ID
@@ -435,7 +436,7 @@ class TradeManager:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            log.error(f"place_SL() - Error occurred placing SL on {symbol}, Error: {e}, {exc_type, fname, exc_tb.tb_lineno}")
+            log.error(f"place_SL() - Error occurred placing SL on {symbol}, price: {SL}, Error: {e}, {exc_type, fname, exc_tb.tb_lineno}")
             return -1
 
         return order_ID
