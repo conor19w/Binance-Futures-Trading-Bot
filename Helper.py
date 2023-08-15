@@ -201,7 +201,7 @@ class CustomClient:
             self.print_trades.get()
             position_information = [position for position in self.client.futures_position_information() if float(position['notional']) != 0.0]
             if len(position_information) != 0:
-                info = {'Symbol': [], 'Position Size (USDT)': [], 'Direction': [], 'Entry Price': [], 'Market Price': [], 'TP': [], 'SL': [], 'Distance to TP (%)': [] , 'Distance to SL (%)': [], 'PNL': []}
+                info = {'Symbol': [], 'Position Size': [], 'Direction': [], 'Entry Price': [], 'Market Price': [], 'TP': [], 'SL': [], 'Distance to TP (%)': [] , 'Distance to SL (%)': [], 'PNL': []}
                 orders = self.client.futures_get_open_orders()
                 open_orders = {f'{str(order["symbol"]) + "_TP"}': float(order['price']) for order in orders if order['reduceOnly'] is True and order['type'] == 'LIMIT'}
                 open_orders_SL = {f'{str(order["symbol"]) + "_SL"}': float(order['stopPrice']) for order in orders if order['origType'] == 'STOP_MARKET'}
