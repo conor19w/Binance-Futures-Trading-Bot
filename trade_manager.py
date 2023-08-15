@@ -145,7 +145,7 @@ class TradeManager:
         count = 0
         while True:
             try:
-                time.sleep(5)
+                time.sleep(8)
                 open_trades = self.get_all_open_trades()
                 ## Check trading threshold for each trade
                 for trade in self.active_trades:
@@ -171,7 +171,7 @@ class TradeManager:
         while i < len(self.active_trades):
             if self.active_trades[i].trade_status == 2:
                 try:
-                    pop_trade = self.check_position_and_cancel_orders(self.active_trades[i])
+                    pop_trade = self.check_position_and_cancel_orders(self.active_trades[i], open_trades)
                     if pop_trade:
                         log.info(f'cancel_and_remove_trades() - orders cancelled on {self.active_trades[i].symbol} as price surpassed the trading threshold set in live_trading_config.py')
                         self.active_trades.pop(i)
@@ -185,7 +185,7 @@ class TradeManager:
             elif self.active_trades[i].trade_status == 3:
                 try:
                     self.close_position(self.active_trades[i].symbol, self.active_trades[i].trade_direction, self.active_trades[i].position_size)
-                    if self.active_trades[i].SL_id == -99:
+                    if self.active_trades[i].SL_id == -1:
                         log.info(f'cancel_and_remove_trades() - orders cancelled on {self.active_trades[i].symbol} as there was an issue placing the Stop loss')
                     else:
                         log.info(f'cancel_and_remove_trades() - orders cancelled on {self.active_trades[i].symbol} as there was an issue placing the Take Profit')
@@ -242,7 +242,7 @@ class TradeManager:
                             if symbol == trade.symbol and ID == trade.order_id:
                                 trade.SL_id = self.place_SL(trade.symbol, trade.SL_val, trade.trade_direction, trade.CP, trade.tick_size)
                                 trade.TP_id = self.place_TP(trade.symbol, [trade.TP_val, trade.position_size], trade.trade_direction, trade.CP, trade.tick_size)
-                                if trade.SL_id != -99 and trade.TP_id != -99:
+                                if trade.SL_id != -1 and trade.TP_id != -1:
                                     trade.trade_status = 1
                                     log.info(f'place_tp_sl_loop() - Order filled on {symbol}, Entry price: {trade.entry_price}, order quantity: {trade.position_size}, Side: {"Long" if trade.trade_direction else "Short"}\n'
                                         f' Take Profit & Stop loss have been placed')
@@ -446,7 +446,10 @@ class TradeManager:
     Can also be used to close a position based off a condition met in your strategy
     '''
     def close_position(self, symbol: str, trade_direction: int, total_position_size: float):
-        self.client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel orders for this symbol
+        try:
+            self.client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel orders for this symbol
+        except:
+            log.warning(f'close_position() issue cancelling open orders on {symbol} potentially there were no open orders')
         if trade_direction == 0:
             self.client.futures_create_order(
                 symbol=symbol,
@@ -463,8 +466,7 @@ class TradeManager:
     '''
     Function that checks we haven't entered a position before cancelling it
     '''
-    def check_position_and_cancel_orders(self, trade: Trade):
-        open_trades = self.get_all_open_trades()
+    def check_position_and_cancel_orders(self, trade: Trade, open_trades):
         if trade.symbol not in open_trades:
             self.client.futures_cancel_all_open_orders(symbol=trade.symbol)
             return True
