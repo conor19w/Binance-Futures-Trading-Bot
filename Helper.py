@@ -3,8 +3,7 @@ from threading import Thread
 from binance.client import Client
 
 import Bot_Class
-from live_trading_config import API_KEY, API_SECRET, leverage, interval, trading_strategy, TP_SL_choice, SL_mult, \
-    TP_mult, buffer
+from live_trading_config import *
 from binance import ThreadedWebsocketManager
 import time
 from logger import *

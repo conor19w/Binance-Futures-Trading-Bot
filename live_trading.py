@@ -1,3 +1,4 @@
+import asyncio
 from copy import copy
 from pprint import PrettyPrinter
 from live_trading_config import *
@@ -12,6 +13,8 @@ import os
 os.environ['TYPE_CHECKING'] = 'False'
 
 if __name__ == '__main__':
+    if os.name == 'nt':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     pp = PrettyPrinter()  ##for printing json text cleanly (inspect binance API call returns)
     Bots: [Bot_Class.Bot] = []
     signal_queue = None
