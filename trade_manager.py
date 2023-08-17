@@ -470,10 +470,10 @@ class TradeManager:
                         info['SL'].append('Not opened yet')
                         info['Distance to SL (%)'].append('Not available yet')
                     info['PNL'].append(float(position['unRealizedProfit']))
-                log.info(f'Account Balance: {self.get_account_balance()}, Total profit: {self.total_profit}, PNL ($): {sum(info["PNL"])}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss}, Open Positions: {len(info["Symbol"])}\n' + tabulate(
+                log.info(f'Account Balance: ${self.get_account_balance()}, Total profit: ${self.total_profit}, PNL: ${sum(info["PNL"])}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss}, Open Positions: {len(info["Symbol"])}\n' + tabulate(
                         info, headers='keys', tablefmt='fancy_grid'))
             else:
-                log.info(f'Account Balance: {self.get_account_balance()}, Total profit: {self.total_profit}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss},  No Open Positions')
+                log.info(f'Account Balance: ${self.get_account_balance()}, Total profit: ${self.total_profit}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss},  No Open Positions')
 
 
 def start_new_trades_loop_multiprocess(client: Client, new_trades_q, print_trades_q):
