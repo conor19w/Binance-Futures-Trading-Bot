@@ -27,7 +27,7 @@ if __name__ == '__main__':
         print_trades_q = Queue()
 
     python_binance_client = Client(api_key=API_KEY, api_secret=API_SECRET)
-    client = CustomClient(python_binance_client, print_trades_q)
+    client = CustomClient(python_binance_client)
     if trade_all_symbols:
         symbols_to_trade = client.get_all_symbols()
 
@@ -39,7 +39,16 @@ if __name__ == '__main__':
     client.start_websockets(Bots)
 
     ## Initialize Trade manager for order related tasks
-    TM = TradeManager(python_binance_client, signal_queue, print_trades_q)
+    new_trade_loop = None
+    TM = None
+    if use_multiprocessing_for_trade_execution:
+        new_trade_loop = multiprocessing.Process(target=start_new_trades_loop_multiprocess, args=(python_binance_client, signal_queue, print_trades_q))
+        new_trade_loop.start()
+    else:
+        TM = TradeManager(python_binance_client, signal_queue, print_trades_q)
+        new_trade_loop = Thread(target=TM.new_trades_loop)
+        new_trade_loop.daemon = True
+        new_trade_loop.start()
 
     ## Thread to ping the server & reconnect websockets
     ping_server_reconnect_sockets_thread = Thread(target=client.ping_server_reconnect_sockets, args=(Bots,))
@@ -50,19 +59,4 @@ if __name__ == '__main__':
     combine_data_thread = Thread(target=client.combine_data, args=(Bots, symbols_to_trade))
     combine_data_thread.daemon = True
     combine_data_thread.start()
-
-    new_trade_loop = None
-    if use_multiprocessing_for_trade_execution:
-        new_trade_loop = multiprocessing.Process(target=new_trades_loop_multiprocess, args=(python_binance_client, signal_queue))
-        new_trade_loop.start()
-    else:
-        new_trade_loop = Thread(target=TM.new_trades_loop)
-        new_trade_loop.daemon = True
-        new_trade_loop.start()
-
-    account_balance = TM.get_account_balance()
-    startup_account_balance = copy(account_balance)
-
-    log.info(f'Start Balance: {account_balance}')
-    print()
     new_trade_loop.join()

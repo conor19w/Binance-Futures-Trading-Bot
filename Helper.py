@@ -1,5 +1,3 @@
-from threading import Thread
-
 from binance.client import Client
 
 import Bot_Class
@@ -7,19 +5,13 @@ from live_trading_config import *
 from binance import ThreadedWebsocketManager
 import time
 from logger import *
-from tabulate import tabulate
-
 
 class CustomClient:
-    def __init__(self, client: Client, print_trades_q):
+    def __init__(self, client: Client):
         self.client = client
         self.leverage = leverage
         self.twm = ThreadedWebsocketManager(api_key=API_KEY, api_secret=API_SECRET)
         self.number_of_bots = 0
-        self.print_trades = print_trades_q
-        self.log_trades_loop_thread = Thread(target=self.log_trades_loop)
-        self.log_trades_loop_thread.daemon = True
-        self.log_trades_loop_thread.start()
 
     '''
     Function that returns the list of trade-able USDT symbols
@@ -72,7 +64,6 @@ class CustomClient:
     '''
     Loop that runs constantly, it pings the server every 15 seconds so we don't lose connection
     '''
-
     def ping_server_reconnect_sockets(self, bots: [Bot_Class.Bot]):
         while True:
             time.sleep(15)
@@ -191,45 +182,6 @@ class CustomClient:
             log.error(
                 f'get_historical() - Error occurred for symbol: {symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
         return Date, Open, Close, High, Low, Volume
-
-    '''
-    Loop that runs constantly and updates the logs for the user when something happens or when a new candle is received
-    '''
-    def log_trades_loop(self):
-        while True:
-            self.print_trades.get()
-            position_information = [position for position in self.client.futures_position_information() if float(position['notional']) != 0.0]
-            if len(position_information) != 0:
-                info = {'Symbol': [], 'Position Size': [], 'Direction': [], 'Entry Price': [], 'Market Price': [], 'TP': [], 'SL': [], 'Distance to TP (%)': [] , 'Distance to SL (%)': [], 'PNL': []}
-                orders = self.client.futures_get_open_orders()
-                open_orders = {f'{str(order["symbol"]) + "_TP"}': float(order['price']) for order in orders if order['reduceOnly'] is True and order['type'] == 'LIMIT'}
-                open_orders_SL = {f'{str(order["symbol"]) + "_SL"}': float(order['stopPrice']) for order in orders if order['origType'] == 'STOP_MARKET'}
-                open_orders.update(open_orders_SL)
-                for position in position_information:
-                    info['Symbol'].append(position['symbol'])
-                    info['Position Size'].append(position['positionAmt'])
-                    if float(position['notional']) > 0:
-                        info['Direction'].append('LONG')
-                    else:
-                        info['Direction'].append('SHORT')
-                    info['Entry Price'].append(position['entryPrice'])
-                    info['Market Price'].append(position['markPrice'])
-                    try:
-                        info['TP'].append(open_orders[f'{position["symbol"]}_TP'])
-                        info['Distance to TP (%)'].append(abs(((float(info['Market Price'][-1]) - float(info['TP'][-1])) / float(info['Market Price'][-1])) * 100))
-                    except:
-                        info['TP'].append('Not opened yet')
-                        info['Distance to TP (%)'].append('Not available yet')
-                    try:
-                        info['SL'].append(open_orders[f'{position["symbol"]}_SL'])
-                        info['Distance to SL (%)'].append(abs(((float(info['Market Price'][-1]) - float(info['SL'][-1])) / float(info['Market Price'][-1])) * 100))
-                    except:
-                        info['SL'].append('Not opened yet')
-                        info['Distance to SL (%)'].append('Not available yet')
-                    info['PNL'].append(float(position['unRealizedProfit']))
-                log.info(f'Account Balance: {self.get_account_balance()}, PNL ($): {sum(info["PNL"])}, Open Positions: {len(info["Symbol"])}\n'+tabulate(info, headers='keys', tablefmt='fancy_grid'))
-            else:
-                log.info(f'Account Balance: {self.get_account_balance()}, No Open Positions')
 
     '''
     Function that returns the USDT balance of the account

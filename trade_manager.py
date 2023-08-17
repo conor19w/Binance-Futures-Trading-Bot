@@ -1,52 +1,17 @@
 from threading import Thread
 
+from binance import ThreadedWebsocketManager
 from binance.client import Client
 from binance.enums import SIDE_SELL, SIDE_BUY, FUTURE_ORDER_TYPE_MARKET, FUTURE_ORDER_TYPE_LIMIT, TIME_IN_FORCE_GTC, \
     FUTURE_ORDER_TYPE_STOP_MARKET
 from binance.exceptions import BinanceAPIException
+from tabulate import tabulate
 
 import TradingStrats
 from live_trading_config import *
 import time
 from Helper import Trade
 from logger import *
-
-active_trades_multiprocess: [Trade] = []
-
-
-def new_trades_loop_multiprocess(client: Client, new_trades_q):
-    global active_trades_multiprocess
-    check_threshold_thread = Thread(target=check_threshold_loop_multiprocess)
-    check_threshold_thread.daemon = True
-    while True:
-        [symbol, OP, CP, tick_size, trade_direction, stop_loss_val, take_profit_val] = new_trades_q.get()
-        try:
-            pass
-
-            if not check_threshold_thread.is_alive():
-                check_threshold_thread.start()  ## Start this thread after a trade executes
-        except Exception as e:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            log.error(f'new_trades_loop() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
-
-
-def check_threshold_loop_multiprocess():
-    global active_trades_multiprocess
-    ## This loop will only be active while we have trades in status 0
-    try:
-        while True:
-            time.sleep(10)
-            unopened_trades = [t.trade_status for t in active_trades_multiprocess if t.trade_status == 0]
-            if len(unopened_trades) == 0:
-                break
-            ## Check trading threshold for each trade
-
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        log.error(f'check_threshold_loop() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
-
 
 '''
 Function for custom TP SL values that need trade information before calculating, may be needed depending on your TP SL Function
@@ -73,13 +38,16 @@ class TradeManager:
         self.check_threshold_thread = Thread(target=self.check_threshold_loop)
         self.check_threshold_thread.daemon = True
         self.check_threshold_thread.start()
-        self.place_tp_sl_thread = Thread(target=self.place_tp_sl_loop)
-        self.place_tp_sl_thread.daemon = True
-        self.place_tp_sl_thread.start()
-        self.monitor_tp_sl_thread = Thread(target=self.monitor_tp_sl_loop)
-        self.monitor_tp_sl_thread.daemon = True
-        self.monitor_tp_sl_thread.start()
+        self.twm = ThreadedWebsocketManager(api_key=API_KEY, api_secret=API_SECRET)
+        self.twm.start()
+        self.user_socket = self.twm.start_futures_user_socket(callback=self.monitor_trades)
         self.print_trades_q = print_trades_q
+        self.log_trades_loop_thread = Thread(target=self.log_trades_loop)
+        self.log_trades_loop_thread.daemon = True
+        self.log_trades_loop_thread.start()
+        self.total_profit = 0
+        self.number_of_wins = 0
+        self.number_of_losses = 0
 
     '''
     Loop that constantly runs and opens new trades as they come in
@@ -93,9 +61,10 @@ class TradeManager:
                     if TP_SL_choice in custom_tp_sl_functions and trade_status != -99:
                         options = {'position_size': order_qty} ## If you have a need to add additional inputs to calculate_custom_tp_sl() you can do so by adding to this dict
                         stop_loss_val, take_profit_val = calculate_custom_tp_sl(options)
-                    self.active_trades.append(Trade(index, entry_price, order_qty, take_profit_val, stop_loss_val, trade_direction, order_id, symbol, CP, tick_size))
+                    if trade_status != -99:
+                        self.active_trades.append(Trade(index, entry_price, order_qty, take_profit_val, stop_loss_val, trade_direction, order_id, symbol, CP, tick_size))
                     if trade_status:
-                        self.place_tp_sl(symbol, trade_direction, CP, tick_size, entry_price, order_qty)
+                        self.place_tp_sl(symbol, trade_direction, CP, tick_size, entry_price, order_qty, -1)
                     elif trade_status == 0:
                         log.info(f'new_trades_loop() - Order placed on {symbol}, Entry price: {entry_price}, order quantity: {order_qty}, Side: {"Long" if trade_direction else "Short"}')
                 except Exception as e:
@@ -104,18 +73,47 @@ class TradeManager:
                     log.error(f'new_trades_loop() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
     '''
+    Callback for user socket that places TP and SL and marks completed trades for removal
+    Any logic to update trades based on hitting TPs should be performed here example: moving the LS after a TP is hit
+    '''
+    def monitor_trades(self, msg):
+        try:
+            for i in range(len(self.active_trades)):
+                if msg['e'] == 'ORDER_TRADE_UPDATE' and msg['o']['s'] == self.active_trades[i].symbol and msg['o']['X'] == 'FILLED':
+                    if float(msg['o']['rp']) > 0 and msg['o']['i'] == self.active_trades[i].TP_id:
+                        self.total_profit += float(msg['o']['rp'])
+                        self.number_of_wins += 1
+                        self.active_trades[i].trade_status = 4
+                    elif float(msg['o']['rp']) < 0 and msg['o']['i'] == self.active_trades[i].SL_id:
+                        self.total_profit += float(msg['o']['rp'])
+                        self.number_of_losses += 1
+                        self.active_trades[i].trade_status = 5
+                    elif msg['o']['i'] == self.active_trades[i].order_id:
+                        self.place_tp_sl(self.active_trades[i].symbol, self.active_trades[i].trade_direction,
+                                         self.active_trades[i].CP, self.active_trades[i].tick_size,
+                                         self.active_trades[i].entry_price, self.active_trades[i].position_size, i)
+                elif msg['e'] == 'ACCOUNT_UPDATE':
+                    for position in msg['a']['P']:
+                        if position['s'] == self.active_trades[i].symbol and position['pa'] == '0':
+                            self.active_trades[i].trade_status = 6
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            log.error(f'monitor_trades() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+
+    '''
     Opens TP and SL positions
     '''
-    def place_tp_sl(self, symbol, trade_direction, CP, tick_size, entry_price, order_qty):
-        self.active_trades[-1].SL_id = self.place_SL(symbol, self.active_trades[-1].SL_val, trade_direction, CP, tick_size)
-        self.active_trades[-1].TP_id = self.place_TP(symbol, [self.active_trades[-1].TP_val, order_qty], trade_direction, CP, tick_size)
-        if self.active_trades[-1].SL_id != -1 and self.active_trades[-1].TP_id != -1:
-            self.active_trades[-1].trade_status = 1
-            log.info(f'new_trades_loop() - Position opened on {symbol}, Entry price: {entry_price}, order quantity: {order_qty}, Side: {"Long" if trade_direction else "Short"}\n'
+    def place_tp_sl(self, symbol, trade_direction, CP, tick_size, entry_price, order_qty, index):
+        self.active_trades[index].SL_id = self.place_SL(symbol, self.active_trades[index].SL_val, trade_direction, CP, tick_size)
+        self.active_trades[index].TP_id = self.place_TP(symbol, [self.active_trades[index].TP_val, order_qty], trade_direction, CP, tick_size)
+        if self.active_trades[index].SL_id != -1 and self.active_trades[-1].TP_id != -1:
+            self.active_trades[index].trade_status = 1
+            log.info(f'new_trades_loop() - Position opened on {symbol}, orderId: {self.active_trades[-1].order_id}, Entry price: {entry_price}, order quantity: {order_qty}, Side: {"Long" if trade_direction else "Short"}\n'
                      f' Take Profit & Stop loss have been placed')
             self.print_trades_q.put(True)
         else:
-            self.active_trades[-1].trade_status = 3  ## Signals to close the trade as it doesn't have either a Take Profit or a Stop Loss
+            self.active_trades[index].trade_status = 3  ## Signals to close the trade as it doesn't have either a Take Profit or a Stop Loss
 
     '''
     Gets all opened trades, User opened positions + Bot opened trades + Pending Bot trades
@@ -152,7 +150,7 @@ class TradeManager:
                         current_price = float(self.client.futures_symbol_ticker(symbol=trade.symbol)['price'])
                         if (abs(trade.entry_price - current_price) / trade.entry_price) > trading_threshold / 100:
                             trade.trade_status = 2
-                self.cancel_and_remove_trades(open_trades)
+                self.cancel_and_remove_trades()
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -161,8 +159,9 @@ class TradeManager:
     '''
     Function that removes finished trades from the active_trades list
     '''
-    def cancel_and_remove_trades(self, open_trades):
+    def cancel_and_remove_trades(self):
         i = 0
+        open_trades = self.get_all_open_trades()
         while i < len(self.active_trades):
             if self.active_trades[i].trade_status == 2:
                 try:
@@ -207,63 +206,17 @@ class TradeManager:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                     log.error(f'cancel_and_remove_trades() - error occurred closing open orders on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
-            elif self.active_trades[i].trade_status == 1:
+            elif self.active_trades[i].trade_status == 6:
                 try:
-                    if self.active_trades[i].symbol not in open_trades:
-                        self.client.futures_cancel_all_open_orders(symbol=self.active_trades[i].symbol)
-                        log.info(f'cancel_and_remove_trades() - orders cancelled on {self.active_trades[i].symbol} as trade was closed, possibly by the user')
-                        self.active_trades.pop(i)
+                    self.client.futures_cancel_all_open_orders(symbol=self.active_trades[i].symbol)
+                    log.info(f'cancel_and_remove_trades() - orders cancelled on {self.active_trades[i].symbol} as trade was closed, possibly by the user')
+                    self.active_trades.pop(i)
                 except Exception as e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                     log.error(f'cancel_and_remove_trades() - error occurred cancelling a trade on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
             else:
                 i += 1
-
-    '''
-    Loop that constantly runs and places TP / SL positions when we enter a new position
-    '''
-    def place_tp_sl_loop(self):
-        while True:
-            try:
-                time.sleep(5)
-                unopened_trades = [t for t in self.active_trades if t.trade_status == 0]
-                unopened_order_symbols = [t.symbol for t in unopened_trades]
-                filled_orders = [[order['symbol'], order['orderId']] for order in self.client.futures_get_all_orders() if (order['symbol'] in unopened_order_symbols and order['status'] == 'FILLED')] ##TODO filter on more conditions for quicker execution
-                ## Check if trade was entered
-                for trade in self.active_trades:
-                    if trade.trade_status == 0:
-                        for [symbol, ID] in filled_orders:
-                            if symbol == trade.symbol and ID == trade.order_id:
-                                trade.SL_id = self.place_SL(trade.symbol, trade.SL_val, trade.trade_direction, trade.CP, trade.tick_size)
-                                trade.TP_id = self.place_TP(trade.symbol, [trade.TP_val, trade.position_size], trade.trade_direction, trade.CP, trade.tick_size)
-                                if trade.SL_id != -1 and trade.TP_id != -1:
-                                    trade.trade_status = 1
-                                    log.info(f'place_tp_sl_loop() - Order filled on {symbol}, Entry price: {trade.entry_price}, order quantity: {trade.position_size}, Side: {"Long" if trade.trade_direction else "Short"}\n'
-                                        f' Take Profit & Stop loss have been placed')
-                                    self.print_trades_q.put(True)
-                                else:
-                                    self.active_trades[-1].trade_status = 3
-            except Exception as e:
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                log.error(f'place_tp_sl_loop() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
-
-    '''
-    Loop that constantly runs and updates the status of trades for removal based on TP & SL
-    '''
-    def monitor_tp_sl_loop(self):
-        while True:
-            time.sleep(10)
-            opened_trades = [t for t in self.active_trades if t.trade_status == 1]
-            opened_order_symbols = [t.symbol for t in opened_trades]
-            filled_orders = [[order['symbol'], order['orderId']] for order in self.client.futures_get_all_orders() if (order['symbol'] in opened_order_symbols and order['status'] == 'FILLED')]
-            for trade in self.active_trades:
-                for [symbol, ID] in filled_orders:
-                    if symbol == trade.symbol and ID == trade.TP_id:
-                        trade.trade_status = 4 ## successful trade marking for removal
-                    elif symbol == trade.symbol and ID == trade.SL_id:
-                        trade.trade_status = 5  ## unsuccessful trade marking for removal
 
     '''
     Function to open a new trade
@@ -463,11 +416,63 @@ class TradeManager:
     '''
     Function that checks we haven't entered a position before cancelling it
     '''
-    def check_position_and_cancel_orders(self, trade: Trade, open_trades):
+    def check_position_and_cancel_orders(self, trade: Trade, open_trades: [str]):
         if trade.symbol not in open_trades:
             self.client.futures_cancel_all_open_orders(symbol=trade.symbol)
             return True
         else:
             return False
 
+    '''
+        Loop that runs constantly and updates the logs for the user when something happens or when a new candle is received
+        '''
 
+    def log_trades_loop(self):
+        while True:
+            self.print_trades_q.get()
+            position_information = [position for position in self.client.futures_position_information() if float(position['notional']) != 0.0]
+            win_loss = 'Not available yet'
+            if self.number_of_losses != 0:
+                win_loss = self.number_of_wins / self.number_of_losses
+            if len(position_information) != 0:
+                info = {'Symbol': [], 'Position Size': [], 'Direction': [], 'Entry Price': [], 'Market Price': [],
+                        'TP': [], 'SL': [], 'Distance to TP (%)': [], 'Distance to SL (%)': [], 'PNL': []}
+                orders = self.client.futures_get_open_orders()
+                open_orders = {f'{str(order["symbol"]) + "_TP"}': float(order['price']) for order in orders if
+                               order['reduceOnly'] is True and order['type'] == 'LIMIT'}
+                open_orders_SL = {f'{str(order["symbol"]) + "_SL"}': float(order['stopPrice']) for order in orders if
+                                  order['origType'] == 'STOP_MARKET'}
+                open_orders.update(open_orders_SL)
+                for position in position_information:
+                    info['Symbol'].append(position['symbol'])
+                    info['Position Size'].append(position['positionAmt'])
+                    if float(position['notional']) > 0:
+                        info['Direction'].append('LONG')
+                    else:
+                        info['Direction'].append('SHORT')
+                    info['Entry Price'].append(position['entryPrice'])
+                    info['Market Price'].append(position['markPrice'])
+                    try:
+                        info['TP'].append(open_orders[f'{position["symbol"]}_TP'])
+                        info['Distance to TP (%)'].append(abs(((float(info['Market Price'][-1]) - float(
+                            info['TP'][-1])) / float(info['Market Price'][-1])) * 100))
+                    except:
+                        info['TP'].append('Not opened yet')
+                        info['Distance to TP (%)'].append('Not available yet')
+                    try:
+                        info['SL'].append(open_orders[f'{position["symbol"]}_SL'])
+                        info['Distance to SL (%)'].append(abs(((float(info['Market Price'][-1]) - float(
+                            info['SL'][-1])) / float(info['Market Price'][-1])) * 100))
+                    except:
+                        info['SL'].append('Not opened yet')
+                        info['Distance to SL (%)'].append('Not available yet')
+                    info['PNL'].append(float(position['unRealizedProfit']))
+                log.info(f'Account Balance: {self.get_account_balance()}, Total profit: {self.total_profit}, PNL ($): {sum(info["PNL"])}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss}, Open Positions: {len(info["Symbol"])}\n' + tabulate(
+                        info, headers='keys', tablefmt='fancy_grid'))
+            else:
+                log.info(f'Account Balance: {self.get_account_balance()}, Total profit: {self.total_profit}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss},  No Open Positions')
+
+
+def start_new_trades_loop_multiprocess(client: Client, new_trades_q, print_trades_q):
+    TM = TradeManager(client, new_trades_q, print_trades_q)
+    TM.new_trades_loop()
