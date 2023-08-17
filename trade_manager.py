@@ -79,23 +79,26 @@ class TradeManager:
     def monitor_trades(self, msg):
         try:
             trades_to_update = []
-            for i in range(len(self.active_trades)):
-                if msg['e'] == 'ORDER_TRADE_UPDATE' and msg['o']['s'] == self.active_trades[i].symbol and msg['o']['X'] == 'FILLED':
-                    if float(msg['o']['rp']) > 0 and msg['o']['i'] == self.active_trades[i].TP_id:
+            # for i in range(len(self.active_trades)):
+            for trade in self.active_trades:
+                if msg['e'] == 'ORDER_TRADE_UPDATE' and msg['o']['s'] == trade.symbol and msg['o']['X'] == 'FILLED':
+                    i = self.active_trades.index(trade)
+                    if float(msg['o']['rp']) > 0 and msg['o']['i'] == trade.TP_id:
                         self.total_profit += float(msg['o']['rp'])
                         self.number_of_wins += 1
                         trades_to_update.append([i, 4])
-                    elif float(msg['o']['rp']) < 0 and msg['o']['i'] == self.active_trades[i].SL_id:
+                    elif float(msg['o']['rp']) < 0 and msg['o']['i'] == trade.SL_id:
                         self.total_profit += float(msg['o']['rp'])
                         self.number_of_losses += 1
                         trades_to_update.append([i, 5])
                     elif msg['o']['i'] == self.active_trades[i].order_id:
-                        self.place_tp_sl(self.active_trades[i].symbol, self.active_trades[i].trade_direction,
-                                         self.active_trades[i].CP, self.active_trades[i].tick_size,
-                                         self.active_trades[i].entry_price, self.active_trades[i].position_size, i)
+                        trades_to_update.append([i, self.place_tp_sl(trade.symbol, trade.trade_direction,
+                                                    trade.CP, trade.tick_size,
+                                                    trade.entry_price, trade.position_size, i)])
                 elif msg['e'] == 'ACCOUNT_UPDATE':
+                    i = self.active_trades.index(trade)
                     for position in msg['a']['P']:
-                        if position['s'] == self.active_trades[i].symbol and position['pa'] == '0':
+                        if position['s'] == trade.symbol and position['pa'] == '0':
                             trades_to_update.append([i, 6])
             for [index, status] in trades_to_update:
                 self.active_trades[index].trade_status = status
@@ -111,12 +114,12 @@ class TradeManager:
         self.active_trades[index].SL_id = self.place_SL(symbol, self.active_trades[index].SL_val, trade_direction, CP, tick_size)
         self.active_trades[index].TP_id = self.place_TP(symbol, [self.active_trades[index].TP_val, order_qty], trade_direction, CP, tick_size)
         if self.active_trades[index].SL_id != -1 and self.active_trades[-1].TP_id != -1:
-            self.active_trades[index].trade_status = 1
             log.info(f'new_trades_loop() - Position opened on {symbol}, orderId: {self.active_trades[-1].order_id}, Entry price: {entry_price}, order quantity: {order_qty}, Side: {"Long" if trade_direction else "Short"}\n'
                      f' Take Profit & Stop loss have been placed')
             self.print_trades_q.put(True)
+            return 1
         else:
-            self.active_trades[index].trade_status = 3  ## Signals to close the trade as it doesn't have either a Take Profit or a Stop Loss
+            return 3  ## Signals to close the trade as it doesn't have either a Take Profit or a Stop Loss
 
     '''
     Gets all opened trades, User opened positions + Bot opened trades + Pending Bot trades
@@ -152,6 +155,7 @@ class TradeManager:
                     if trade.trade_status == 0 and trade.symbol not in open_trades:
                         current_price = float(self.client.futures_symbol_ticker(symbol=trade.symbol)['price'])
                         if (abs(trade.entry_price - current_price) / trade.entry_price) > trading_threshold / 100:
+                            trade.current_price = current_price
                             trade.trade_status = 2
                 self.cancel_and_remove_trades()
             except Exception as e:
@@ -170,7 +174,8 @@ class TradeManager:
                 try:
                     pop_trade = self.check_position_and_cancel_orders(self.active_trades[i], open_trades)
                     if pop_trade:
-                        log.info(f'cancel_and_remove_trades() - orders cancelled on {self.active_trades[i].symbol} as price surpassed the trading threshold set in live_trading_config.py')
+                        log.info(f'cancel_and_remove_trades() - orders cancelled on {self.active_trades[i].symbol} as price surpassed the trading threshold set in live_trading_config.py\n '
+                                 f'Current Price was: {self.active_trades[i].current_price}, Attempted entry price was: {self.active_trades[i].entry_price}, % moved: {abs(100*(self.active_trades[i].entry_price-self.active_trades[i].current_price)/self.active_trades[i].entry_price)}')
                         self.active_trades.pop(i)
                     else:
                         self.active_trades[i].trade_status = 0
@@ -436,7 +441,7 @@ class TradeManager:
             position_information = [position for position in self.client.futures_position_information() if float(position['notional']) != 0.0]
             win_loss = 'Not available yet'
             if self.number_of_losses != 0:
-                win_loss = self.number_of_wins / self.number_of_losses
+                win_loss = round(self.number_of_wins / self.number_of_losses, 4)
             if len(position_information) != 0:
                 info = {'Symbol': [], 'Position Size': [], 'Direction': [], 'Entry Price': [], 'Market Price': [],
                         'TP': [], 'SL': [], 'Distance to TP (%)': [], 'Distance to SL (%)': [], 'PNL': []}
@@ -457,23 +462,23 @@ class TradeManager:
                     info['Market Price'].append(position['markPrice'])
                     try:
                         info['TP'].append(open_orders[f'{position["symbol"]}_TP'])
-                        info['Distance to TP (%)'].append(abs(((float(info['Market Price'][-1]) - float(
-                            info['TP'][-1])) / float(info['Market Price'][-1])) * 100))
+                        info['Distance to TP (%)'].append(round(abs(((float(info['Market Price'][-1]) - float(
+                            info['TP'][-1])) / float(info['Market Price'][-1])) * 100), 3))
                     except:
                         info['TP'].append('Not opened yet')
                         info['Distance to TP (%)'].append('Not available yet')
                     try:
                         info['SL'].append(open_orders[f'{position["symbol"]}_SL'])
-                        info['Distance to SL (%)'].append(abs(((float(info['Market Price'][-1]) - float(
-                            info['SL'][-1])) / float(info['Market Price'][-1])) * 100))
+                        info['Distance to SL (%)'].append(round(abs(((float(info['Market Price'][-1]) - float(
+                            info['SL'][-1])) / float(info['Market Price'][-1])) * 100), 3))
                     except:
                         info['SL'].append('Not opened yet')
                         info['Distance to SL (%)'].append('Not available yet')
                     info['PNL'].append(float(position['unRealizedProfit']))
-                log.info(f'Account Balance: ${self.get_account_balance()}, Total profit: ${self.total_profit}, PNL: ${sum(info["PNL"])}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss}, Open Positions: {len(info["Symbol"])}\n' + tabulate(
+                log.info(f'Account Balance: ${round(self.get_account_balance(), 3)}, Total profit: ${round(self.total_profit, 3)}, PNL: ${round(sum(info["PNL"]),3)}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss}, Open Positions: {len(info["Symbol"])}\n' + tabulate(
                         info, headers='keys', tablefmt='fancy_grid'))
             else:
-                log.info(f'Account Balance: ${self.get_account_balance()}, Total profit: ${self.total_profit}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss},  No Open Positions')
+                log.info(f'Account Balance: ${round(self.get_account_balance(), 3)}, Total profit: ${round(self.total_profit, 3)}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss},  No Open Positions')
 
 
 def start_new_trades_loop_multiprocess(client: Client, new_trades_q, print_trades_q):

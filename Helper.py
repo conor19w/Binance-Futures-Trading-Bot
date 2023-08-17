@@ -223,3 +223,4 @@ class Trade:
         self.Lowest_val = 9_999_999
         self.trail_activated = False
         self.same_candle = True
+        self.current_price = 0
