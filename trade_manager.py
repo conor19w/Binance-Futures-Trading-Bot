@@ -78,16 +78,17 @@ class TradeManager:
     '''
     def monitor_trades(self, msg):
         try:
+            trades_to_update = []
             for i in range(len(self.active_trades)):
                 if msg['e'] == 'ORDER_TRADE_UPDATE' and msg['o']['s'] == self.active_trades[i].symbol and msg['o']['X'] == 'FILLED':
                     if float(msg['o']['rp']) > 0 and msg['o']['i'] == self.active_trades[i].TP_id:
                         self.total_profit += float(msg['o']['rp'])
                         self.number_of_wins += 1
-                        self.active_trades[i].trade_status = 4
+                        trades_to_update.append([i, 4])
                     elif float(msg['o']['rp']) < 0 and msg['o']['i'] == self.active_trades[i].SL_id:
                         self.total_profit += float(msg['o']['rp'])
                         self.number_of_losses += 1
-                        self.active_trades[i].trade_status = 5
+                        trades_to_update.append([i, 5])
                     elif msg['o']['i'] == self.active_trades[i].order_id:
                         self.place_tp_sl(self.active_trades[i].symbol, self.active_trades[i].trade_direction,
                                          self.active_trades[i].CP, self.active_trades[i].tick_size,
@@ -95,7 +96,9 @@ class TradeManager:
                 elif msg['e'] == 'ACCOUNT_UPDATE':
                     for position in msg['a']['P']:
                         if position['s'] == self.active_trades[i].symbol and position['pa'] == '0':
-                            self.active_trades[i].trade_status = 6
+                            trades_to_update.append([i, 6])
+            for [index, status] in trades_to_update:
+                self.active_trades[index].trade_status = status
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
