@@ -437,48 +437,53 @@ class TradeManager:
 
     def log_trades_loop(self):
         while True:
-            self.print_trades_q.get()
-            position_information = [position for position in self.client.futures_position_information() if float(position['notional']) != 0.0]
-            win_loss = 'Not available yet'
-            if self.number_of_losses != 0:
-                win_loss = round(self.number_of_wins / self.number_of_losses, 4)
-            if len(position_information) != 0:
-                info = {'Symbol': [], 'Position Size': [], 'Direction': [], 'Entry Price': [], 'Market Price': [],
-                        'TP': [], 'SL': [], 'Distance to TP (%)': [], 'Distance to SL (%)': [], 'PNL': []}
-                orders = self.client.futures_get_open_orders()
-                open_orders = {f'{str(order["symbol"]) + "_TP"}': float(order['price']) for order in orders if
-                               order['reduceOnly'] is True and order['type'] == 'LIMIT'}
-                open_orders_SL = {f'{str(order["symbol"]) + "_SL"}': float(order['stopPrice']) for order in orders if
-                                  order['origType'] == 'STOP_MARKET'}
-                open_orders.update(open_orders_SL)
-                for position in position_information:
-                    info['Symbol'].append(position['symbol'])
-                    info['Position Size'].append(position['positionAmt'])
-                    if float(position['notional']) > 0:
-                        info['Direction'].append('LONG')
-                    else:
-                        info['Direction'].append('SHORT')
-                    info['Entry Price'].append(position['entryPrice'])
-                    info['Market Price'].append(position['markPrice'])
-                    try:
-                        info['TP'].append(open_orders[f'{position["symbol"]}_TP'])
-                        info['Distance to TP (%)'].append(round(abs(((float(info['Market Price'][-1]) - float(
-                            info['TP'][-1])) / float(info['Market Price'][-1])) * 100), 3))
-                    except:
-                        info['TP'].append('Not opened yet')
-                        info['Distance to TP (%)'].append('Not available yet')
-                    try:
-                        info['SL'].append(open_orders[f'{position["symbol"]}_SL'])
-                        info['Distance to SL (%)'].append(round(abs(((float(info['Market Price'][-1]) - float(
-                            info['SL'][-1])) / float(info['Market Price'][-1])) * 100), 3))
-                    except:
-                        info['SL'].append('Not opened yet')
-                        info['Distance to SL (%)'].append('Not available yet')
-                    info['PNL'].append(float(position['unRealizedProfit']))
-                log.info(f'Account Balance: ${round(self.get_account_balance(), 3)}, Total profit: ${round(self.total_profit, 3)}, PNL: ${round(sum(info["PNL"]),3)}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss}, Open Positions: {len(info["Symbol"])}\n' + tabulate(
-                        info, headers='keys', tablefmt='fancy_grid'))
-            else:
-                log.info(f'Account Balance: ${round(self.get_account_balance(), 3)}, Total profit: ${round(self.total_profit, 3)}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss},  No Open Positions')
+            try:
+                self.print_trades_q.get()
+                position_information = [position for position in self.client.futures_position_information() if float(position['notional']) != 0.0]
+                win_loss = 'Not available yet'
+                if self.number_of_losses != 0:
+                    win_loss = round(self.number_of_wins / self.number_of_losses, 4)
+                if len(position_information) != 0:
+                    info = {'Symbol': [], 'Position Size': [], 'Direction': [], 'Entry Price': [], 'Market Price': [],
+                            'TP': [], 'SL': [], 'Distance to TP (%)': [], 'Distance to SL (%)': [], 'PNL': []}
+                    orders = self.client.futures_get_open_orders()
+                    open_orders = {f'{str(order["symbol"]) + "_TP"}': float(order['price']) for order in orders if
+                                   order['reduceOnly'] is True and order['type'] == 'LIMIT'}
+                    open_orders_SL = {f'{str(order["symbol"]) + "_SL"}': float(order['stopPrice']) for order in orders if
+                                      order['origType'] == 'STOP_MARKET'}
+                    open_orders.update(open_orders_SL)
+                    for position in position_information:
+                        info['Symbol'].append(position['symbol'])
+                        info['Position Size'].append(position['positionAmt'])
+                        if float(position['notional']) > 0:
+                            info['Direction'].append('LONG')
+                        else:
+                            info['Direction'].append('SHORT')
+                        info['Entry Price'].append(position['entryPrice'])
+                        info['Market Price'].append(position['markPrice'])
+                        try:
+                            info['TP'].append(open_orders[f'{position["symbol"]}_TP'])
+                            info['Distance to TP (%)'].append(round(abs(((float(info['Market Price'][-1]) - float(
+                                info['TP'][-1])) / float(info['Market Price'][-1])) * 100), 3))
+                        except:
+                            info['TP'].append('Not opened yet')
+                            info['Distance to TP (%)'].append('Not available yet')
+                        try:
+                            info['SL'].append(open_orders[f'{position["symbol"]}_SL'])
+                            info['Distance to SL (%)'].append(round(abs(((float(info['Market Price'][-1]) - float(
+                                info['SL'][-1])) / float(info['Market Price'][-1])) * 100), 3))
+                        except:
+                            info['SL'].append('Not opened yet')
+                            info['Distance to SL (%)'].append('Not available yet')
+                        info['PNL'].append(float(position['unRealizedProfit']))
+                    log.info(f'Account Balance: ${round(self.get_account_balance(), 3)}, Total profit: ${round(self.total_profit, 3)}, PNL: ${round(sum(info["PNL"]),3)}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss}, Open Positions: {len(info["Symbol"])}\n' + tabulate(
+                            info, headers='keys', tablefmt='fancy_grid'))
+                else:
+                    log.info(f'Account Balance: ${round(self.get_account_balance(), 3)}, Total profit: ${round(self.total_profit, 3)}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss},  No Open Positions')
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                log.error(f'log_trades_loop() - Error: {e}, {exc_type, fname, exc_tb.tb_lineno}')
 
 
 def start_new_trades_loop_multiprocess(client: Client, new_trades_q, print_trades_q):
