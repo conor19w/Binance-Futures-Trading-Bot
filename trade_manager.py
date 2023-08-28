@@ -3,7 +3,7 @@ from threading import Thread
 from binance import ThreadedWebsocketManager
 from binance.client import Client
 from binance.enums import SIDE_SELL, SIDE_BUY, FUTURE_ORDER_TYPE_MARKET, FUTURE_ORDER_TYPE_LIMIT, TIME_IN_FORCE_GTC, \
-    FUTURE_ORDER_TYPE_STOP_MARKET
+    FUTURE_ORDER_TYPE_STOP_MARKET, FUTURE_ORDER_TYPE_TAKE_PROFIT
 from binance.exceptions import BinanceAPIException
 from tabulate import tabulate
 
@@ -111,7 +111,7 @@ class TradeManager:
     Opens TP and SL positions
     '''
     def place_tp_sl(self, symbol, trade_direction, CP, tick_size, entry_price, order_qty, index):
-        self.active_trades[index].SL_id = self.place_SL(symbol, self.active_trades[index].SL_val, trade_direction, CP, tick_size)
+        self.active_trades[index].SL_id = self.place_SL(symbol, self.active_trades[index].SL_val, trade_direction, CP, tick_size, order_qty)
         self.active_trades[index].TP_id = self.place_TP(symbol, [self.active_trades[index].TP_val, order_qty], trade_direction, CP, tick_size)
         if self.active_trades[index].SL_id != -1 and self.active_trades[-1].TP_id != -1:
             log.info(f'new_trades_loop() - Position opened on {symbol}, orderId: {self.active_trades[-1].order_id}, Entry price: {entry_price}, order quantity: {order_qty}, Side: {"Long" if trade_direction else "Short"}\n'
@@ -270,14 +270,14 @@ class TradeManager:
                         type=FUTURE_ORDER_TYPE_MARKET,
                         quantity=order_qty)
                     order_id = order['orderId']
-                market_entry_price = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
-                return order_id, order_qty, market_entry_price, 1
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 log.error(f'open_trade() - error occurred placing market order on {symbol}, OP: {OP}, trade direction: {trade_direction}, '
                           f'Quantity: {order_qty}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
                 return -99, -99, -99, -99
+            market_entry_price = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
+            return order_id, order_qty, market_entry_price, 1
         else:
             try:
                 if trade_direction == 0:
@@ -298,13 +298,13 @@ class TradeManager:
                         timeInForce=TIME_IN_FORCE_GTC,
                         quantity=order_qty)
                     order_id = order['orderId']
-                return order_id, order_qty, entry_price, 0
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 log.error(f'open_trade() - error occurred placing limit order on {symbol}, OP: {OP}, tick_size: {tick_size} '
                     f'Entry price: {entry_price}, trade direction: {trade_direction}, Quantity: {order_qty}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
                 return -99, -99, -99, -99
+            return order_id, order_qty, entry_price, 0
 
     '''
     Function that returns the USDT balance of the account
@@ -341,8 +341,9 @@ class TradeManager:
                 order = self.client.futures_create_order(
                     symbol=symbol,
                     side=order_side,
-                    type=FUTURE_ORDER_TYPE_LIMIT,
+                    type=FUTURE_ORDER_TYPE_TAKE_PROFIT,
                     price=TP_val,
+                    stopPrice=TP_val,
                     timeInForce=TIME_IN_FORCE_GTC,
                     reduceOnly='true',
                     quantity=TP[1])
@@ -367,30 +368,27 @@ class TradeManager:
     '''
     Function that places a new SL order
     '''
-    def place_SL(self, symbol: str, SL: float, trade_direction: int, CP: int, tick_size: float):
+    def place_SL(self, symbol: str, SL: float, trade_direction: int, CP: int, tick_size: float, quantity: float):
         order_ID = ''
         try:
             if CP == 0:
                 SL = round(SL)
             else:
                 SL = round(round(SL / tick_size) * tick_size, CP)
-
+            order_side = ''
             if trade_direction == 1:
-                order = self.client.futures_create_order(
-                    symbol=symbol,
-                    side=SIDE_SELL,
-                    type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                    stopPrice=SL,
-                    closePosition='true')
-                order_ID = order['orderId']
-            else:
-                order = self.client.futures_create_order(
-                    symbol=symbol,
-                    side=SIDE_BUY,
-                    type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                    stopPrice=SL,
-                    closePosition='true')
-                order_ID = order['orderId']
+                order_side = SIDE_SELL
+            elif trade_direction == 0:
+                order_side = SIDE_BUY
+
+            order = self.client.futures_create_order(
+                symbol=symbol,
+                side=order_side,
+                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                reduceOnly='true',
+                stopPrice=SL,
+                quantity=quantity)
+            order_ID = order['orderId']
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -448,7 +446,7 @@ class TradeManager:
                             'TP': [], 'SL': [], 'Distance to TP (%)': [], 'Distance to SL (%)': [], 'PNL': []}
                     orders = self.client.futures_get_open_orders()
                     open_orders = {f'{str(order["symbol"]) + "_TP"}': float(order['price']) for order in orders if
-                                   order['reduceOnly'] is True and order['type'] == 'LIMIT'}
+                                   order['reduceOnly'] is True and order['type'] == 'TAKE_PROFIT'}
                     open_orders_SL = {f'{str(order["symbol"]) + "_SL"}': float(order['stopPrice']) for order in orders if
                                       order['origType'] == 'STOP_MARKET'}
                     open_orders.update(open_orders_SL)
