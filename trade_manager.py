@@ -71,7 +71,7 @@ class TradeManager:
                 except Exception as e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    log.error(f'new_trades_loop() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+                    log.warning(f'new_trades_loop() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
     '''
     Callback for user socket that places TP and SL and marks completed trades for removal
@@ -106,7 +106,7 @@ class TradeManager:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            log.error(f'monitor_trades() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+            log.warning(f'monitor_trades() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
     '''
     Opens TP and SL positions
@@ -131,7 +131,7 @@ class TradeManager:
             active_trade_symbols = [trade.symbol for trade in self.active_trades]
             return open_trades_symbols + active_trade_symbols
         except Exception as e:
-            log.error(f'get_all_open_or_pending_trades() - Error occurred: {e}')
+            log.warning(f'get_all_open_or_pending_trades() - Error occurred: {e}')
             return -1
 
     '''
@@ -141,7 +141,7 @@ class TradeManager:
         try:
             return [position['symbol'] for position in self.client.futures_position_information() if float(position['notional']) != 0.0]
         except Exception as e:
-            log.error(f'get_all_open_trades() - Error occurred: {e}')
+            log.warning(f'get_all_open_trades() - Error occurred: {e}')
             return -1
 
     '''
@@ -152,7 +152,7 @@ class TradeManager:
             account_info = self.client.futures_account()
             return float(account_info['totalMarginBalance']) > (float(account_info['totalWalletBalance']) * (1 - order_size / 100)) / leverage
         except Exception as e:
-            log.error(f'check_margin_sufficient() - Error occurred: {e}')
+            log.warning(f'check_margin_sufficient() - Error occurred: {e}')
             return False
 
     '''
@@ -175,7 +175,7 @@ class TradeManager:
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                log.error(f'check_threshold_loop() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+                log.warning(f'check_threshold_loop() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
     '''
     Function that removes finished trades from the active_trades list
@@ -197,7 +197,7 @@ class TradeManager:
                 except Exception as e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    log.error(f'cancel_and_remove_trades() - error occurred cancelling a trade on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+                    log.warning(f'cancel_and_remove_trades() - error occurred cancelling a trade on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
             elif self.active_trades[i].trade_status == 3:
                 try:
                     self.close_position(self.active_trades[i].symbol, self.active_trades[i].trade_direction, self.active_trades[i].position_size)
@@ -209,7 +209,7 @@ class TradeManager:
                 except Exception as e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    log.error(f'cancel_and_remove_trades() - error occurred cancelling a trade on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+                    log.warning(f'cancel_and_remove_trades() - error occurred cancelling a trade on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
             elif self.active_trades[i].trade_status == 4:
                 try:
                     self.client.futures_cancel_all_open_orders(symbol=self.active_trades[i].symbol)
@@ -218,7 +218,7 @@ class TradeManager:
                 except Exception as e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    log.error(f'cancel_and_remove_trades() - error occurred closing open orders on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+                    log.warning(f'cancel_and_remove_trades() - error occurred closing open orders on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
             elif self.active_trades[i].trade_status == 5:
                 try:
                     self.client.futures_cancel_all_open_orders(symbol=self.active_trades[i].symbol)
@@ -227,7 +227,7 @@ class TradeManager:
                 except Exception as e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    log.error(f'cancel_and_remove_trades() - error occurred closing open orders on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+                    log.warning(f'cancel_and_remove_trades() - error occurred closing open orders on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
             elif self.active_trades[i].trade_status == 6:
                 try:
                     self.client.futures_cancel_all_open_orders(symbol=self.active_trades[i].symbol)
@@ -236,7 +236,7 @@ class TradeManager:
                 except Exception as e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    log.error(f'cancel_and_remove_trades() - error occurred cancelling a trade on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+                    log.warning(f'cancel_and_remove_trades() - error occurred cancelling a trade on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
             else:
                 i += 1
 
@@ -251,7 +251,7 @@ class TradeManager:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            log.error(f'open_trade() - error occurred getting order book, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+            log.warning(f'open_trade() - error occurred getting order book, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
         bids = order_book['bids']
         asks = order_book['asks']
@@ -289,7 +289,7 @@ class TradeManager:
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                log.error(f'open_trade() - error occurred placing market order on {symbol}, OP: {OP}, trade direction: {trade_direction}, '
+                log.warning(f'open_trade() - error occurred placing market order on {symbol}, OP: {OP}, trade direction: {trade_direction}, '
                           f'Quantity: {order_qty}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
                 return -1, -1, -1, -1
             return order_id, order_qty, market_entry_price, 1
@@ -316,7 +316,7 @@ class TradeManager:
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                log.error(f'open_trade() - error occurred placing limit order on {symbol}, OP: {OP}, tick_size: {tick_size} '
+                log.warning(f'open_trade() - error occurred placing limit order on {symbol}, OP: {OP}, tick_size: {tick_size} '
                     f'Entry price: {entry_price}, trade direction: {trade_direction}, Quantity: {order_qty}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
                 return -1, -1, -1, -1
             return order_id, order_qty, entry_price, 0
@@ -333,7 +333,7 @@ class TradeManager:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            log.error(f'get_account_balance() - error getting account balance, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+            log.warning(f'get_account_balance() - error getting account balance, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
     '''
     Function that places a new TP order
@@ -375,7 +375,7 @@ class TradeManager:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            log.error(f"place_TP() - Error occurred placing TP on {symbol}, price: {TP_val}, amount: {TP[1]}, Error: {e}, {exc_type, fname, exc_tb.tb_lineno}")
+            log.warning(f"place_TP() - Error occurred placing TP on {symbol}, price: {TP_val}, amount: {TP[1]}, Error: {e}, {exc_type, fname, exc_tb.tb_lineno}")
             return -1
 
         return TP_ID
@@ -407,7 +407,7 @@ class TradeManager:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            log.error(f"place_SL() - Error occurred placing SL on {symbol}, price: {SL}, Error: {e}, {exc_type, fname, exc_tb.tb_lineno}")
+            log.warning(f"place_SL() - Error occurred placing SL on {symbol}, price: {SL}, Error: {e}, {exc_type, fname, exc_tb.tb_lineno}")
             return -1
 
         return order_ID
@@ -496,7 +496,7 @@ class TradeManager:
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                log.error(f'log_trades_loop() - Error: {e}, {exc_type, fname, exc_tb.tb_lineno}')
+                log.warning(f'log_trades_loop() - Error: {e}, {exc_type, fname, exc_tb.tb_lineno}')
 
 
 def start_new_trades_loop_multiprocess(client: Client, new_trades_q, print_trades_q):
