@@ -114,7 +114,7 @@ class TradeManager:
     def place_tp_sl(self, symbol, trade_direction, CP, tick_size, entry_price, order_qty, index):
         self.active_trades[index].SL_id = self.place_SL(symbol, self.active_trades[index].SL_val, trade_direction, CP, tick_size, order_qty)
         self.active_trades[index].TP_id = self.place_TP(symbol, [self.active_trades[index].TP_val, order_qty], trade_direction, CP, tick_size)
-        if self.active_trades[index].SL_id != -1 and self.active_trades[-1].TP_id != -1:
+        if self.active_trades[index].SL_id != -1 and self.active_trades[index].TP_id != -1:
             log.info(f'new_trades_loop() - Position opened on {symbol}, orderId: {self.active_trades[-1].order_id}, Entry price: {entry_price}, order quantity: {order_qty}, Side: {"Long" if trade_direction else "Short"}\n'
                      f' Take Profit & Stop loss have been placed')
             self.print_trades_q.put(True)
