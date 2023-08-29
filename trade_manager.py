@@ -55,16 +55,17 @@ class TradeManager:
     def new_trades_loop(self):
         while True:
             [symbol, OP, CP, tick_size, trade_direction, index, stop_loss_val, take_profit_val] = self.new_trades_q.get()
-            if symbol not in self.get_all_open_or_pending_trades() and len(self.active_trades) < max_number_of_positions and self.check_margin_sufficient():
+            open_trades = self.get_all_open_or_pending_trades()
+            if open_trades != -1 and symbol not in open_trades and len(self.active_trades) < max_number_of_positions and self.check_margin_sufficient():
                 try:
                     order_id, order_qty, entry_price, trade_status = self.open_trade(symbol, trade_direction, OP, tick_size)
-                    if TP_SL_choice in custom_tp_sl_functions and trade_status != -99:
+                    if TP_SL_choice in custom_tp_sl_functions and trade_status != -1:
                         options = {'position_size': order_qty} ## If you have a need to add additional inputs to calculate_custom_tp_sl() you can do so by adding to this dict
                         stop_loss_val, take_profit_val = calculate_custom_tp_sl(options)
-                    if trade_status != -99:
+                    if trade_status != -1:
                         self.active_trades.append(Trade(index, entry_price, order_qty, take_profit_val, stop_loss_val, trade_direction, order_id, symbol, CP, tick_size))
-                    if trade_status:
-                        self.place_tp_sl(symbol, trade_direction, CP, tick_size, entry_price, order_qty, -1)
+                    if trade_status == 1:
+                        self.active_trades[-1].trade_status = self.place_tp_sl(symbol, trade_direction, CP, tick_size, entry_price, order_qty, -1)
                     elif trade_status == 0:
                         log.info(f'new_trades_loop() - Order placed on {symbol}, Entry price: {entry_price}, order quantity: {order_qty}, Side: {"Long" if trade_direction else "Short"}')
                 except Exception as e:
@@ -91,10 +92,10 @@ class TradeManager:
                         self.total_profit += float(msg['o']['rp'])
                         self.number_of_losses += 1
                         trades_to_update.append([i, 5])
-                    elif msg['o']['i'] == self.active_trades[i].order_id:
-                        trades_to_update.append([i, self.place_tp_sl(trade.symbol, trade.trade_direction,
-                                                    trade.CP, trade.tick_size,
-                                                    trade.entry_price, trade.position_size, i)])
+                    elif msg['o']['i'] == trade.order_id:
+                        status = self.place_tp_sl(trade.symbol, trade.trade_direction, trade.CP, trade.tick_size,
+                                         trade.entry_price, trade.position_size, i)
+                        trades_to_update.append([i, status])
                 elif msg['e'] == 'ACCOUNT_UPDATE':
                     i = self.active_trades.index(trade)
                     for position in msg['a']['P']:
@@ -125,22 +126,34 @@ class TradeManager:
     Gets all opened trades, User opened positions + Bot opened trades + Pending Bot trades
     '''
     def get_all_open_or_pending_trades(self):
-        open_trades_symbols = [position['symbol'] for position in self.client.futures_position_information() if float(position['notional']) != 0.0]  ## All open Trades
-        active_trade_symbols = [trade.symbol for trade in self.active_trades]
-        return open_trades_symbols + active_trade_symbols
+        try:
+            open_trades_symbols = [position['symbol'] for position in self.client.futures_position_information() if float(position['notional']) != 0.0]  ## All open Trades
+            active_trade_symbols = [trade.symbol for trade in self.active_trades]
+            return open_trades_symbols + active_trade_symbols
+        except Exception as e:
+            log.error(f'get_all_open_or_pending_trades() - Error occurred: {e}')
+            return -1
 
     '''
     Gets all opened trades from binance
     '''
     def get_all_open_trades(self):
-        return [position['symbol'] for position in self.client.futures_position_information() if float(position['notional']) != 0.0]
+        try:
+            return [position['symbol'] for position in self.client.futures_position_information() if float(position['notional']) != 0.0]
+        except Exception as e:
+            log.error(f'get_all_open_trades() - Error occurred: {e}')
+            return -1
 
     '''
     Checks if we have sufficient margin remaining to open a new trade
     '''
     def check_margin_sufficient(self):
-        account_info = self.client.futures_account()
-        return float(account_info['totalMarginBalance']) > (float(account_info['totalWalletBalance']) * (1 - order_size / 100)) / leverage
+        try:
+            account_info = self.client.futures_account()
+            return float(account_info['totalMarginBalance']) > (float(account_info['totalWalletBalance']) * (1 - order_size / 100)) / leverage
+        except Exception as e:
+            log.error(f'check_margin_sufficient() - Error occurred: {e}')
+            return False
 
     '''
     Checks if any trades have gone past our specified threshold in live_trading_config.py
@@ -151,13 +164,14 @@ class TradeManager:
                 time.sleep(5)
                 open_trades = self.get_all_open_trades()
                 ## Check trading threshold for each trade
-                for trade in self.active_trades:
-                    if trade.trade_status == 0 and trade.symbol not in open_trades:
-                        current_price = float(self.client.futures_symbol_ticker(symbol=trade.symbol)['price'])
-                        if (abs(trade.entry_price - current_price) / trade.entry_price) > trading_threshold / 100:
-                            trade.current_price = current_price
-                            trade.trade_status = 2
-                self.cancel_and_remove_trades()
+                if open_trades != -1:
+                    for trade in self.active_trades:
+                        if trade.trade_status == 0 and trade.symbol not in open_trades:
+                            current_price = float(self.client.futures_symbol_ticker(symbol=trade.symbol)['price'])
+                            if (abs(trade.entry_price - current_price) / trade.entry_price) > trading_threshold / 100:
+                                trade.current_price = current_price
+                                trade.trade_status = 2
+                    self.cancel_and_remove_trades()
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -170,7 +184,7 @@ class TradeManager:
         i = 0
         open_trades = self.get_all_open_trades()
         while i < len(self.active_trades):
-            if self.active_trades[i].trade_status == 2:
+            if self.active_trades[i].trade_status == 2 and open_trades != -1:
                 try:
                     pop_trade = self.check_position_and_cancel_orders(self.active_trades[i], open_trades)
                     if pop_trade:
@@ -249,6 +263,7 @@ class TradeManager:
         account_balance = self.get_account_balance()
         order_notional = leverage * account_balance * (order_size/100)
         order_qty = order_notional / entry_price
+        market_entry_price = 0
         if OP == 0:
             order_qty = round(order_qty)
         else:
@@ -270,13 +285,13 @@ class TradeManager:
                         type=FUTURE_ORDER_TYPE_MARKET,
                         quantity=order_qty)
                     order_id = order['orderId']
+                market_entry_price = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 log.error(f'open_trade() - error occurred placing market order on {symbol}, OP: {OP}, trade direction: {trade_direction}, '
                           f'Quantity: {order_qty}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
-                return -99, -99, -99, -99
-            market_entry_price = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
+                return -1, -1, -1, -1
             return order_id, order_qty, market_entry_price, 1
         else:
             try:
@@ -303,7 +318,7 @@ class TradeManager:
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 log.error(f'open_trade() - error occurred placing limit order on {symbol}, OP: {OP}, tick_size: {tick_size} '
                     f'Entry price: {entry_price}, trade direction: {trade_direction}, Quantity: {order_qty}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
-                return -99, -99, -99, -99
+                return -1, -1, -1, -1
             return order_id, order_qty, entry_price, 0
 
     '''
@@ -475,7 +490,7 @@ class TradeManager:
                             info['Distance to SL (%)'].append('Not available yet')
                         info['PNL'].append(float(position['unRealizedProfit']))
                     log.info(f'Account Balance: ${round(self.get_account_balance(), 3)}, Total profit: ${round(self.total_profit, 3)}, PNL: ${round(sum(info["PNL"]),3)}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss}, Open Positions: {len(info["Symbol"])}\n' + tabulate(
-                            info, headers='keys', tablefmt='fancy_grid'))
+                            info, headers='keys', tablefmt='github'))
                 else:
                     log.info(f'Account Balance: ${round(self.get_account_balance(), 3)}, Total profit: ${round(self.total_profit, 3)}, Wins: {self.number_of_wins}, Losses: {self.number_of_losses}, Win/Loss ratio: {win_loss},  No Open Positions')
             except Exception as e:

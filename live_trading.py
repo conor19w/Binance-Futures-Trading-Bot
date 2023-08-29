@@ -13,6 +13,12 @@ import os
 os.environ['TYPE_CHECKING'] = 'False'
 
 if __name__ == '__main__':
+    log.info(f'Configuration:\ntrading strategy: {trading_strategy}\nleverage: {leverage}\norder size: {order_size}\n'
+             f'interval: {interval}\nTP/SL choice: {TP_SL_choice}\nSL mult: {SL_mult}\nTP mult: {TP_mult}\n'
+             f'trade all symbols: {trade_all_symbols}\nsymbols to trade: {symbols_to_trade}\nuse trailing stop: {use_trailing_stop}\n'
+             f'trailing stop callback: {trailing_stop_callback}\ntrading threshold: {trading_threshold}\nuse market orders: {use_market_orders}\n'
+             f'max number of positions: {max_number_of_positions}\nbuffer: {buffer}\nuse multiprocessing for trade execution: {use_multiprocessing_for_trade_execution}\n'
+             f'custom TP/SL Functions: {custom_tp_sl_functions}\nmake decision options: {make_decision_options}\n')
     if os.name == 'nt':
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     pp = PrettyPrinter()  ##for printing json text cleanly (inspect binance API call returns)
