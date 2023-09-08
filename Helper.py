@@ -20,7 +20,10 @@ class CustomClient:
     def get_all_symbols(self):
         x = self.client.futures_exchange_info()['symbols']
         symbols_to_trade = [y['symbol'] for y in x if
-                            (y['status'] == 'TRADING' and 'USDT' in y['symbol'] and '_' not in y['symbol'])]
+                            (y['status'] == 'TRADING' and
+                             'USDT' in y['symbol'] and
+                             '_' not in y['symbol'] and
+                             y['symbol'] not in coin_exclusion_list)]
         return symbols_to_trade
 
     '''

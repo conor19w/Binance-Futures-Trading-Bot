@@ -45,9 +45,34 @@ class TradeManager:
         self.log_trades_loop_thread = Thread(target=self.log_trades_loop)
         self.log_trades_loop_thread.daemon = True
         self.log_trades_loop_thread.start()
+        self.monitor_orders_by_polling_api_loop = Thread(target=self.monitor_orders_by_polling_api)
+        self.monitor_orders_by_polling_api_loop.daemon = True
+        self.monitor_orders_by_polling_api_loop.start()
         self.total_profit = 0
         self.number_of_wins = 0
         self.number_of_losses = 0
+
+    '''
+    Loop that runs constantly to catch trades that opened, when packet loss occurs
+    to ensure that SL & TPs are placed on all positions
+    '''
+    def monitor_orders_by_polling_api(self):
+        while True:
+            time.sleep(15)
+            open_positions = self.get_all_open_positions()
+            if open_positions == []:
+                continue
+            try:
+                for trade in self.active_trades:
+                    if trade.symbol in open_positions and trade.trade_status == 0:
+                        i = self.active_trades.index(trade)
+                        trade.trade_status = self.place_tp_sl(trade.symbol, trade.trade_direction, trade.CP, trade.tick_size,
+                                                  trade.entry_price, trade.position_size, i)
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                log.warning(f'monitor_orders_by_polling_api() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+
 
     '''
     Loop that constantly runs and opens new trades as they come in
@@ -135,14 +160,14 @@ class TradeManager:
             return -1
 
     '''
-    Gets all opened trades from binance
+    Gets all open positions from binance
     '''
-    def get_all_open_trades(self):
+    def get_all_open_positions(self):
         try:
-            return [position['symbol'] for position in self.client.futures_position_information() if float(position['notional']) != 0.0]
+            return [position['symbol'] for position in self.client.futures_position_information() if float(position['notional']) != 0.0] ## TODO convert this to a hashmap perhaps {symbol: position_size,...}
         except Exception as e:
             log.warning(f'get_all_open_trades() - Error occurred: {e}')
-            return -1
+            return []
 
     '''
     Checks if we have sufficient margin remaining to open a new trade
@@ -162,16 +187,17 @@ class TradeManager:
         while True:
             try:
                 time.sleep(5)
-                open_trades = self.get_all_open_trades()
                 ## Check trading threshold for each trade
-                if open_trades != -1:
-                    for trade in self.active_trades:
-                        if trade.trade_status == 0 and trade.symbol not in open_trades:
-                            current_price = float(self.client.futures_symbol_ticker(symbol=trade.symbol)['price'])
-                            if (abs(trade.entry_price - current_price) / trade.entry_price) > trading_threshold / 100:
-                                trade.current_price = current_price
-                                trade.trade_status = 2
-                    self.cancel_and_remove_trades()
+                for trade in self.active_trades:
+                    if trade.trade_status == 0:
+                        current_price = float(self.client.futures_symbol_ticker(symbol=trade.symbol)['price'])
+                        if trade.trade_direction == 1 and ((current_price - trade.entry_price) / trade.entry_price) > trading_threshold / 100:
+                            trade.current_price = current_price
+                            trade.trade_status = 2
+                        elif trade.trade_direction == 0 and ((trade.entry_price - current_price) / trade.entry_price) > trading_threshold / 100:
+                            trade.current_price = current_price
+                            trade.trade_status = 2
+                self.cancel_and_remove_trades()
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -182,9 +208,9 @@ class TradeManager:
     '''
     def cancel_and_remove_trades(self):
         i = 0
-        open_trades = self.get_all_open_trades()
+        open_trades = self.get_all_open_positions()
         while i < len(self.active_trades):
-            if self.active_trades[i].trade_status == 2 and open_trades != -1:
+            if self.active_trades[i].trade_status == 2 and open_trades != []:
                 try:
                     pop_trade = self.check_position_and_cancel_orders(self.active_trades[i], open_trades)
                     if pop_trade:

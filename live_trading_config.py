@@ -6,15 +6,16 @@ leverage = 10
 order_size = 2 ## % of account
 interval = '1m'
 TP_SL_choice = '%'
-SL_mult = .5 ## SL_mult x TP_SL_choice = SL value
-TP_mult = .5 ## TP_mult x TP_SL_choice = TP value
+SL_mult = .15 ## SL_mult x TP_SL_choice = SL value
+TP_mult = .15 ## TP_mult x TP_SL_choice = TP value
 trade_all_symbols = True
 symbols_to_trade = ['BTCUSDT']
+coin_exclusion_list = [] ## Put coins you want to exclude in here, so they won't be traded
 use_trailing_stop = False
 trailing_stop_callback = .1
 trading_threshold = .1 ## used to cancel trades that have moved this distance in % away from our attempted entry price
 use_market_orders = False
-max_number_of_positions = 15
+max_number_of_positions = 5
 
 buffer = '3 hours ago' ## TODO auto-calculate this
 
