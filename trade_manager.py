@@ -142,11 +142,11 @@ class TradeManager:
             self.client.futures_coin_cancel_all_open_orders(symbol=symbol)
         except:
             pass
-        self.active_trades[index].position_size = [float(position['positionAmt']) for position in self.client.futures_position_information() if position['symbol'] == symbol][0]
+        self.active_trades[index].position_size = abs([float(position['positionAmt']) for position in self.client.futures_position_information() if position['symbol'] == symbol][0])
         self.active_trades[index].SL_id = self.place_SL(symbol, self.active_trades[index].SL_val, trade_direction, CP, tick_size, self.active_trades[index].position_size)
         self.active_trades[index].TP_id = self.place_TP(symbol, [self.active_trades[index].TP_val, self.active_trades[index].position_size], trade_direction, CP, tick_size)
         if self.active_trades[index].SL_id != -1 and self.active_trades[index].TP_id != -1:
-            log.info(f'new_trades_loop() - Position opened on {symbol}, orderId: {self.active_trades[-1].order_id}, Entry price: {entry_price}, order quantity: {order_qty}, Side: {"Long" if trade_direction else "Short"}\n'
+            log.info(f'new_trades_loop() - Position opened on {symbol}, orderId: {self.active_trades[-1].order_id}, Entry price: {entry_price}, order quantity: {self.active_trades[index].position_size}, Side: {"Long" if trade_direction else "Short"}\n'
                      f' Take Profit & Stop loss have been placed')
             self.print_trades_q.put(True)
             return 1
