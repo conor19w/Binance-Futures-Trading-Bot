@@ -13,11 +13,11 @@ import time
 from Helper import Trade
 from logger import *
 
-'''
-Function for custom TP SL values that need trade information before calculating, may be needed depending on your TP SL Function
-Otherwise you can go the usual route and configure a TP SL function in Bot_Class.Bot.update_TP_SL() & TradingStrats.SetSLTP()
-'''
 def calculate_custom_tp_sl(options):
+    '''
+    Function for custom TP SL values that need trade information before calculating, may be needed depending on your TP SL Function
+    Otherwise you can go the usual route and configure a TP SL function in Bot_Class.Bot.update_TP_SL() & TradingStrats.SetSLTP()
+    '''
     stop_loss_val = -99
     take_profit_val = -99
     match TP_SL_choice:
@@ -52,11 +52,11 @@ class TradeManager:
         self.number_of_wins = 0
         self.number_of_losses = 0
 
-    '''
-    Loop that runs constantly to catch trades that opened, when packet loss occurs
-    to ensure that SL & TPs are placed on all positions
-    '''
     def monitor_orders_by_polling_api(self):
+        '''
+        Loop that runs constantly to catch trades that opened, when packet loss occurs
+        to ensure that SL & TPs are placed on all positions
+        '''
         while True:
             time.sleep(15)
             open_positions = self.get_all_open_positions()
@@ -73,11 +73,8 @@ class TradeManager:
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 log.warning(f'monitor_orders_by_polling_api() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
-
-    '''
-    Loop that constantly runs and opens new trades as they come in
-    '''
     def new_trades_loop(self):
+        ''' Loop that constantly runs and opens new trades as they come in '''
         while True:
             [symbol, OP, CP, tick_size, trade_direction, index, stop_loss_val, take_profit_val] = self.new_trades_q.get()
             open_trades = self.get_all_open_or_pending_trades()
@@ -98,11 +95,11 @@ class TradeManager:
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                     log.warning(f'new_trades_loop() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
-    '''
-    Callback for user socket that places TP and SL and marks completed trades for removal
-    Any logic to update trades based on hitting TPs should be performed here example: moving the LS after a TP is hit
-    '''
     def monitor_trades(self, msg):
+        '''
+        Callback for user socket that places TP and SL and marks completed trades for removal
+        Any logic to update trades based on hitting TPs should be performed here example: moving the LS after a TP is hit
+        '''
         try:
             trades_to_update = []
             # for i in range(len(self.active_trades)):
@@ -133,10 +130,8 @@ class TradeManager:
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             log.warning(f'monitor_trades() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
-    '''
-    Opens TP and SL positions
-    '''
     def place_tp_sl(self, symbol, trade_direction, CP, tick_size, entry_price, index):
+        ''' Opens TP and SL positions '''
         try:
             ## Cancel any open orders to get around an issue with partially filled orders
             self.client.futures_coin_cancel_all_open_orders(symbol=symbol)
@@ -153,10 +148,8 @@ class TradeManager:
         else:
             return 3  ## Signals to close the trade as it doesn't have either a Take Profit or a Stop Loss
 
-    '''
-    Gets all opened trades, User opened positions + Bot opened trades + Pending Bot trades
-    '''
     def get_all_open_or_pending_trades(self):
+        ''' Gets all opened trades, User opened positions + Bot opened trades + Pending Bot trades '''
         try:
             open_trades_symbols = [position['symbol'] for position in self.client.futures_position_information() if float(position['notional']) != 0.0]  ## All open Trades
             active_trade_symbols = [trade.symbol for trade in self.active_trades]
@@ -165,20 +158,16 @@ class TradeManager:
             log.warning(f'get_all_open_or_pending_trades() - Error occurred: {e}')
             return -1
 
-    '''
-    Gets all open positions from binance
-    '''
     def get_all_open_positions(self):
+        ''' Gets all open positions from binance '''
         try:
             return [position['symbol'] for position in self.client.futures_position_information() if float(position['notional']) != 0.0] ## TODO convert this to a hashmap perhaps {symbol: position_size,...}
         except Exception as e:
             log.warning(f'get_all_open_trades() - Error occurred: {e}')
             return []
 
-    '''
-    Checks if we have sufficient margin remaining to open a new trade
-    '''
     def check_margin_sufficient(self):
+        ''' Checks if we have sufficient margin remaining to open a new trade '''
         try:
             account_info = self.client.futures_account()
             return float(account_info['totalMarginBalance']) > (float(account_info['totalWalletBalance']) * (1 - order_size / 100)) / leverage
@@ -186,10 +175,8 @@ class TradeManager:
             log.warning(f'check_margin_sufficient() - Error occurred: {e}')
             return False
 
-    '''
-    Checks if any trades have gone past our specified threshold in live_trading_config.py
-    '''
     def check_threshold_loop(self):
+        ''' Checks if any trades have gone past our specified threshold in live_trading_config.py '''
         while True:
             try:
                 time.sleep(5)
@@ -209,10 +196,8 @@ class TradeManager:
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 log.warning(f'check_threshold_loop() - error occurred, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
-    '''
-    Function that removes finished trades from the active_trades list
-    '''
     def cancel_and_remove_trades(self):
+        ''' Function that removes finished trades from the active_trades list '''
         i = 0
         open_trades = self.get_all_open_positions()
         while i < len(self.active_trades):
@@ -272,10 +257,8 @@ class TradeManager:
             else:
                 i += 1
 
-    '''
-    Function to open a new trade
-    '''
     def open_trade(self, symbol, trade_direction, OP, tick_size):
+        ''' Function to open a new trade '''
         order_book = None
         order_id = ''
         try:
@@ -353,10 +336,8 @@ class TradeManager:
                 return -1, -1, -1, -1
             return order_id, order_qty, entry_price, 0
 
-    '''
-    Function that returns the USDT balance of the account
-    '''
     def get_account_balance(self):
+        ''' Function that returns the USDT balance of the account '''
         try:
             account_balance_info = self.client.futures_account_balance()
             for x in account_balance_info:
@@ -367,10 +348,8 @@ class TradeManager:
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             log.warning(f'get_account_balance() - error getting account balance, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
-    '''
-    Function that places a new TP order
-    '''
     def place_TP(self, symbol: str, TP: [float, float], trade_direction: int, CP: int, tick_size: float):
+        ''' Function that places a new TP order '''
         TP_ID = ''
         TP_val = 0
         try:
@@ -412,10 +391,8 @@ class TradeManager:
 
         return TP_ID
 
-    '''
-    Function that places a new SL order
-    '''
     def place_SL(self, symbol: str, SL: float, trade_direction: int, CP: int, tick_size: float, quantity: float):
+        ''' Function that places a new SL order '''
         order_ID = ''
         try:
             if CP == 0:
@@ -444,11 +421,11 @@ class TradeManager:
 
         return order_ID
 
-    '''
-    Function for closing an open position, used when something goes wrong with a trade
-    Can also be used to close a position based off a condition met in your strategy
-    '''
     def close_position(self, symbol: str, trade_direction: int, total_position_size: float):
+        '''
+        Function for closing an open position, used when something goes wrong with a trade
+        Can also be used to close a position based off a condition met in your strategy
+        '''
         try:
             self.client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel orders for this symbol
         except:
@@ -466,21 +443,16 @@ class TradeManager:
                 type=FUTURE_ORDER_TYPE_MARKET,
                 quantity=total_position_size)
 
-    '''
-    Function that checks we haven't entered a position before cancelling it
-    '''
     def check_position_and_cancel_orders(self, trade: Trade, open_trades: [str]):
+        ''' Function that checks we haven't entered a position before cancelling it '''
         if trade.symbol not in open_trades:
             self.client.futures_cancel_all_open_orders(symbol=trade.symbol)
             return True
         else:
             return False
 
-    '''
-        Loop that runs constantly and updates the logs for the user when something happens or when a new candle is received
-        '''
-
     def log_trades_loop(self):
+        ''' Loop that runs constantly and updates the logs for the user when something happens or when a new candle is received '''
         while True:
             try:
                 self.print_trades_q.get()

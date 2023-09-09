@@ -1,8 +1,8 @@
 import asyncio
-from copy import copy
 from pprint import PrettyPrinter
 from live_trading_config import *
 from live_trading_config import symbols_to_trade  # explicitly importing to remove a warning
+from live_trading_config import buffer  # explicitly importing to remove a warning
 from Helper import *
 from trade_manager import *
 from threading import Thread
@@ -17,7 +17,7 @@ if __name__ == '__main__':
              f'interval: {interval}\nTP/SL choice: {TP_SL_choice}\nSL mult: {SL_mult}\nTP mult: {TP_mult}\n'
              f'trade all symbols: {trade_all_symbols}\nsymbols to trade: {symbols_to_trade}\nuse trailing stop: {use_trailing_stop}\n'
              f'trailing stop callback: {trailing_stop_callback}\ntrading threshold: {trading_threshold}\nuse market orders: {use_market_orders}\n'
-             f'max number of positions: {max_number_of_positions}\nbuffer: {buffer}\nuse multiprocessing for trade execution: {use_multiprocessing_for_trade_execution}\n'
+             f'max number of positions: {max_number_of_positions}\nuse multiprocessing for trade execution: {use_multiprocessing_for_trade_execution}\n'
              f'custom TP/SL Functions: {custom_tp_sl_functions}\nmake decision options: {make_decision_options}\n')
     if os.name == 'nt':
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -61,8 +61,12 @@ if __name__ == '__main__':
     ping_server_reconnect_sockets_thread.daemon = True
     ping_server_reconnect_sockets_thread.start()
 
+    if auto_calculate_buffer:
+        ## auto-calculate the required buffer size
+        buffer_int = get_required_buffer()
+        buffer = convert_buffer_to_string(buffer_int)
     ## Combine data collected from websockets with historical data, so we have a buffer of data to calculate signals
-    combine_data_thread = Thread(target=client.combine_data, args=(Bots, symbols_to_trade))
+    combine_data_thread = Thread(target=client.combine_data, args=(Bots, symbols_to_trade, buffer))
     combine_data_thread.daemon = True
     combine_data_thread.start()
     new_trade_loop.join()

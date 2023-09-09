@@ -3,21 +3,22 @@ API_SECRET = ''
 
 trading_strategy = 'tripleEMAStochasticRSIATR'
 leverage = 10
-order_size = 2 ## % of account
+order_size = 3 ## % of account
 interval = '1m'
 TP_SL_choice = '%'
-SL_mult = .15 ## SL_mult x TP_SL_choice = SL value
-TP_mult = .15 ## TP_mult x TP_SL_choice = TP value
-trade_all_symbols = True
+SL_mult = 1.8 ## SL_mult x TP_SL_choice = SL value
+TP_mult = 2 ## TP_mult x TP_SL_choice = TP value
+trade_all_symbols = False
 symbols_to_trade = ['BTCUSDT']
-coin_exclusion_list = [] ## Put coins you want to exclude in here, so they won't be traded
+coin_exclusion_list = ['USDCUSDT', 'BTCDOMUSDT'] ## Put coins you want to exclude in here, so they won't be traded
 use_trailing_stop = False
 trailing_stop_callback = .1
-trading_threshold = .1 ## used to cancel trades that have moved this distance in % away from our attempted entry price
+trading_threshold = .3 ## used to cancel trades that have moved this distance in % away from our attempted entry price
 use_market_orders = False
-max_number_of_positions = 5
+max_number_of_positions = 10
 
-buffer = '3 hours ago' ## TODO auto-calculate this
+auto_calculate_buffer = True ## Set this to false if you want to manually allocate a buffer
+buffer = '3 hours ago'
 
 ## Logging configuration
 LOG_LEVEL = 20 ## CRITICAL = 50, ERROR = 40, WARNING = 30, INFO = 20, DEBUG = 10, NOTSET = 0
