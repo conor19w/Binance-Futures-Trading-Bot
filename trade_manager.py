@@ -67,7 +67,7 @@ class TradeManager:
                     if trade.symbol in open_positions and trade.trade_status == 0:
                         i = self.active_trades.index(trade)
                         trade.trade_status = self.place_tp_sl(trade.symbol, trade.trade_direction, trade.CP, trade.tick_size,
-                                                  trade.entry_price, trade.position_size, i)
+                                                  trade.entry_price, i)
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -90,7 +90,7 @@ class TradeManager:
                     if trade_status != -1:
                         self.active_trades.append(Trade(index, entry_price, order_qty, take_profit_val, stop_loss_val, trade_direction, order_id, symbol, CP, tick_size))
                     if trade_status == 1:
-                        self.active_trades[-1].trade_status = self.place_tp_sl(symbol, trade_direction, CP, tick_size, entry_price, order_qty, -1)
+                        self.active_trades[-1].trade_status = self.place_tp_sl(symbol, trade_direction, CP, tick_size, entry_price, -1)
                     elif trade_status == 0:
                         log.info(f'new_trades_loop() - Order placed on {symbol}, Entry price: {entry_price}, order quantity: {order_qty}, Side: {"Long" if trade_direction else "Short"}')
                 except Exception as e:
@@ -119,7 +119,7 @@ class TradeManager:
                         trades_to_update.append([i, 5])
                     elif msg['o']['i'] == trade.order_id:
                         status = self.place_tp_sl(trade.symbol, trade.trade_direction, trade.CP, trade.tick_size,
-                                         trade.entry_price, trade.position_size, i)
+                                         trade.entry_price, i)
                         trades_to_update.append([i, status])
                 elif msg['e'] == 'ACCOUNT_UPDATE':
                     i = self.active_trades.index(trade)
@@ -136,9 +136,15 @@ class TradeManager:
     '''
     Opens TP and SL positions
     '''
-    def place_tp_sl(self, symbol, trade_direction, CP, tick_size, entry_price, order_qty, index):
-        self.active_trades[index].SL_id = self.place_SL(symbol, self.active_trades[index].SL_val, trade_direction, CP, tick_size, order_qty)
-        self.active_trades[index].TP_id = self.place_TP(symbol, [self.active_trades[index].TP_val, order_qty], trade_direction, CP, tick_size)
+    def place_tp_sl(self, symbol, trade_direction, CP, tick_size, entry_price, index):
+        try:
+            ## Cancel any open orders to get around an issue with partially filled orders
+            self.client.futures_coin_cancel_all_open_orders(symbol=symbol)
+        except:
+            pass
+        self.active_trades[index].position_size = [float(position['positionAmt']) for position in self.client.futures_position_information() if position['symbol'] == symbol][0]
+        self.active_trades[index].SL_id = self.place_SL(symbol, self.active_trades[index].SL_val, trade_direction, CP, tick_size, self.active_trades[index].position_size)
+        self.active_trades[index].TP_id = self.place_TP(symbol, [self.active_trades[index].TP_val, self.active_trades[index].position_size], trade_direction, CP, tick_size)
         if self.active_trades[index].SL_id != -1 and self.active_trades[index].TP_id != -1:
             log.info(f'new_trades_loop() - Position opened on {symbol}, orderId: {self.active_trades[-1].order_id}, Entry price: {entry_price}, order quantity: {order_qty}, Side: {"Long" if trade_direction else "Short"}\n'
                      f' Take Profit & Stop loss have been placed')
