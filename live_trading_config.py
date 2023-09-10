@@ -2,10 +2,18 @@ API_KEY = ''
 API_SECRET = ''
 
 trading_strategy = 'tripleEMAStochasticRSIATR'
+'''
+valid options for trading_strategy are: 'StochRSIMACD', 'tripleEMAStochasticRSIATR', 'tripleEMA', 'breakout', 'stochBB',
+'goldenCross', 'candle_wick', 'fibMACD', 'EMA_cross', 'heikin_ashi_ema2', 'heikin_ashi_ema', 'ema_crossover'
+'''
+TP_SL_choice = '%'
+'''valid options for TP_SL_choice are: 'USDT', '%', 'x (ATR)', 'x (Swing High/Low) level 1',
+'x (Swing High/Low) level 2', 'x (Swing High/Low) level 3', 'x (Swing Close) level 1',
+'x (Swing Close) level 2', 'x (Swing Close) level 3
+'''
 leverage = 10
 order_size = 3 ## % of account
 interval = '1m'
-TP_SL_choice = '%'
 SL_mult = 1.8 ## SL_mult x TP_SL_choice = SL value
 TP_mult = 2 ## TP_mult x TP_SL_choice = TP value
 trade_all_symbols = False

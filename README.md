@@ -18,7 +18,7 @@ ___
 ___
 #### Creating Custom Strategies: ####
 __Strategies are implemented in TradingStrats.py as functions and then referenced in Bot_Class.Bot.make_decision()__
-* ```Make_decision()``` must return ```Trade_Direction, stop_loss_val, take_profit_val``` for the strategy to work properly
+* `Make_decision()` must return `Trade_Direction, stop_loss_val, take_profit_val` for the strategy to work properly
 * You might draw inspiration for a strategy from one of the samples in __TradingStrats.py__  
 Docs are being updated currently for the new bot  
 [Create Custom Strategies](docs/Custom_Strategies.pdf)  
@@ -55,17 +55,7 @@ TP_SL_choice = 'USDT'
 SL_mult = 1  
 TP_mult = 2  
 This configuration will set TP and SL values at $1 loss and $2 gain respectively  
-* Choose the `interval` you want to trade and the `buffer` of candlesticks your strategy will need.  
-__buffer__ should be 5 times the size of your largest indicators window, this is to prevent errors in calculations (I'm working on having this be auto-calculated, so you won't have to)  
-Example:  
-In TradingStrats.py you'll find all the strategies, taking ```tripleEMAStochasticRSIATR``` as an example:  
-That strategy has a 50EMA as its largest EMA, so you need at least 250 candles.  
-If you're trading the:  
-  * 1m timeframe this would be 250 minutes buffer 
-  * 3m timeframe would be 750 minutes buffer 
-  * 5m timeframe would be 1250 minutes buffer 
-  etc...  
-(not sure that this is valid buffer input but you can convert these amounts to hours/ days)
+* Choose the `interval` you want to trade, valid intervals are: `1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d`.
 
 
 ___
