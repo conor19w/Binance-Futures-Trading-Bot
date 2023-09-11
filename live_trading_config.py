@@ -13,9 +13,9 @@ TP_SL_choice = '%'
 '''
 leverage = 10
 order_size = 3 ## % of account
-interval = '1m'
-SL_mult = 1.8 ## SL_mult x TP_SL_choice = SL value
-TP_mult = 2 ## TP_mult x TP_SL_choice = TP value
+interval = '5m'
+SL_mult = .3 ## SL_mult x TP_SL_choice = SL value
+TP_mult = .5 ## TP_mult x TP_SL_choice = TP value
 trade_all_symbols = False
 symbols_to_trade = ['BTCUSDT']
 coin_exclusion_list = ['USDCUSDT', 'BTCDOMUSDT'] ## Put coins you want to exclude in here, so they won't be traded
@@ -24,7 +24,7 @@ trailing_stop_callback = .1
 trading_threshold = .3 ## used to cancel trades that have moved this distance in % away from our attempted entry price
 use_market_orders = False
 max_number_of_positions = 10
-
+wait_for_candle_close = True ## Not recommended setting to False, but was requested. If set to False the bot will take trades before candles close
 auto_calculate_buffer = True ## Set this to false if you want to manually allocate a buffer
 buffer = '3 hours ago'
 

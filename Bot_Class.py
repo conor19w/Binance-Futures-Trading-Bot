@@ -4,7 +4,7 @@ from ta.volatility import average_true_range, bollinger_pband
 import pandas as pd
 import TradingStrats as TS
 from logger import *
-from live_trading_config import custom_tp_sl_functions, make_decision_options
+from live_trading_config import custom_tp_sl_functions, make_decision_options, wait_for_candle_close
 
 
 
@@ -16,17 +16,16 @@ class Bot:
 
         # Remove extra candle if present TODO check if needed
         shortest = min(len(Open), len(Close), len(High), len(Low), len(Volume))
-        self.Open = Open[:shortest]
-        self.Close = Close[:shortest]
-        self.High = High[:shortest]
-        self.Low = Low[:shortest]
-        self.Volume = Volume[:shortest]
+        self.Open = Open[-shortest:]
+        self.Close = Close[-shortest:]
+        self.High = High[-shortest:]
+        self.Low = Low[-shortest:]
+        self.Volume = Volume[-shortest:]
 
         self.OP = OP
         self.CP = CP
         self.index = index
         self.add_hist_complete = 0
-        self.generate_heikin_ashi = True
         self.Open_H = []
         self.Close_H = []
         self.High_H = []
@@ -40,7 +39,6 @@ class Bot:
         self.SL_mult = SL_mult
         self.TP_mult = TP_mult
         self.indicators = {}
-        self.using_heikin_ashi = False
         self.current_index = -1  ## -1 for live Bot to always reference the most recent candle, will update in Backtester
         self.take_profit_val, self.stop_loss_val = [], []
         self.peaks, self.troughs = [], []
@@ -49,8 +47,11 @@ class Bot:
         if self.index == 0:
             self.print_trades_q = print_trades_q
         if backtesting:
+            self.add_hist([], [], [], [], [], [])
             self.update_indicators()
             self.update_TP_SL()
+        self.first_interval = False
+        self.pop_previous_value = False
 
     def update_indicators(self):
         ## Calculate indicators
@@ -142,7 +143,6 @@ class Bot:
                 case 'heikin_ashi_ema2':
                     CloseS = pd.Series(self.Close)
                     self.use_close_pos = True
-                    self.using_heikin_ashi = True ## for graphing heikin ashi candles
                     self.indicators = {"fastd": {"values": list(stochrsi_d(CloseS)),
                                                  "plotting_axis": 3},
                                        "fastk": {"values": list(stochrsi_k(CloseS)),
@@ -153,7 +153,6 @@ class Bot:
                 case 'heikin_ashi_ema':
                     CloseS = pd.Series(self.Close)
                     self.use_close_pos = True
-                    self.using_heikin_ashi = True ## for graphing heikin ashi candles
                     self.indicators = {"fastd": {"values": list(stochrsi_d(CloseS)),
                                                  "plotting_axis": 3},
                                        "fastk": {"values": list(stochrsi_k(CloseS)),
@@ -262,22 +261,21 @@ class Bot:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 log.error(f'add_hist() - Error occurred joining historical and websocket data, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
-        if self.generate_heikin_ashi:
-            try:
-                ## TODO verify these are correct
-                self.Close_H.append((self.Open[0] + self.Close[0] + self.Low[0] + self.High[0]) / 4)
-                self.Open_H.append((self.Close[0] + self.Open[0]) / 2)
-                self.High_H.append(self.High[0])
-                self.Low_H.append(self.Low[0])
-                for i in range(1, len(self.Close)):
-                    self.Open_H.append((self.Open_H[i-1] + self.Close_H[i-1]) / 2)
-                    self.Close_H.append((self.Open[i] + self.Close[i] + self.Low[i] + self.High[i]) / 4)
-                    self.High_H.append(max(self.High[i], self.Open_H[i], self.Close_H[i]))
-                    self.Low_H.append(min(self.Low[i], self.Open_H[i], self.Close_H[i]))
-            except Exception as e:
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                log.error(f'add_hist() - Error occurred creating heikin ashi candles, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+        try:
+            ## TODO verify these are correct
+            self.Close_H.append((self.Open[0] + self.Close[0] + self.Low[0] + self.High[0]) / 4)
+            self.Open_H.append((self.Close[0] + self.Open[0]) / 2)
+            self.High_H.append(self.High[0])
+            self.Low_H.append(self.Low[0])
+            for i in range(1, len(self.Close)):
+                self.Open_H.append((self.Open_H[i-1] + self.Close_H[i-1]) / 2)
+                self.Close_H.append((self.Open[i] + self.Close[i] + self.Low[i] + self.High[i]) / 4)
+                self.High_H.append(max(self.High[i], self.Open_H[i], self.Close_H[i]))
+                self.Low_H.append(min(self.Low[i], self.Open_H[i], self.Close_H[i]))
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            log.error(f'add_hist() - Error occurred creating heikin ashi candles, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
         self.add_hist_complete = 1
 
     def handle_socket_message(self, msg):
@@ -285,6 +283,17 @@ class Bot:
             if msg != '':
                 payload = msg['k']
                 if payload['x']:
+                    if self.pop_previous_value:
+                        self.Date.pop(-1)
+                        self.Close.pop(-1)
+                        self.Volume.pop(-1)
+                        self.High.pop(-1)
+                        self.Low.pop(-1)
+                        self.Open.pop(-1)
+                        self.Open_H.pop(-1)
+                        self.Close_H.pop(-1)
+                        self.High_H.pop(-1)
+                        self.Low_H.pop(-1)
                     self.Date.append(int(payload['T']))
                     self.Close.append(float(payload['c']))
                     self.Volume.append(float(payload['q']))
@@ -292,11 +301,10 @@ class Bot:
                     self.Low.append(float(payload['l']))
                     self.Open.append(float(payload['o']))
                     if self.add_hist_complete:
-                        if self.generate_heikin_ashi:
-                            self.Open_H.append((self.Open_H[-1] + self.Close_H[-1]) / 2)
-                            self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
-                            self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
-                            self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
+                        self.Open_H.append((self.Open_H[-1] + self.Close_H[-1]) / 2)
+                        self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
+                        self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
+                        self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
                         trade_direction, stop_loss_val, take_profit_val = self.make_decision()
                         if trade_direction != -99:
                             self.signal_queue.put([self.symbol, self.OP, self.CP, self.tick_size, trade_direction, self.index, stop_loss_val, take_profit_val])
@@ -306,79 +314,49 @@ class Bot:
                         self.High.pop(0)
                         self.Low.pop(0)
                         self.Open.pop(0)
-                        if self.generate_heikin_ashi:
-                            self.Open_H.pop(0)
-                            self.Close_H.pop(0)
-                            self.Low_H.pop(0)
-                            self.High_H.pop(0)
+                        self.Open_H.pop(0)
+                        self.Close_H.pop(0)
+                        self.Low_H.pop(0)
+                        self.High_H.pop(0)
                     if self.index == 0:
                         self.print_trades_q.put(True)
+                    if not self.first_interval:
+                        self.first_interval = True
+                    self.pop_previous_value = False
+                elif not wait_for_candle_close and self.first_interval and self.add_hist_complete:
+                    if self.pop_previous_value:
+                        self.Date.pop(-1)
+                        self.Close.pop(-1)
+                        self.Volume.pop(-1)
+                        self.High.pop(-1)
+                        self.Low.pop(-1)
+                        self.Open.pop(-1)
+                        self.Open_H.pop(-1)
+                        self.Close_H.pop(-1)
+                        self.High_H.pop(-1)
+                        self.Low_H.pop(-1)
+                    self.pop_previous_value = True
+                    self.Date.append(int(payload['T']))
+                    self.Close.append(float(payload['c']))
+                    self.Volume.append(float(payload['q']))
+                    self.High.append(float(payload['h']))
+                    self.Low.append(float(payload['l']))
+                    self.Open.append(float(payload['o']))
+                    self.Open_H.append((self.Open_H[-1] + self.Close_H[-1]) / 2)
+                    self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
+                    self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
+                    self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
+                    trade_direction, stop_loss_val, take_profit_val = self.make_decision()
+                    if trade_direction != -99:
+                        self.signal_queue.put([self.symbol, self.OP, self.CP, self.tick_size, trade_direction, self.index, stop_loss_val, take_profit_val])
+
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             log.warning(f"handle_socket_message() - Error in handling of {self.symbol} websocket flagging for reconnection, msg: {msg}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
             self.socket_failed = True
 
-    # def handle_socket_message(self, Data, Date=0, Close=0, Volume=0, Open=0, High=0, Low=0):
-    #     try:
-    #         if Data == -99:
-    #             self.Date.append(Date)
-    #             self.Close.append(Close)
-    #             self.Volume.append(Volume)
-    #             self.High.append(High)
-    #             self.Low.append(Low)
-    #             self.Open.append(Open)
-    #             if self.add_hist_complete:
-    #                 self.Date.pop(0)
-    #                 self.Close.pop(0)
-    #                 self.Volume.pop(0)
-    #                 self.High.pop(0)
-    #                 self.Low.pop(0)
-    #                 self.Open.pop(0)
-    #                 if self.generate_heikin_ashi:
-    #                     self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
-    #                     self.Open_H.append((self.Open_H[-1] + self.Close_H[-2]) / 2)
-    #                     self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
-    #                     self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
-    #                     self.Open_H.pop(0)
-    #                     self.Close_H.pop(0)
-    #                     self.Low_H.pop(0)
-    #                     self.High_H.pop(0)
-    #                 self.new_data = 1
-    #         elif Data['Date'] != -99:
-    #             self.Date.append(Data['Date'])
-    #             self.Close.append(Data['Close'])
-    #             self.Volume.append(Data['Volume'])
-    #             self.High.append(Data['High'])
-    #             self.Low.append(Data['Low'])
-    #             self.Open.append(Data['Open'])
-    #             if self.add_hist_complete:
-    #                 self.Date.pop(0)
-    #                 self.Close.pop(0)
-    #                 self.Volume.pop(0)
-    #                 self.High.pop(0)
-    #                 self.Low.pop(0)
-    #                 self.Open.pop(0)
-    #                 if self.generate_heikin_ashi:
-    #                     self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
-    #                     self.Open_H.append((self.Open_H[-1] + self.Close_H[-2]) / 2)
-    #                     self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
-    #                     self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
-    #                     self.Open_H.pop(0)
-    #                     self.Close_H.pop(0)
-    #                     self.Low_H.pop(0)
-    #                     self.High_H.pop(0)
-    #                 self.new_data = 1
-    #             self.update_indicators()
-    #             self.update_TP_SL()
-    #     # except Exception as e:
-    #     #
-    #     except Exception as e:
-    #         print(f"Error in {self.symbol}.handle_socket_message(): ", e)
-    #         self.socket_failed = True
-    #         exc_type, exc_obj, exc_tb = sys.exc_info()
-    #         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    #         print(exc_type, fname, exc_tb.tb_lineno) ## Can add this except statement in to code to figure out what line the error was thrown on
+
     def make_decision(self):
         self.update_indicators()
         ##Initialize vars:
