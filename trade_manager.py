@@ -12,6 +12,7 @@ from live_trading_config import *
 import time
 from Helper import Trade
 from logger import *
+from telegram_message import send_open_long_position_message, send_open_short_position_message, send_close_position_message, send_message
 
 def calculate_custom_tp_sl(options):
     '''
@@ -29,28 +30,32 @@ def calculate_custom_tp_sl(options):
 
 class TradeManager:
     def __init__(self, client: Client, new_trades_q, print_trades_q):
-        self.client = client
-        self.active_trades: [Trade] = []
-        self.use_trailing_stop = use_trailing_stop
-        self.trailing_stop_callback = trailing_stop_callback
-        self.use_market_orders = use_market_orders
-        self.new_trades_q = new_trades_q
-        self.check_threshold_thread = Thread(target=self.check_threshold_loop)
-        self.check_threshold_thread.daemon = True
-        self.check_threshold_thread.start()
-        self.twm = ThreadedWebsocketManager(api_key=API_KEY, api_secret=API_SECRET)
-        self.twm.start()
-        self.user_socket = self.twm.start_futures_user_socket(callback=self.monitor_trades)
-        self.print_trades_q = print_trades_q
-        self.log_trades_loop_thread = Thread(target=self.log_trades_loop)
-        self.log_trades_loop_thread.daemon = True
-        self.log_trades_loop_thread.start()
-        self.monitor_orders_by_polling_api_loop = Thread(target=self.monitor_orders_by_polling_api)
-        self.monitor_orders_by_polling_api_loop.daemon = True
-        self.monitor_orders_by_polling_api_loop.start()
-        self.total_profit = 0
-        self.number_of_wins = 0
-        self.number_of_losses = 0
+        try:
+            self.client = client
+            self.active_trades: [Trade] = []
+            self.use_trailing_stop = use_trailing_stop
+            self.trailing_stop_callback = trailing_stop_callback
+            self.use_market_orders = use_market_orders
+            self.new_trades_q = new_trades_q
+            self.check_threshold_thread = Thread(target=self.check_threshold_loop)
+            self.check_threshold_thread.daemon = True
+            self.check_threshold_thread.start()
+            self.twm = ThreadedWebsocketManager(api_key=API_KEY, api_secret=API_SECRET)
+            self.twm.start()
+            self.user_socket = self.twm.start_futures_user_socket(callback=self.monitor_trades)
+            self.print_trades_q = print_trades_q
+            self.log_trades_loop_thread = Thread(target=self.log_trades_loop)
+            self.log_trades_loop_thread.daemon = True
+            self.log_trades_loop_thread.start()
+            self.monitor_orders_by_polling_api_loop = Thread(target=self.monitor_orders_by_polling_api)
+            self.monitor_orders_by_polling_api_loop.daemon = True
+            self.monitor_orders_by_polling_api_loop.start()
+            self.total_profit = 0
+            self.number_of_wins = 0
+            self.number_of_losses = 0
+            send_message("Connect Success")
+        except Exception as e:
+            send_message(f"Connect Failed: {e}")
 
     def monitor_orders_by_polling_api(self):
         '''
@@ -293,6 +298,9 @@ class TradeManager:
                         type=FUTURE_ORDER_TYPE_MARKET,
                         quantity=order_qty)
                     order_id = order['orderId']
+                    send_open_short_position_message(order_id, entry_price, account_balance, order_notional)
+
+
                 if trade_direction == 1:
                     order = self.client.futures_create_order(
                         symbol=symbol,
@@ -300,6 +308,9 @@ class TradeManager:
                         type=FUTURE_ORDER_TYPE_MARKET,
                         quantity=order_qty)
                     order_id = order['orderId']
+                    send_open_long_position_message(order_id, entry_price, account_balance, order_notional)
+
+
                 market_entry_price = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -442,6 +453,9 @@ class TradeManager:
                 side=SIDE_SELL,
                 type=FUTURE_ORDER_TYPE_MARKET,
                 quantity=total_position_size)
+            
+        send_close_position_message(symbol, trade_direction, total_position_size)
+
 
     def check_position_and_cancel_orders(self, trade: Trade, open_trades: [str]):
         ''' Function that checks we haven't entered a position before cancelling it '''

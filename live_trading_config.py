@@ -1,5 +1,8 @@
 API_KEY = ''
 API_SECRET = ''
+TELEGRAM_API_KEY = '' 
+TELEGRAM_USER_ID = ''
+SEND_TELEGRAM_MESSAGE = True  #False not send massege
 
 trading_strategy = 'tripleEMAStochasticRSIATR'
 '''
