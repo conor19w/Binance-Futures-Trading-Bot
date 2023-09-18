@@ -3,8 +3,8 @@ from ta.trend import ema_indicator, macd_signal, macd, sma_indicator
 from ta.volatility import average_true_range, bollinger_pband
 import pandas as pd
 import TradingStrats as TS
-from logger import *
-from live_trading_config import custom_tp_sl_functions, make_decision_options, wait_for_candle_close
+from Logger import *
+from LiveTradingConfig import custom_tp_sl_functions, make_decision_options, wait_for_candle_close
 
 
 
@@ -26,10 +26,7 @@ class Bot:
         self.CP = CP
         self.index = index
         self.add_hist_complete = 0
-        self.Open_H = []
-        self.Close_H = []
-        self.High_H = []
-        self.Low_H = []
+        self.Open_H, self.Close_H, self.High_H, self.Low_H = [], [], [], []
         self.tick_size = tick
         self.socket_failed = False
         self.backtesting = backtesting
@@ -43,7 +40,6 @@ class Bot:
         self.take_profit_val, self.stop_loss_val = [], []
         self.peaks, self.troughs = [], []
         self.signal_queue = signal_queue
-        self.stream = ''
         if self.index == 0:
             self.print_trades_q = print_trades_q
         if backtesting:
@@ -167,6 +163,11 @@ class Bot:
                                        "ema_long": {"values": list(ema_indicator(CloseS, window=50)),
                                                  "plotting_axis": 1},
                                        }
+                case 'Alex_F_volume':
+                    self.indicators = {"average_volume": {
+                        "values": sum(self.Volume[-make_decision_options['look_back_period']:])/make_decision_options['look_back_period'],
+                        "plotting_axis": 1},
+                    }
                 case _:
                     return
         except Exception as e:
@@ -284,40 +285,14 @@ class Bot:
                 payload = msg['k']
                 if payload['x']:
                     if self.pop_previous_value:
-                        self.Date.pop(-1)
-                        self.Close.pop(-1)
-                        self.Volume.pop(-1)
-                        self.High.pop(-1)
-                        self.Low.pop(-1)
-                        self.Open.pop(-1)
-                        self.Open_H.pop(-1)
-                        self.Close_H.pop(-1)
-                        self.High_H.pop(-1)
-                        self.Low_H.pop(-1)
-                    self.Date.append(int(payload['T']))
-                    self.Close.append(float(payload['c']))
-                    self.Volume.append(float(payload['q']))
-                    self.High.append(float(payload['h']))
-                    self.Low.append(float(payload['l']))
-                    self.Open.append(float(payload['o']))
+                        self.remove_last_candle()
+                    self.consume_new_candle(payload)
                     if self.add_hist_complete:
-                        self.Open_H.append((self.Open_H[-1] + self.Close_H[-1]) / 2)
-                        self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
-                        self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
-                        self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
+                        self.generate_new_heikin_ashi()
                         trade_direction, stop_loss_val, take_profit_val = self.make_decision()
                         if trade_direction != -99:
                             self.signal_queue.put([self.symbol, self.OP, self.CP, self.tick_size, trade_direction, self.index, stop_loss_val, take_profit_val])
-                        self.Date.pop(0)
-                        self.Close.pop(0)
-                        self.Volume.pop(0)
-                        self.High.pop(0)
-                        self.Low.pop(0)
-                        self.Open.pop(0)
-                        self.Open_H.pop(0)
-                        self.Close_H.pop(0)
-                        self.Low_H.pop(0)
-                        self.High_H.pop(0)
+                        self.remove_first_candle()
                     if self.index == 0:
                         self.print_trades_q.put(True)
                     if not self.first_interval:
@@ -325,27 +300,10 @@ class Bot:
                     self.pop_previous_value = False
                 elif not wait_for_candle_close and self.first_interval and self.add_hist_complete:
                     if self.pop_previous_value:
-                        self.Date.pop(-1)
-                        self.Close.pop(-1)
-                        self.Volume.pop(-1)
-                        self.High.pop(-1)
-                        self.Low.pop(-1)
-                        self.Open.pop(-1)
-                        self.Open_H.pop(-1)
-                        self.Close_H.pop(-1)
-                        self.High_H.pop(-1)
-                        self.Low_H.pop(-1)
+                        self.remove_last_candle()
                     self.pop_previous_value = True
-                    self.Date.append(int(payload['T']))
-                    self.Close.append(float(payload['c']))
-                    self.Volume.append(float(payload['q']))
-                    self.High.append(float(payload['h']))
-                    self.Low.append(float(payload['l']))
-                    self.Open.append(float(payload['o']))
-                    self.Open_H.append((self.Open_H[-1] + self.Close_H[-1]) / 2)
-                    self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
-                    self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
-                    self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))
+                    self.consume_new_candle(payload)
+                    self.generate_new_heikin_ashi()
                     trade_direction, stop_loss_val, take_profit_val = self.make_decision()
                     if trade_direction != -99:
                         self.signal_queue.put([self.symbol, self.OP, self.CP, self.tick_size, trade_direction, self.index, stop_loss_val, take_profit_val])
@@ -409,6 +367,10 @@ class Bot:
                     trade_direction = TS.ema_crossover(trade_direction, self.current_index,
                                                        self.indicators["ema_short"]["values"],
                                                        self.indicators["ema_long"]["values"])
+                case 'Alex_F_volume':
+                    trade_direction = TS.alex_f_volume(trade_direction, self.indicators["average_volume"]["values"],
+                                                       self.Volume[self.current_index],
+                                                       self.Close[self.current_index], self.Open[self.current_index])
 
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -451,3 +413,41 @@ class Bot:
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 log.error(f"check_close_pos() - Error with strategy: {self.strategy}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
             return close_pos
+
+    def remove_last_candle(self):
+        self.Date.pop(-1)
+        self.Close.pop(-1)
+        self.Volume.pop(-1)
+        self.High.pop(-1)
+        self.Low.pop(-1)
+        self.Open.pop(-1)
+        self.Open_H.pop(-1)
+        self.Close_H.pop(-1)
+        self.High_H.pop(-1)
+        self.Low_H.pop(-1)
+
+    def remove_first_candle(self):
+        self.Date.pop(0)
+        self.Close.pop(0)
+        self.Volume.pop(0)
+        self.High.pop(0)
+        self.Low.pop(0)
+        self.Open.pop(0)
+        self.Open_H.pop(0)
+        self.Close_H.pop(0)
+        self.Low_H.pop(0)
+        self.High_H.pop(0)
+
+    def consume_new_candle(self, payload):
+        self.Date.append(int(payload['T']))
+        self.Close.append(float(payload['c']))
+        self.Volume.append(float(payload['q']))
+        self.High.append(float(payload['h']))
+        self.Low.append(float(payload['l']))
+        self.Open.append(float(payload['o']))
+
+    def generate_new_heikin_ashi(self):
+        self.Open_H.append((self.Open_H[-1] + self.Close_H[-1]) / 2)
+        self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
+        self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
+        self.Low_H.append(min(self.Low[-1], self.Open_H[-1], self.Close_H[-1]))

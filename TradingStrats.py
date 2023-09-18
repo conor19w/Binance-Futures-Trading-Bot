@@ -1,4 +1,5 @@
-from live_trading_config import *
+from LiveTradingConfig import *
+from Logger import *
 
 def USDT_SL_TP(options):
     Q = round(1 / options['position_size'], 6)

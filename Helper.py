@@ -1,10 +1,10 @@
 from binance.client import Client
 
-import Bot_Class
-from live_trading_config import *
+import BotClass
+from LiveTradingConfig import *
 from binance import ThreadedWebsocketManager
 import time
-from logger import *
+from Logger import *
 import numpy as np
 
 
@@ -37,77 +37,12 @@ def convert_buffer_to_string(buffer_int):
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         log.warning(f"convert_buffer_to_string() - Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
 
-def compare_indicators(keys, indicators_buffer, indicators_actual):
-    ''' Function to compare the indicators for calculating the required buffer size '''
-    try:
-        error_percent = []
-        for key in keys:
-            if isinstance(indicators_buffer[key]['values'], list):
-                error_percent.append(abs(sum([(actual - buffer) / actual for actual, buffer in zip(indicators_actual[key]['values'][-30:], indicators_buffer[key]['values'][-30:])])))
-            else:
-                error_percent.append((indicators_actual[key]['values'] - indicators_buffer[key]['values']) / indicators_actual[key]['values'])
-        return sum(error_percent) / len(keys)
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        log.warning(f"compare_indicators() - Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
-
-
-
-def get_required_buffer():
-    ''' Function to calculate the buffer for your strategy to use, ensuring accurate signals '''
-    log.info('get_required_buffer() - Calculating the required buffer for your strategy...')
-    # Create an array of random float elements
-    np.random.seed(5)
-    ran_arr_open = np.random.uniform(size=20000, low=2, high=100)
-    np.random.seed(300)
-    ran_arr_close = np.random.uniform(size=20000, low=2, high=100)
-    np.random.seed(44)
-    ran_arr_high = np.random.uniform(size=20000, low=2, high=100)
-    np.random.seed(29)
-    ran_arr_low = np.random.uniform(size=20000, low=2, high=100)
-    np.random.seed(78)
-    ran_arr_volume = np.random.uniform(size=20000, low=2, high=100_000_000)
-
-    actual_values_bot = Bot_Class.Bot('actual_values_bot', ran_arr_open, ran_arr_close, ran_arr_high,
-                                      ran_arr_low, ran_arr_volume, [], 3, 4, 0, 1, trading_strategy, TP_SL_choice,
-                                      SL_mult, TP_mult, 1)
-    buffer_bot: Bot_Class.Bot
-    for i in range(30, 20000):
-        try:
-            ## Calculate indicators for this size of buffer
-            buffer_bot = Bot_Class.Bot('buffer_bot', ran_arr_open[-i:], ran_arr_close[-i:], ran_arr_high[-i:],
-                                       ran_arr_low[-i:], ran_arr_volume[-i:], [], 3, 4, 0, 1, trading_strategy,
-                                       TP_SL_choice,
-                                       SL_mult, TP_mult, 1)
-            ## Compare the indicators of actual_values_bot & buffer_bot until the error % is less than .1%
-            keys = buffer_bot.indicators.keys()
-            error_percent = compare_indicators(keys, buffer_bot.indicators, actual_values_bot.indicators)
-            log.debug(f'Error Percent is {error_percent} with a buffer of {i} candles')
-            if error_percent < .00001:
-                return i
-        except Exception as e:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            log.warning(f"get_required_buffer() - Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
-
-
 class CustomClient:
     def __init__(self, client: Client):
         self.client = client
         self.leverage = leverage
         self.twm = ThreadedWebsocketManager(api_key=API_KEY, api_secret=API_SECRET)
         self.number_of_bots = 0
-
-
-    def get_all_symbols(self):
-        ''' Function that returns the list of trade-able USDT symbols & removes coins you've added to your exclusion list in live_trading_config.py '''
-        x = self.client.futures_exchange_info()['symbols']
-        symbols_to_trade = [y['symbol'] for y in x if (y['status'] == 'TRADING' and
-                             'USDT' in y['symbol'] and '_' not in y['symbol'] and
-                             y['symbol'] not in coin_exclusion_list)]
-        return symbols_to_trade
-
 
     def set_leverage(self, symbols_to_trade: [str]):
         ''' Function that sets the leverage for each coin as specified in live_trading_config.py '''
@@ -124,7 +59,7 @@ class CustomClient:
                 log.warning(f"set_leverage() - Symbol: {symbols_to_trade[i]} removing symbol due to error, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
                 symbols_to_trade.pop(i)
 
-    def start_websockets(self, bots: [Bot_Class.Bot]):
+    def start_websockets(self, bots: [BotClass.Bot]):
         ''' Function that starts the websockets for price data in the bots '''
         self.twm.start()  ##start ws manager
         log.info("start_websockets() - Starting Websockets...")
@@ -141,7 +76,7 @@ class CustomClient:
                 bots.pop(i)
         self.number_of_bots = len(bots)
 
-    def ping_server_reconnect_sockets(self, bots: [Bot_Class.Bot]):
+    def ping_server_reconnect_sockets(self, bots: [BotClass.Bot]):
         ''' Loop that runs constantly, it pings the server every 15 seconds, so we don't lose connection '''
         while True:
             time.sleep(15)
@@ -159,7 +94,7 @@ class CustomClient:
                         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                         log.error(f"retry_websockets_job() - Error in resetting websocket for {bot.symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
 
-    def setup_bots(self, bots: [Bot_Class.Bot], symbols_to_trade: [str], signal_queue, print_trades_q):
+    def setup_bots(self, bots: [BotClass.Bot], symbols_to_trade: [str], signal_queue, print_trades_q):
         ''' Function that initializes a Bot class for each symbol in our symbols_to_trade list / All symbols if trade_all_coins is True '''
         log.info(f"setup_bots() - Beginning Bots setup...")
         y = self.client.futures_exchange_info()['symbols']
@@ -180,7 +115,7 @@ class CustomClient:
                     break
             if flag == 1:
                 bots.append(
-                    Bot_Class.Bot(symbol=symbols_to_trade[i], Open=[], Close=[], High=[], Low=[], Volume=[], Date=[],
+                    BotClass.Bot(symbol=symbols_to_trade[i], Open=[], Close=[], High=[], Low=[], Volume=[], Date=[],
                                   OP=order_precision, CP=symbol_precision,
                                   index=i, tick=tick, strategy=trading_strategy, TP_SL_choice=TP_SL_choice,
                                   SL_mult=SL_mult, TP_mult=TP_mult, signal_queue=signal_queue, print_trades_q=print_trades_q))
@@ -195,7 +130,7 @@ class CustomClient:
                     log.warning(f"setup_bots() - Error occurred removing symbol, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
         log.info(f"setup_bots() - Bots have completed setup")
 
-    def combine_data(self, bots: [Bot_Class.Bot], symbols_to_trade: [str], buffer):
+    def combine_data(self, bots: [BotClass.Bot], symbols_to_trade: [str], buffer):
         ''' Function that pulls in historical data so we have candles for the Bot to start trading immediately '''
         log.info("combine_data() - Combining Historical and web socket data...")
         i = 0

@@ -8,10 +8,10 @@ from binance.exceptions import BinanceAPIException
 from tabulate import tabulate
 
 import TradingStrats
-from live_trading_config import *
+from LiveTradingConfig import *
 import time
 from Helper import Trade
-from logger import *
+from Logger import *
 
 def calculate_custom_tp_sl(options):
     '''
@@ -54,7 +54,7 @@ class TradeManager:
 
     def monitor_orders_by_polling_api(self):
         '''
-        Loop that runs constantly to catch trades that opened, when packet loss occurs
+        Loop that runs constantly to catch trades that opened when packet loss occurs
         to ensure that SL & TPs are placed on all positions
         '''
         while True:
@@ -66,8 +66,7 @@ class TradeManager:
                 for trade in self.active_trades:
                     if trade.symbol in open_positions and trade.trade_status == 0:
                         i = self.active_trades.index(trade)
-                        trade.trade_status = self.place_tp_sl(trade.symbol, trade.trade_direction, trade.CP, trade.tick_size,
-                                                  trade.entry_price, i)
+                        trade.trade_status = self.place_tp_sl(trade.symbol, trade.trade_direction, trade.CP, trade.tick_size, trade.entry_price, i)
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -115,8 +114,7 @@ class TradeManager:
                         self.number_of_losses += 1
                         trades_to_update.append([i, 5])
                     elif msg['o']['i'] == trade.order_id:
-                        status = self.place_tp_sl(trade.symbol, trade.trade_direction, trade.CP, trade.tick_size,
-                                         trade.entry_price, i)
+                        status = self.place_tp_sl(trade.symbol, trade.trade_direction, trade.CP, trade.tick_size, trade.entry_price, i)
                         trades_to_update.append([i, status])
                 elif msg['e'] == 'ACCOUNT_UPDATE':
                     i = self.active_trades.index(trade)

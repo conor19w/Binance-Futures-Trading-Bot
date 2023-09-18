@@ -1,10 +1,12 @@
 import asyncio
 from pprint import PrettyPrinter
-from live_trading_config import *
-from live_trading_config import symbols_to_trade  # explicitly importing to remove a warning
-from live_trading_config import buffer  # explicitly importing to remove a warning
+from LiveTradingConfig import *
+from LiveTradingConfig import symbols_to_trade  # explicitly importing to remove a warning
+from LiveTradingConfig import buffer  # explicitly importing to remove a warning
+
+import SharedHelper
 from Helper import *
-from trade_manager import *
+from TradeManager import *
 from threading import Thread
 import multiprocessing
 from queue import Queue
@@ -22,7 +24,7 @@ if __name__ == '__main__':
     if os.name == 'nt':
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     pp = PrettyPrinter()  ##for printing json text cleanly (inspect binance API call returns)
-    Bots: [Bot_Class.Bot] = []
+    Bots: [BotClass.Bot] = []
     signal_queue = None
     print_trades_q = None
     if use_multiprocessing_for_trade_execution:
@@ -35,7 +37,7 @@ if __name__ == '__main__':
     python_binance_client = Client(api_key=API_KEY, api_secret=API_SECRET)
     client = CustomClient(python_binance_client)
     if trade_all_symbols:
-        symbols_to_trade = client.get_all_symbols()
+        symbols_to_trade = SharedHelper.get_all_symbols(python_binance_client, coin_exclusion_list)
 
     client.set_leverage(symbols_to_trade)
 
@@ -63,7 +65,7 @@ if __name__ == '__main__':
 
     if auto_calculate_buffer:
         ## auto-calculate the required buffer size
-        buffer_int = get_required_buffer()
+        buffer_int = SharedHelper.get_required_buffer(trading_strategy)
         buffer = convert_buffer_to_string(buffer_int)
     ## Combine data collected from websockets with historical data, so we have a buffer of data to calculate signals
     combine_data_thread = Thread(target=client.combine_data, args=(Bots, symbols_to_trade, buffer))
