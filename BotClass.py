@@ -163,11 +163,6 @@ class Bot:
                                        "ema_long": {"values": list(ema_indicator(CloseS, window=50)),
                                                  "plotting_axis": 1},
                                        }
-                case 'Alex_F_volume':
-                    self.indicators = {"average_volume": {
-                        "values": sum(self.Volume[-make_decision_options['look_back_period']:])/make_decision_options['look_back_period'],
-                        "plotting_axis": 1},
-                    }
                 case _:
                     return
         except Exception as e:
@@ -367,10 +362,6 @@ class Bot:
                     trade_direction = TS.ema_crossover(trade_direction, self.current_index,
                                                        self.indicators["ema_short"]["values"],
                                                        self.indicators["ema_long"]["values"])
-                case 'Alex_F_volume':
-                    trade_direction = TS.alex_f_volume(trade_direction, self.indicators["average_volume"]["values"],
-                                                       self.Volume[self.current_index],
-                                                       self.Close[self.current_index], self.Open[self.current_index])
 
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
