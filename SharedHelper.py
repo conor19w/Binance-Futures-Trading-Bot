@@ -1,7 +1,6 @@
 import numpy as np
 from Logger import *
 import BotClass
-from back_testing.BacktesterConfig import *
 
 def get_all_symbols(client, coin_exclusion_list):
     ''' Function that returns the list of trade-able USDT symbols & removes coins you've added to your exclusion list in live_trading_config.py '''
@@ -45,16 +44,16 @@ def get_required_buffer(trading_strategy):
     ran_arr_volume = np.random.uniform(size=20000, low=2, high=100_000_000)
 
     actual_values_bot = BotClass.Bot('actual_values_bot', ran_arr_open, ran_arr_close, ran_arr_high,
-                                      ran_arr_low, ran_arr_volume, [], 3, 4, 0, 1, trading_strategy, TP_SL_choice,
-                                      SL_mult, TP_mult, 1)
+                                      ran_arr_low, ran_arr_volume, [], 3, 4, 0, 1, trading_strategy, '%',
+                                      1, 1, 1)
     buffer_bot: BotClass.Bot
     for i in range(30, 20000):
         try:
             ## Calculate indicators for this size of buffer
             buffer_bot = BotClass.Bot('buffer_bot', ran_arr_open[-i:], ran_arr_close[-i:], ran_arr_high[-i:],
                                        ran_arr_low[-i:], ran_arr_volume[-i:], [], 3, 4, 0, 1, trading_strategy,
-                                       TP_SL_choice,
-                                       SL_mult, TP_mult, 1)
+                                       '%',
+                                       1, 1, 1)
             ## Compare the indicators of actual_values_bot & buffer_bot until the error % is less than .1%
             keys = buffer_bot.indicators.keys()
             error_percent = compare_indicators(keys, buffer_bot.indicators, actual_values_bot.indicators)
