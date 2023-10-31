@@ -2,5 +2,4 @@ __pycache__
 .github
 venv
 .idea
-testing.py
-back_testing.py
+./back_testing/price_data/
