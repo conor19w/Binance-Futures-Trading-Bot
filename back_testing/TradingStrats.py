@@ -1,3 +1,5 @@
+from BacktesterConfig import *
+
 def candle_wick(Trade_Direction, Close, Open, High, Low, current_index):
     if Close[current_index - 4] < Close[current_index - 3] < Close[current_index - 2] and Close[current_index - 1] < Open[current_index - 1] and (
             High[current_index - 1] - Open[current_index - 1] + Close[current_index - 1] - Low[current_index - 1]) > 10 * (Open[current_index - 1] - Close[current_index - 1]) and Close[current_index] < Close[current_index - 1]:

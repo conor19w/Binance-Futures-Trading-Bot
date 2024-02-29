@@ -94,7 +94,7 @@ class CustomClient:
                         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                         log.error(f"retry_websockets_job() - Error in resetting websocket for {bot.symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
 
-    def setup_bots(self, bots: [BotClass.Bot], symbols_to_trade: [str], signal_queue, print_trades_q):
+    def setup_bots(self, bots: [BotClass.Bot], symbols_to_trade: [str], signal_queue, print_trades_q, position_close_queue):
         ''' Function that initializes a Bot class for each symbol in our symbols_to_trade list / All symbols if trade_all_coins is True '''
         log.info(f"setup_bots() - Beginning Bots setup...")
         y = self.client.futures_exchange_info()['symbols']
@@ -118,7 +118,7 @@ class CustomClient:
                     BotClass.Bot(symbol=symbols_to_trade[i], Open=[], Close=[], High=[], Low=[], Volume=[], Date=[],
                                   OP=order_precision, CP=symbol_precision,
                                   index=i, tick=tick, strategy=trading_strategy, TP_SL_choice=TP_SL_choice,
-                                  SL_mult=SL_mult, TP_mult=TP_mult, signal_queue=signal_queue, print_trades_q=print_trades_q))
+                                  SL_mult=SL_mult, TP_mult=TP_mult, signal_queue=signal_queue, print_trades_q=print_trades_q, position_close_queue=position_close_queue))
                 i += 1
             else:
                 log.info(f"setup_bots() - {symbols_to_trade[i]} no symbol info found, removing symbol")

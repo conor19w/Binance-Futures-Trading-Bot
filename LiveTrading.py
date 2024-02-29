@@ -27,12 +27,15 @@ if __name__ == '__main__':
     Bots: [BotClass.Bot] = []
     signal_queue = None
     print_trades_q = None
+    position_close_queue = None
     if use_multiprocessing_for_trade_execution:
         signal_queue = multiprocessing.Queue()
         print_trades_q = multiprocessing.Queue()
+        position_close_queue = multiprocessing.Queue()
     else:
         signal_queue = Queue()
         print_trades_q = Queue()
+        position_close_queue = Queue()
 
     python_binance_client = Client(api_key=API_KEY, api_secret=API_SECRET)
     client = CustomClient(python_binance_client)
@@ -42,7 +45,7 @@ if __name__ == '__main__':
     client.set_leverage(symbols_to_trade)
 
     ## Initialize a bot for each coin we're trading
-    client.setup_bots(Bots, symbols_to_trade, signal_queue, print_trades_q)
+    client.setup_bots(Bots, symbols_to_trade, signal_queue, print_trades_q, position_close_queue)
 
     client.start_websockets(Bots)
 
@@ -50,10 +53,10 @@ if __name__ == '__main__':
     new_trade_loop = None
     TM = None
     if use_multiprocessing_for_trade_execution:
-        new_trade_loop = multiprocessing.Process(target=start_new_trades_loop_multiprocess, args=(python_binance_client, signal_queue, print_trades_q))
+        new_trade_loop = multiprocessing.Process(target=start_new_trades_loop_multiprocess, args=(python_binance_client, signal_queue, print_trades_q, position_close_queue))
         new_trade_loop.start()
     else:
-        TM = TradeManager(python_binance_client, signal_queue, print_trades_q)
+        TM = TradeManager(python_binance_client, signal_queue, print_trades_q, position_close_queue)
         new_trade_loop = Thread(target=TM.new_trades_loop)
         new_trade_loop.daemon = True
         new_trade_loop.start()

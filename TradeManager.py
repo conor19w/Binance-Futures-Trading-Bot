@@ -28,7 +28,7 @@ def calculate_custom_tp_sl(options):
 
 
 class TradeManager:
-    def __init__(self, client: Client, new_trades_q, print_trades_q):
+    def __init__(self, client: Client, new_trades_q, print_trades_q, position_close_q):
         self.client = client
         self.active_trades: [Trade] = []
         self.use_trailing_stop = use_trailing_stop
@@ -48,9 +48,25 @@ class TradeManager:
         self.monitor_orders_by_polling_api_loop = Thread(target=self.monitor_orders_by_polling_api)
         self.monitor_orders_by_polling_api_loop.daemon = True
         self.monitor_orders_by_polling_api_loop.start()
+        self.position_close_q = position_close_q
+        self.listen_for_position_close_loop = Thread(target=self.listen_for_position_close)
+        self.listen_for_position_close_loop.daemon = True
+        self.listen_for_position_close_loop.start()
         self.total_profit = 0
         self.number_of_wins = 0
         self.number_of_losses = 0
+
+    def listen_for_position_close(self):
+        '''
+        Loop that runs constantly that receives signals from the Bots to close positions
+        '''
+        while True:
+            [symbol, decision] = self.position_close_q.get()
+            for trade in self.active_trades:
+                if symbol == trade.symbol and decision == 'CLOSE_SHORT' and trade.trade_direction == 0:
+                    trade.trade_status = 7
+                elif symbol == trade.symbol and decision == 'CLOSE_LONG' and trade.trade_direction == 1:
+                    trade.trade_status = 7
 
     def monitor_orders_by_polling_api(self):
         '''
@@ -252,6 +268,15 @@ class TradeManager:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                     log.warning(f'cancel_and_remove_trades() - error occurred cancelling a trade on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
+            elif self.active_trades[i].trade_status == 7:
+                try:
+                    self.close_position(self.active_trades[i].symbol, self.active_trades[i].trade_direction, self.active_trades[i].position_size)
+                    log.info(f'cancel_and_remove_trades() - orders cancelled on {self.active_trades[i].symbol} as a signal to close was generated from the BotClass')
+                    self.active_trades.pop(i)
+                except Exception as e:
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    log.warning(f'cancel_and_remove_trades() - error occurred closing a trade on {self.active_trades[i].symbol}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
             else:
                 i += 1
 
@@ -501,6 +526,6 @@ class TradeManager:
                 log.warning(f'log_trades_loop() - Error: {e}, {exc_type, fname, exc_tb.tb_lineno}')
 
 
-def start_new_trades_loop_multiprocess(client: Client, new_trades_q, print_trades_q):
-    TM = TradeManager(client, new_trades_q, print_trades_q)
+def start_new_trades_loop_multiprocess(client: Client, new_trades_q, print_trades_q, position_close_q):
+    TM = TradeManager(client, new_trades_q, print_trades_q, position_close_q)
     TM.new_trades_loop()

@@ -880,3 +880,15 @@ def SetSLTP(stop_loss_val_arr, take_profit_val_arr, peaks, troughs, Close, High,
             return
 
     return stop_loss_val, take_profit_val
+
+
+def close_based_off_rsi(RSI, current_index):
+    '''
+    Example check_close_pos function
+    '''
+    close_long_position, close_short_position = 0, 0
+    if RSI[current_index] > 80 > RSI[current_index - 1]:
+        close_long_position = 1
+    if RSI[current_index] < 20 < RSI[current_index - 1]:
+        close_short_position = 1
+    return close_long_position, close_short_position

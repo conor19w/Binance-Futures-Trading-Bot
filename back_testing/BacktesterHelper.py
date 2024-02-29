@@ -10,77 +10,14 @@ import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 from matplotlib import pyplot as plt
 
-import Bot_Class
-from Config_File import API_KEY, API_SECRET
+import BotClass
 from joblib import load, dump
 import sys, os
 from tabulate import tabulate
 import multiprocessing
 
-client = Client(api_key=API_KEY, api_secret=API_SECRET)  ##Binance keys needed to Trade on an account, can remove keys if backtesting
+client = Client()  ##Binance keys needed to Trade on an account, can remove keys if backtesting
 price_data_path = '.'
-
-class Data_Handler:
-    def __init__(self, symbol: str, index: int):
-        self.symbol = symbol
-        self.index = index
-        self.new_data = False
-        self.socket_failed = False
-        self.next_candle = {'Date': 0, 'Close': 0.0, 'Open': 0.0, 'High': 0.0, 'Low': 0.0, 'Volume': 0.0}
-
-    def handle_socket_message(self, msg):
-        try:
-            if msg != '':
-                payload = msg['k']
-                if payload['x']:
-                    self.next_candle['Date'] = payload['T']
-                    self.next_candle['Close'] = float(payload['c'])
-                    self.next_candle['Volume'] = float(payload['q'])
-                    self.next_candle['High'] = float(payload['h'])
-                    self.next_candle['Low'] = float(payload['l'])
-                    self.next_candle['Open'] = float(payload['o'])
-                    # print(self.symbol_data)
-                    self.new_data = True
-        except Exception as e:
-            print(f"Error in handling of websocket, Error: {e}")
-            self.socket_failed = True
-
-class Data_Handler_multi:
-    def __init__(self, symbol):
-        self.new_data = False
-        self.price_data = {s: {'Date': None, 'Close': None,
-                                    'Open': None, 'High': None, 'Low': None,
-                                    'Volume': None, 'new_candle': False}
-                           for s in symbol}
-
-
-    def handle_socket_message(self, msg):
-        try:
-            if msg != '':
-                payload = msg['k']
-                if payload['x']:
-                    if msg['ps'] not in self.price_data:
-                        self.price_data[msg['ps']] = {'Date': payload['T'], 'Close': float(payload['c']),
-                                                          'Open': float(payload['o']), 'High': float(payload['h']), 'Low': float(payload['l']),
-                                                          'Volume': float(payload['q']), 'new_candle': True}
-                    else:
-                        self.price_data[msg['ps']]['Date'] = payload['T']
-                        self.price_data[msg['ps']]['Close'] = float(payload['c'])
-                        self.price_data[msg['ps']]['Open'] = float(payload['o'])
-                        self.price_data[msg['ps']]['High'] = float(payload['h'])
-                        self.price_data[msg['ps']]['Low'] = float(payload['l'])
-                        self.price_data[msg['ps']]['Volume'] = float(payload['q'])
-                        self.price_data[msg['ps']]['new_candle'] = True
-                    #print(self.price_data)
-        except Exception as e:
-            print(f"Error in handling of websocket, Error: {e}")
-
-class Trade_Stats:
-    def __init__(self):
-        self.total_number_of_trades = 0
-        self.wins = 0
-        self.losses = 0
-
 
 class trade_info:
     def __init__(self, symbol, TP_price, SL_price, trade_direction):
@@ -115,233 +52,9 @@ class Trade:
         self.trail_activated = False
         self.same_candle = True
         self.trade_info: trade_info = trade_info(symbol, take_profit_val, stop_loss_val, trade_direction)
+
     def print_vals(self):
         return self.symbol, self.entry_price, self.position_size, self.TP_val, self.SL_val, self.trade_direction, self.trade_status, self.Highest_val, self.Lowest_val
-
-
-def log_error(e):
-    with open('errors.txt', 'a') as O:
-        O.write(e + "\n")
-
-
-class Trade_Manager:
-    def __init__(self, client: Client, use_trailing_stop: bool, trailing_stop_callback: float, use_market: bool):
-        self.client = client
-        self.use_trailing_stop = use_trailing_stop
-        self.trailing_stop_callback = trailing_stop_callback
-        self.use_market = use_market
-
-    def open_trade_check_threshold(self, symbol: str, trade_direction: int, order_notional: float, CP: int, OP: int, tick_size: float, time: int, close: float, trading_threshold: float, orderID: int = '', old_entry_price: float = 0):
-        order_book = self.client.futures_order_book(symbol=symbol)
-        bids = order_book['bids']
-        asks = order_book['asks']
-        entry_price = 0
-        if trade_direction == 1:
-            entry_price = float(bids[0][0])
-        elif trade_direction == 0:
-            entry_price = float(asks[0][0])
-
-        if self.use_market:
-            order_qty = order_notional / close
-            ## Conditions to cancel the opening of a trade
-            if old_entry_price != 0 and (close - entry_price) / close > trading_threshold and trade_direction == 0:
-                return '', order_qty, entry_price, -99
-            elif old_entry_price != 0 and (entry_price - close) / close > trading_threshold and trade_direction == 1:
-                return '', order_qty, entry_price, -99
-
-            try:
-                if OP == 0:
-                    order_qty = round(order_qty)
-                else:
-                    order_qty = round(order_qty, OP)
-                ##Could Make limit orders but for now the entry is a market
-                if trade_direction == 0:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=SIDE_SELL,
-                        type=FUTURE_ORDER_TYPE_MARKET,
-                        quantity=order_qty)
-                    orderID = order['orderId']
-                if trade_direction == 1:
-                    order = self.client.futures_create_order(
-                        symbol=symbol,
-                        side=SIDE_BUY,
-                        type=FUTURE_ORDER_TYPE_MARKET,
-                        quantity=order_qty)
-                    orderID = order['orderId']
-            except BinanceAPIException as e:
-                log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in open_trade(), Error: {e}")
-                print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in open_trade(), Error: ", e, order_qty, CP, OP)
-            except Exception as e:
-                print(e)
-                log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: {e}")
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
-
-            entry_price = float(self.client.futures_position_information(symbol=symbol)[0]['entryPrice'])
-            return orderID, order_qty, entry_price, 1
-
-        else:
-            order_qty = 0
-            try:
-                if OP == 0:
-                    order_qty = round(order_notional / entry_price)
-                else:
-                    order_qty = round(order_notional / entry_price, OP)
-                if CP == 0:
-                    entry_price = round(entry_price)
-                else:
-                    entry_price = round(round(entry_price / tick_size) * tick_size, CP)
-
-                ## Conditions to cancel the opening of a trade
-                if old_entry_price != 0 and (old_entry_price - entry_price) / old_entry_price > trading_threshold and trade_direction == 0:
-                    return '', order_qty, entry_price, -99
-                elif old_entry_price != 0 and (entry_price - old_entry_price) / old_entry_price > trading_threshold and trade_direction == 1:
-                    return '', order_qty, entry_price, -99
-                if order_qty == 0:
-                    return '', order_qty, entry_price, -99
-
-                if orderID == '':
-                    if trade_direction == 0:
-                        order = self.client.futures_create_order(
-                            symbol=symbol,
-                            side=SIDE_SELL,
-                            type=FUTURE_ORDER_TYPE_LIMIT,
-                            price=entry_price,
-                            timeInForce=TIME_IN_FORCE_GTC,
-                            quantity=order_qty)
-                        orderID = order['orderId']
-                    if trade_direction == 1:
-                        order = self.client.futures_create_order(
-                            symbol=symbol,
-                            side=SIDE_BUY,
-                            type=FUTURE_ORDER_TYPE_LIMIT,
-                            price=entry_price,
-                            timeInForce=TIME_IN_FORCE_GTC,
-                            quantity=order_qty)
-                        orderID = order['orderId']
-
-                return orderID, order_qty, entry_price, 0
-            except BinanceAPIException as e:
-                print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in open_trade(), Error: ", e, order_qty, entry_price, CP, OP)
-                return '', 0, 0, 0
-            except Exception as e:
-                print(e)
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
-
-    def place_TP(self, symbol: str, TP: [float, float], trade_direction: int, CP: int, tick_size: float, time: int):
-        TP_ID = ''
-        try:
-            TP_val = 0
-            order = ''
-            order_side = ''
-            if CP == 0:
-                TP_val = round(TP[0])
-            else:
-                TP_val = round(round(TP[0] / tick_size) * tick_size, CP)
-            if trade_direction == 1:
-                order_side = SIDE_SELL
-            elif trade_direction == 0:
-                order_side = SIDE_BUY
-            if not self.use_trailing_stop:
-                order = self.client.futures_create_order(
-                    symbol=symbol,
-                    side=order_side,
-                    type=FUTURE_ORDER_TYPE_LIMIT,
-                    price=TP_val,
-                    timeInForce=TIME_IN_FORCE_GTC,
-                    reduceOnly='true',
-                    quantity=TP[1])
-                TP_ID = order['orderId']
-            else:
-                order = self.client.futures_create_order(
-                    symbol=symbol,
-                    side=order_side,
-                    type='TRAILING_STOP_MARKET',
-                    ActivationPrice=TP_val,
-                    callbackRate=self.trailing_stop_callback,
-                    quantity=TP[1])
-                TP_ID = order['orderId']
-        except BinanceAPIException as e:
-            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in place_TP(), Error: {e}")
-            print(f"\n{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in place_TP(), Error: {e}")
-            print(f"symbol: {symbol} TP: {TP}\n")
-            return -1
-        except Exception as e:
-            print(e)
-            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: {e}")
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
-        return TP_ID
-
-    def place_SL(self, symbol: str, SL: float, trade_direction: int, CP: int, tick_size: float, time: int):
-        order_ID = ''
-        try:
-            if CP == 0:
-                SL = round(SL)
-            else:
-                SL = round(round(SL / tick_size) * tick_size, CP)
-
-            if trade_direction == 1:
-                order = self.client.futures_create_order(
-                    symbol=symbol,
-                    side=SIDE_SELL,
-                    type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                    stopPrice=SL,
-                    closePosition='true')
-                order_ID = order['orderId']
-            else:
-                order = self.client.futures_create_order(
-                    symbol=symbol,
-                    side=SIDE_BUY,
-                    type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                    stopPrice=SL,
-                    closePosition='true')
-                order_ID = order['orderId']
-
-        except BinanceAPIException as e:
-            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in place_SL(), Error: {e}")
-            print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: Error in place_SL(), Error: {e}")
-            print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: symbol: {symbol} SL: {SL}\n")
-            return -1
-        except Exception as e:
-            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {e}")
-            print(e)
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
-
-        return order_ID
-
-    def close_position(self, symbol: str, trade_direction: int, total_position_size: float, time: int):
-        try:
-            self.client.futures_cancel_all_open_orders(symbol=symbol)  ##cancel orders for this symbol
-            if trade_direction == 0:
-                order = self.client.futures_create_order(
-                    symbol=symbol,
-                    side=SIDE_BUY,
-                    type=FUTURE_ORDER_TYPE_MARKET,
-                    quantity=total_position_size)
-            if trade_direction == 1:
-                order = self.client.futures_create_order(
-                    symbol=symbol,
-                    side=SIDE_SELL,
-                    type=FUTURE_ORDER_TYPE_MARKET,
-                    quantity=total_position_size)
-
-        except BinanceAPIException as e:
-            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: Error in close_position(), Error: {e}")
-            print(f"{symbol}: Error in close_position(), Error: {e}")
-        except Exception as e:
-            print(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {e}")
-            log_error(f"{str(datetime.utcfromtimestamp(round(time/1000)))}: {symbol}: {e}")
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
 
 
 def get_TIME_INTERVAL(TIME_INTERVAL):
@@ -503,27 +216,6 @@ def get_Klines(symbol, start_str, end_str, path):
     return price_data
 
 
-def get_historical(symbol: str, start_string: str, Interval: str):
-    Open = []
-    High = []
-    Low = []
-    Close = []
-    Volume = []
-    Date = []
-    try:
-        for kline in client.futures_historical_klines(symbol, Interval, start_str=start_string):
-            #Date.append(str(datetime.utcfromtimestamp(round(kline[6] / 1000))))
-            Date.append(kline[6])
-            Open.append(float(kline[1]))
-            Close.append(float(kline[4]))
-            High.append(float(kline[2]))
-            Low.append(float(kline[3]))
-            Volume.append(float(kline[7]))
-    except BinanceAPIException as e:
-        print(e)
-    return Date, Open, Close, High, Low, Volume
-
-
 def align_Datasets(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume):
     print("Aligning Data Sets... This may take a few minutes")
     start_date = [Date[0][0], 0]  ##get 1st date of first coin
@@ -593,67 +285,9 @@ def get_CAGR(start, end):
     return (int(end[0:2]) - int(start[0:2]) + 30 * (int(end[3:5]) - int(start[3:5])) + 365 * (
             int(end[6:]) - int(start[6:]))) / 365
 
-
-def align_Datasets_easy(Date, Close, Open):
-    start_date = [Date[0][0], 0]
-    end_date = [Date[0][-1], 0]
-    for i in range(len(Date)):
-        if Date[i][0] < start_date[0]:
-            start_date = [Date[i][0], i]  ##Date,index of start date
-        if Date[i][-1] > end_date[0]:
-            end_date = [Date[i][-1], i]  ##Date, index of end date
-    for i in range(len(Date)):
-        len_infront = 0
-        len_behind = 0
-        for j in range(len(Date[start_date[1]])):
-            if Date[start_date[1]][j] != Date[i][0]:
-                len_infront += 1
-            else:
-                break
-        for j in range(len(Date[end_date[1]]) - 1, -1, -1):
-            if Date[end_date[1]][j] != Date[i][-1]:
-                len_behind += 1
-            else:
-                break
-        for j in range(len_infront):
-            Date[i].insert(0, "Data Set hasn't started yet")
-            Close[i].insert(0, Close[i][0])
-            Open[i].insert(0, Open[i][0])
-        for j in range(len_behind):
-            Date[i].append("Data Set Ended")
-            Close[i].append(Close[i][-1])
-            Open[i].append(Open[i][-1])
-
-    return Date, Close, Open
-
-
-def get_heikin_ashi(Open, Close, High, Low):
-    Open_heikin = []
-    Close_heikin = []
-    High_heikin = []
-    Low_heikin = []
-    for i in range(len(Close)):
-        Open_heikin.append([])
-        Close_heikin.append([])
-        High_heikin.append([])
-        Low_heikin.append([])
-        for j in range(len(Close[i])):
-            Close_heikin[i].append((Open[i][j] + Close[i][j] + Low[i][j] + High[i][j]) / 4)
-            if j == 0:
-                Open_heikin[i].append((Close_heikin[i][j] + Open[i][j]) / 2)
-                High_heikin[i].append(High[i][j])
-                Low_heikin[i].append(Low[i][j])
-            else:
-                Open_heikin[i].append((Open_heikin[i][j - 1] + Close_heikin[i][j - 2]) / 2)
-                High_heikin[i].append(max(High[i][j], Open_heikin[i][j], Close_heikin[i][j]))
-                Low_heikin[i].append(min(Low[i][j], Open_heikin[i][j], Close_heikin[i][j]))
-    return Open_heikin, Close_heikin, High_heikin, Low_heikin
-
-
-def get_aligned_candles(Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume,
-                        symbol, TIME_INTERVAL, start, end, use_multiprocessing=False, index=0, return_dict=None):
+def get_aligned_candles(symbol, TIME_INTERVAL, start, end, use_multiprocessing=False, index=0, return_dict=None):
     i = 0
-
+    Date_1min, High_1min, Low_1min, Close_1min, Open_1min, Date, Open, Close, High, Low, Volume = [], [], [], [], [], [], [], [], [], [], []
     price_data_path = '.'
     if not os.path.exists(price_data_path + f'//price_data//'):
         os.makedirs(price_data_path + f'//price_data//')
@@ -889,7 +523,7 @@ def close_pos(t, account_balance, fee, Close):
     return t, account_balance
 
 
-def print_trades(active_trades: [Trade], trade_price, Date, account_balance, change_occurred, print_to_csv, csv_name, path, csv_path, time_delta):
+def print_trades(active_trades: [Trade], trade_price, Date, account_balance, change_occurred, csv_name, path, csv_path, time_delta):
     ###########################################################################################################
     #####################               PRINT TRADE DETAILS                          ##########################
     ###########################################################################################################
@@ -965,12 +599,11 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
         print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
         print(f"Time: {Date + time_delta} , Account Balance: {account_balance[0]}")
         print("------------------------------------------------------------\n")
-        if print_to_csv:
-            with open(csv_path+csv_name, 'a') as O:
-                for i in range(len(active_trades)):
-                    O.write(
-                        f'{Date + time_delta},{account_balance[0]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
-                        f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
+        with open(csv_path+csv_name, 'a') as O:
+            for i in range(len(active_trades)):
+                O.write(
+                    f'{Date + time_delta},{account_balance[0]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
+                    f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
         total_pnl = 0
         for x in trade_pnl:
             total_pnl += x
@@ -988,73 +621,13 @@ def print_trades(active_trades: [Trade], trade_price, Date, account_balance, cha
         print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
         print(f"Time: {Date + time_delta}")
         print("------------------------------------------------------------\n")
-        if print_to_csv:
-            with open(csv_path+csv_name, 'a') as O:
-                for i in range(len(active_trades)):
-                    O.write(
-                        f'{Date + time_delta},{account_balance_info[i]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
-                        f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
+        with open(csv_path+csv_name, 'a') as O:
+            for i in range(len(active_trades)):
+                O.write(
+                    f'{Date + time_delta},{account_balance_info[i]},{symbol_info[i]},{entry_price_info[i]},{position_size_info[i]},'
+                    f'{trade_price[i]},{TP_vals_info[i]},{SL_val_info[i]},{trade_direction_info[i]},{trade_highest_info[i]},{trade_lowest_info[i]},{trade_status_info[i]}\n')
 
     return 0, 0, False
-
-
-def log_info(active_trades: [Trade], trade_price, Dates, account_balance, csv_name, indicators):
-    ###########################################################################################################
-    #####################               Log Details                          ##########################
-    ###########################################################################################################
-
-    info = {}
-    symbol_info = []
-    entry_price_info = []
-    position_size_info = []
-    TP_vals_info = []
-    SL_val_info = []
-    trade_direction_info = []
-    for k in range(len(active_trades)):
-        symbol_info_temp, entry_price_info_temp, position_size_info_temp, TP_vals_info_temp, SL_val_info_temp, \
-            trade_direction_info_temp, trade_status_info_temp, trade_highest_temp, trade_lowest_temp = \
-            active_trades[k].print_vals()
-        symbol_info.append(symbol_info_temp)
-        entry_price_info.append(entry_price_info_temp)
-        position_size_info.append(position_size_info_temp)
-        TP_vals_info.append(TP_vals_info_temp)
-        SL_val_info.append(SL_val_info_temp)
-
-        if trade_direction_info_temp == 0:
-            trade_direction_info.append('Short')
-        elif trade_direction_info_temp == 1:
-            trade_direction_info.append('Long')
-        elif trade_direction_info_temp == -99:
-            trade_direction_info.append('Closed')
-
-    trade_pnl = []
-    for i in range(len(active_trades)):
-        if active_trades[i].trade_direction == 0:
-            trade_pnl.append((entry_price_info[i] - trade_price[i]) * (position_size_info[i]))
-        elif active_trades[i].trade_direction == 1:
-            trade_pnl.append((trade_price[i] - entry_price_info[i]) * (position_size_info[i]))
-    info['Date'] = Dates
-    info['Symbol'] = symbol_info
-    info['Direction'] = trade_direction_info
-    info['Entry'] = entry_price_info
-    info['Close'] = trade_price
-    info['Size'] = position_size_info
-    info['TP'] = TP_vals_info
-    info['SL'] = SL_val_info
-    info['PNL'] = trade_pnl
-    for x in indicators:
-        info[f'{x[0]}'] = x[1]
-
-
-    print(f"\nAccount Balance: {account_balance}")
-    print(tabulate(info, headers='keys', tablefmt='fancy_grid'))
-    print(f"Account Balance: {account_balance}")
-    print("------------------------------------------------------------\n")
-
-    with open(csv_name, 'a') as O:
-        for i in range(len(active_trades)):
-            O.write(f"Account Balance: {account_balance}" + "\n" + tabulate(info, headers='keys', tablefmt='fancy_grid') + "\n")
-
 
 
 def generate_trade_graphs1(trades: [trade_info], graph_before, trade_graph_folder):
@@ -1062,10 +635,10 @@ def generate_trade_graphs1(trades: [trade_info], graph_before, trade_graph_folde
     os.makedirs(f'{trade_graph_folder}//losing_trades')
     os.makedirs(f'{trade_graph_folder}//winning_trades')
     for trade, i in zip(trades, range(len(trades))):
-        if not os.path.exists(f'{trade_graph_folder}//losing_trades//{trade.symbol}'):
-            os.makedirs(f'{trade_graph_folder}//losing_trades//{trade.symbol}')
-        if not os.path.exists(f'{trade_graph_folder}//winning_trades//{trade.symbol}'):
-            os.makedirs(f'{trade_graph_folder}//winning_trades//{trade.symbol}')
+        if not os.path.exists(f'{trade_graph_folder}//losing_trades//{trade.symbols_to_trade}'):
+            os.makedirs(f'{trade_graph_folder}//losing_trades//{trade.symbols_to_trade}')
+        if not os.path.exists(f'{trade_graph_folder}//winning_trades//{trade.symbols_to_trade}'):
+            os.makedirs(f'{trade_graph_folder}//winning_trades//{trade.symbols_to_trade}')
 
         # define width of candlestick elements
         width = .2
@@ -1166,17 +739,17 @@ def generate_trade_graphs1(trades: [trade_info], graph_before, trade_graph_folde
         # create legend
         plt.legend(fontsize=5, loc="upper left")
         if trade.trade_success == 1:
-            plt.title(f'{trade.start_time}: {trade.symbol} Winning Trade')
-            plt.savefig(f'{trade_graph_folder}//winning_trades//{trade.symbol}//{trade.start_time}.png', dpi=500)
+            plt.title(f'{trade.start_time}: {trade.symbols_to_trade} Winning Trade')
+            plt.savefig(f'{trade_graph_folder}//winning_trades//{trade.symbols_to_trade}//{trade.start_time}.png', dpi=500)
             plt.close()
         else:
-            plt.title(f'{trade.start_time}: {trade.symbol} Losing Trade')
-            plt.savefig(f'{trade_graph_folder}//losing_trades//{trade.symbol}//{trade.start_time}.png', dpi=500)
+            plt.title(f'{trade.start_time}: {trade.symbols_to_trade} Losing Trade')
+            plt.savefig(f'{trade_graph_folder}//losing_trades//{trade.symbols_to_trade}//{trade.start_time}.png', dpi=500)
             plt.close()
         print(f"Trade Graph {i+1} of {len(trades)} complete")
 
 
-def get_candles_for_graphing(Bot: Bot_Class.Bot, trade:Trade, graph_before, graph_after):
+def get_candles_for_graphing(Bot: BotClass.Bot, trade:Trade, graph_before, graph_after):
     try:
         if Bot.using_heikin_ashi:
             trade.trade_info.candles = {"Date": Bot.Date[trade.trade_info.trade_start_index - graph_before:
@@ -1228,10 +801,10 @@ def generate_trade_graphs(trades: [trade_info], trade_graph_folder, auto_open_gr
     os.makedirs(f'{trade_graph_folder}//losing_trades')
     os.makedirs(f'{trade_graph_folder}//winning_trades')
     for trade in trades:
-        if not os.path.exists(f'{trade_graph_folder}//losing_trades//{trade.symbol}'):
-            os.makedirs(f'{trade_graph_folder}//losing_trades//{trade.symbol}')
-        if not os.path.exists(f'{trade_graph_folder}//winning_trades//{trade.symbol}'):
-            os.makedirs(f'{trade_graph_folder}//winning_trades//{trade.symbol}')
+        if not os.path.exists(f'{trade_graph_folder}//losing_trades//{trade.symbols_to_trade}'):
+            os.makedirs(f'{trade_graph_folder}//losing_trades//{trade.symbols_to_trade}')
+        if not os.path.exists(f'{trade_graph_folder}//winning_trades//{trade.symbols_to_trade}'):
+            os.makedirs(f'{trade_graph_folder}//winning_trades//{trade.symbols_to_trade}')
 
         data = {"Date": trade.candles["Date"],
                 "Close": trade.candles["Close"],
@@ -1303,13 +876,13 @@ def generate_trade_graphs(trades: [trade_info], trade_graph_folder, auto_open_gr
         fig.add_hline(y=trade.SL_price, line_color='red', name="SL", row=1, col=1 )
 
         if trade.trade_success == 1:
-            fig.update_layout(title=f'{trade.start_time}: {trade.symbol} Winning Trade',
+            fig.update_layout(title=f'{trade.start_time}: {trade.symbols_to_trade} Winning Trade',
                               xaxis_rangeslider_visible=False, template='plotly_dark')
-            plotly.offline.plot(fig, filename=f"{trade_graph_folder}//winning_trades//{trade.symbol}//{str(trade.start_time).replace(' ','_').replace(':','_')}.html", auto_open=auto_open_graph_images)
+            plotly.offline.plot(fig, filename=f"{trade_graph_folder}//winning_trades//{trade.symbols_to_trade}//{str(trade.start_time).replace(' ', '_').replace(':', '_')}.html", auto_open=auto_open_graph_images)
         else:
-            fig.update_layout(title=f'{trade.start_time}: {trade.symbol} Losing Trade',
+            fig.update_layout(title=f'{trade.start_time}: {trade.symbols_to_trade} Losing Trade',
                               xaxis_rangeslider_visible=False, template='plotly_dark')
-            plotly.offline.plot(fig, filename=f"{trade_graph_folder}//losing_trades//{trade.symbol}//{str(trade.start_time).replace(' ','_').replace(':','_')}.html", auto_open=auto_open_graph_images)
+            plotly.offline.plot(fig, filename=f"{trade_graph_folder}//losing_trades//{trade.symbols_to_trade}//{str(trade.start_time).replace(' ', '_').replace(':', '_')}.html", auto_open=auto_open_graph_images)
 
     print("Finished Generating Trade Graphs")
 
@@ -1331,3 +904,99 @@ def get_indicators_for_graphing(indicators:{}, trade:Trade, graph_before, graph_
             trade.trade_info.indicators[key]["plotting_axis"] = indicators[key]["plotting_axis"]
 
     return trade
+
+
+def convert_settings_to_decimal(order_size, slippage, minimum_drawdown, percent_gain_threshold, trailing_stop_callback, use_trailing_stop):
+    order_size = round(order_size / 100, 4)
+    slippage = round(slippage / 100, 4)
+    minimum_drawdown = round(minimum_drawdown, 3)
+    percent_gain_threshold = round(percent_gain_threshold / 100, 3)
+    if trailing_stop_callback < .001 and use_trailing_stop:
+        trailing_stop_callback = .001
+        print("*********************************\nCallback rate must be >= .001, I have set callback rate to .001 for you\n*********************************")
+    trailing_stop_callback = round(trailing_stop_callback, 3) ##Traling stop can only be a multiple of .1% ie 3 decimals
+    return order_size, slippage, minimum_drawdown, percent_gain_threshold, trailing_stop_callback
+
+
+def setup_folders(graph_folder_location, strategy, start, end, interval):
+    path_to_graphs_folder = f'{graph_folder_location}Backtests//{strategy}//{start}_{end}//'  ## where you want to store the graphs
+    now = datetime.now()
+    os.makedirs(path_to_graphs_folder + f'{interval}//Backtest_{now.day}-{now.month}-{now.year}_{now.hour}_{now.minute}_{now.second}')
+    backtest_path = path_to_graphs_folder + f'{interval}//Backtest_{now.day}-{now.month}-{now.year}_{now.hour}_{now.minute}_{now.second}//'
+    return path_to_graphs_folder, backtest_path
+
+def get_all_symbols(client: Client, coin_exclusion_list):
+    ''' Function that returns the list of trade-able USDT symbols & removes coins you've added to your exclusion list in live_trading_config.py '''
+    x = client.futures_exchange_info()['symbols']
+    symbols_to_trade = [y['symbol'] for y in x if (y['status'] == 'TRADING' and
+                         'USDT' in y['symbol'] and '_' not in y['symbol'] and
+                         y['symbol'] not in coin_exclusion_list)]
+    return symbols_to_trade
+
+
+def get_candles(use_multiprocessing_for_downloading_data, symbols_to_trade, interval, start, end):
+    print("Loading Price Data")
+    if use_multiprocessing_for_downloading_data:
+        return multiprocess_get_candles(symbols_to_trade, interval, start, end)
+    else:
+        return get_aligned_candles(symbols_to_trade, interval, start, end)
+
+
+def setup_bots(symbols_to_trade, symbol_info, Open, Close, High, Low, Volume, Date, strategy, TP_SL_choice, SL_mult, TP_mult):
+    Bots: [BotClass.Bot] = []
+    wins_and_losses = {}
+    for k in range(len(symbols_to_trade)):
+        Coin_precision_temp = -99
+        Order_precision_temp = -99
+        tick_temp = -99
+        for x in symbol_info:
+            if x[0] == symbols_to_trade[k]:
+                Coin_precision_temp = int(x[1])
+                Order_precision_temp = int(x[2])
+                tick_temp = float(x[3])
+                wins_and_losses[symbols_to_trade[k]] = {'wins': 0, 'losses': 0, 'trades': 0}
+                break
+        Bots.append(BotClass.Bot(symbols_to_trade[k], Open[k], Close[k], High[k], Low[k], Volume[k], Date[k],
+                                  Order_precision_temp, Coin_precision_temp, k, tick_temp, strategy, TP_SL_choice, SL_mult,
+                                  TP_mult, 1))
+
+    return Bots, wins_and_losses
+
+
+def get_tp_and_sl(trade_direction, take_profit, stop_loss, entry_price, CP):
+    take_profit_val = None
+    stop_loss_val = None
+    if trade_direction == 1:
+        take_profit_val = take_profit + entry_price
+        stop_loss_val = entry_price - stop_loss
+    elif trade_direction == 0:
+        take_profit_val = entry_price - take_profit
+        stop_loss_val = entry_price + stop_loss
+
+    ## Round to the coins specific coin precision
+    if CP == 0:
+        take_profit_val = round(take_profit_val)
+        stop_loss_val = round(stop_loss_val)
+    else:
+        take_profit_val = round(take_profit_val, CP)
+        stop_loss_val = round(stop_loss_val, CP)
+
+    return stop_loss_val, take_profit_val
+
+
+def print_config_to_screen():
+    print('--------------------------------------------------------------------------------------------------------------------------------------')
+    print("Configuration:")
+    # Open the file for reading
+    file_path = "BacktesterConfig.py"
+
+    try:
+        with open(file_path, "r") as file:
+            # Read and print the file's contents line by line
+            for line in file:
+                print(line, end="")
+    except FileNotFoundError:
+        print(f"File '{file_path}' not found.")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+    print('--------------------------------------------------------------------------------------------------------------------------------------')

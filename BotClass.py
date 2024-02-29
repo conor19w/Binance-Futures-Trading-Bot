@@ -10,7 +10,7 @@ from LiveTradingConfig import custom_tp_sl_functions, make_decision_options, wai
 
 class Bot:
     def __init__(self, symbol: str, Open: [float], Close: [float], High: [float], Low: [float], Volume: [float], Date: [str], OP: int, CP: int, index: int, tick: float,
-                 strategy: str, TP_SL_choice: str, SL_mult: float, TP_mult: float, backtesting=0, signal_queue=None, print_trades_q=None):
+                 strategy: str, TP_SL_choice: str, SL_mult: float, TP_mult: float, backtesting=0, signal_queue=None, print_trades_q=None, position_close_queue=None):
         self.symbol = symbol
         self.Date = Date
 
@@ -40,6 +40,7 @@ class Bot:
         self.take_profit_val, self.stop_loss_val = [], []
         self.peaks, self.troughs = [], []
         self.signal_queue = signal_queue
+        self.position_close_queue = position_close_queue
         if self.index == 0:
             self.print_trades_q = print_trades_q
         if backtesting:
@@ -50,7 +51,9 @@ class Bot:
         self.pop_previous_value = False
 
     def update_indicators(self):
-        ## Calculate indicators
+        '''
+        Function that gets called on every new candle/ new price (when wait_for_candle_close is false), generates indicators for your strategy
+        '''
         try:
             match self.strategy:
                 case 'StochRSIMACD':
@@ -79,7 +82,9 @@ class Bot:
                                         "fastd": {"values": list(stochrsi_d(CloseS)),
                                                   "plotting_axis": 3},
                                         "fastk": {"values": list(stochrsi_k(CloseS)),
-                                                  "plotting_axis": 3}
+                                                  "plotting_axis": 3},
+                                        "RSI": {"values": list(rsi(CloseS)),
+                                                "plotting_axis": 4}
                     }
                 case 'tripleEMA':
                     CloseS = pd.Series(self.Close)
@@ -171,7 +176,9 @@ class Bot:
             log.error(f'update_indicators() - Error occurred with strategy: {self.strategy}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
     def update_TP_SL(self):
-        ## Run Once in Backtester/ Run every candle in Live Bot
+        '''
+        Function that gets called on every new candle/ new price (when wait_for_candle_close is false), generates TP and SL values for your strategy
+        '''
         try:
             match self.TP_SL_choice:
                 case '%':
@@ -230,6 +237,10 @@ class Bot:
             log.error(f'update_TP_SL() - Error occurred with tp_sl_choice: {self.TP_SL_choice}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
 
     def add_hist(self, Date_temp: [float], Open_temp: [float], Close_temp: [float], High_temp: [float], Low_temp: [float], Volume_temp: [str]):
+        '''
+        Function that takes historical data and combines it with the websocket data you're receiving, this build up a buffer of candles to calculate indicators with.
+        This is needed as otherwise you would need to wait until the buffer is filled by websocket data, which could take a few hours/ days
+        '''
         if not self.backtesting:
             try:
                 while 0 < len(self.Date):
@@ -274,43 +285,11 @@ class Bot:
             log.error(f'add_hist() - Error occurred creating heikin ashi candles, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}')
         self.add_hist_complete = 1
 
-    def handle_socket_message(self, msg):
-        try:
-            if msg != '':
-                payload = msg['k']
-                if payload['x']:
-                    if self.pop_previous_value:
-                        self.remove_last_candle()
-                    self.consume_new_candle(payload)
-                    if self.add_hist_complete:
-                        self.generate_new_heikin_ashi()
-                        trade_direction, stop_loss_val, take_profit_val = self.make_decision()
-                        if trade_direction != -99:
-                            self.signal_queue.put([self.symbol, self.OP, self.CP, self.tick_size, trade_direction, self.index, stop_loss_val, take_profit_val])
-                        self.remove_first_candle()
-                    if self.index == 0:
-                        self.print_trades_q.put(True)
-                    if not self.first_interval:
-                        self.first_interval = True
-                    self.pop_previous_value = False
-                elif not wait_for_candle_close and self.first_interval and self.add_hist_complete:
-                    if self.pop_previous_value:
-                        self.remove_last_candle()
-                    self.pop_previous_value = True
-                    self.consume_new_candle(payload)
-                    self.generate_new_heikin_ashi()
-                    trade_direction, stop_loss_val, take_profit_val = self.make_decision()
-                    if trade_direction != -99:
-                        self.signal_queue.put([self.symbol, self.OP, self.CP, self.tick_size, trade_direction, self.index, stop_loss_val, take_profit_val])
-
-        except Exception as e:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            log.warning(f"handle_socket_message() - Error in handling of {self.symbol} websocket flagging for reconnection, msg: {msg}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
-            self.socket_failed = True
-
-
     def make_decision(self):
+        '''
+        This function generates the signals which the trade manager will act on, signals are pushed onto the signal_queue which is fed into another process
+        running the TradeManager
+        '''
         self.update_indicators()
         ##Initialize vars:
         trade_direction = -99  ## Short (0), Long (1)
@@ -385,27 +364,87 @@ class Bot:
 
         return trade_direction, stop_loss_val, take_profit_val
 
-    def check_close_pos(self, trade_direction):
-            close_pos = 0
-            try:
-                match self.strategy:
-                    case 'heikin_ashi_ema2':
-                        _, close_pos = TS.heikin_ashi_ema2(self.Open_H, self.High_H, self.Low_H,
-                                                           self.Close_H, -99, trade_direction,
-                                                           0, self.indicators["fastd"]["values"], self.indicators["fastk"]["values"],
-                                                           self.indicators["EMA"]["values"], self.current_index)
-                    case 'heikin_ashi_ema':
-                        _, close_pos = TS.heikin_ashi_ema(self.Open_H, self.Close_H, -99, trade_direction, 0,
-                                                          self.indicators["fastd"]["values"], self.indicators["fastk"]["values"], self.indicators["EMA"]["values"], self.current_index)
-                    case _:
-                        return
-            except Exception as e:
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                log.error(f"check_close_pos() - Error with strategy: {self.strategy}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
-            return close_pos
+    def check_close_pos(self):
+        '''
+        Function that checks conditions for closing positions without hitting a TP or SL.
+        Note you will need to define the indicators needed for calculation in update_indicators() for your strategy
+        See sample close function as example, note this is just to show functionality
+        To add a custom close position function you would need to add a new case which refers to your trading strategy
+        \nFor example:\n case 'example_closing_position_function':\n\tclose_long_position, close_short_position = TS.close_based_off_rsi(self.indicators['RSI']['values'], self.current_index)
+        '''
+        close_long_position, close_short_position = 0, 0
+        try:
+            match self.strategy:
+                case 'new_strategy':
+                    close_long_position, close_short_position = TS.new_strategy_exit_conditions(self.indicators['RSI']['values'], self.indicators['MACD']['values'], self.indicators['MACD_signal']['values'], self.current_index)
+                case 'tripleEMAStochasticRSIATR':
+                    close_long_position, close_short_position = TS.close_based_off_rsi(self.indicators['RSI']['values'], self.current_index)
+                case _:
+                    return 0, 0
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            log.error(f"check_close_pos() - Error with strategy: {self.strategy}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
+        return close_long_position, close_short_position
+
+    def handle_socket_message(self, msg):
+        '''
+        Callback function for websockets, this adds new data to Open, High, Low, Close & volume arrays
+        '''
+        try:
+            if msg != '':
+                payload = msg['k']
+                if payload['x']:
+                    self.remove_and_consume_candle_then_make_decision(payload)
+                    if self.add_hist_complete:
+                        self.remove_first_candle()
+                    if self.index == 0:
+                        self.print_trades_q.put(True)
+                    if not self.first_interval:
+                        self.first_interval = True
+                    self.pop_previous_value = False
+                elif not wait_for_candle_close and self.first_interval and self.add_hist_complete:
+                    self.remove_and_consume_candle_then_make_decision(payload)
+                    self.pop_previous_value = True
+
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            log.warning(f"handle_socket_message() - Error in handling of {self.symbol} websocket flagging for reconnection, msg: {msg}, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
+            self.socket_failed = True
+
+    def remove_and_consume_candle_then_make_decision(self, payload):
+        '''
+        Function that: \n
+        * removes unclosed candles from the top of each data array (when wait_for_candle_close is false)
+        * Consumes new candles (or new data from unclosed candles when wait_for_candle_close is false)
+        * Calls make_decision() to generate signals and then puts signals on the queue
+        * Checks if the trade should close early, If you have configured a check_close_pos method for your strategy
+        '''
+        try:
+            if self.pop_previous_value:
+                self.remove_last_candle()
+            self.consume_new_candle(payload)
+            if self.add_hist_complete:
+                self.generate_new_heikin_ashi()
+                trade_direction, stop_loss_val, take_profit_val = self.make_decision()
+                close_long_position, close_short_position = self.check_close_pos()
+                if (trade_direction == 1 and not close_long_position) or (trade_direction == 0 and not close_short_position):
+                    self.signal_queue.put([self.symbol, self.OP, self.CP, self.tick_size, trade_direction, self.index, stop_loss_val, take_profit_val])
+                if close_long_position:
+                    self.position_close_queue.put([self.symbol, 'CLOSE_SHORT'])
+                if close_short_position:
+                    self.position_close_queue.put([self.symbol, 'CLOSE_LONG'])
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            log.warning(f"remove_and_consume_candle_then_make_decision() - Error possibly in strategy you are using, Error Info: {exc_obj, fname, exc_tb.tb_lineno}, Error: {e}")
+            self.socket_failed = True
 
     def remove_last_candle(self):
+        '''
+        Function that removes the last entry in each data array (when wait_for_candle_close is false)
+        '''
         self.Date.pop(-1)
         self.Close.pop(-1)
         self.Volume.pop(-1)
@@ -418,6 +457,9 @@ class Bot:
         self.Low_H.pop(-1)
 
     def remove_first_candle(self):
+        '''
+        Function that removes the oldest data entry in each data array, called every new candle so memory usage doesn't grow
+        '''
         self.Date.pop(0)
         self.Close.pop(0)
         self.Volume.pop(0)
@@ -430,6 +472,9 @@ class Bot:
         self.High_H.pop(0)
 
     def consume_new_candle(self, payload):
+        '''
+        Function that appends the new data to each array
+        '''
         self.Date.append(int(payload['T']))
         self.Close.append(float(payload['c']))
         self.Volume.append(float(payload['q']))
@@ -438,6 +483,9 @@ class Bot:
         self.Open.append(float(payload['o']))
 
     def generate_new_heikin_ashi(self):
+        '''
+        Function that appends each new heikin ashi value to its respective data array
+        '''
         self.Open_H.append((self.Open_H[-1] + self.Close_H[-1]) / 2)
         self.Close_H.append((self.Open[-1] + self.Close[-1] + self.Low[-1] + self.High[-1]) / 4)
         self.High_H.append(max(self.High[-1], self.Open_H[-1], self.Close_H[-1]))
