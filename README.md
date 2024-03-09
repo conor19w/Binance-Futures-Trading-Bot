@@ -5,6 +5,8 @@
 * See Documentation below to implement your TA strategies. (currently working on new documentation)
 * If you enjoy the repo please share it around to friends & tweet about it using the tweet button above 😃   
 or [Buy me a Coffee](https://www.buymeacoffee.com/conor19w)  
+
+# This Bot currently only works on windows OS, in future I hope to support linux but I don't have the time right now
 ___
 #### This Bot utilizes: ####
 * [python-Binance](https://python-binance.readthedocs.io/en/latest/) Client to execute orders and pull data from Binance
